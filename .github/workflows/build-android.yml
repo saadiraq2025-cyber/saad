@@ -1,4 +1,4 @@
-name: 🚀 Build & Sign Android App (APK + AAB)
+name: 🌐 Build HTML App to Android (APK + AAB)
 
 on:
   push:
@@ -34,33 +34,15 @@ jobs:
           api-level: 34
           build-tools: 34.0.0
 
-      - name: 📦 Install Capacitor CLI
-        run: npm install -g @capacitor/cli@latest
+      - name: 📦 Install Web2App Action
+        uses: darkshredder/web-to-app-action@main
+        with:
+          build-folder-path: "."               # مجلد ملفات موقعك (index.html موجود هنا)
+          app-name: "TaxiIraqApp"
+          output-folder-path: "my-apks"
 
-      - name: 📂 Install Dependencies
-        run: |
-          npm install
-          echo "✅ Packages installed"
-
-      - name: 🏗️ Build Web App
-        run: |
-          npx cap copy android
-          echo "✅ Web assets copied"
-
-      - name: 🔨 Build APK & AAB
-        run: |
-          cd android
-          ./gradlew assembleRelease
-          ./gradlew bundleRelease
-          echo "✅ Build completed"
-
-      - name: 📦 Upload Build Artifacts
-        uses: actions/upload-artifact@v4   # ✅ أحدث إصدار (بدلاً من v3)
+      - name: 📤 Upload APK & AAB
+        uses: actions/upload-artifact@v4
         with:
           name: TaxiIraq-Builds
-          path: |
-            android/app/build/outputs/**/*.apk
-            android/app/build/outputs/**/*.aab
-
-      - name: ✅ Done
-        run: echo "🎉 APK and AAB created successfully!"
+          path: my-apks/
