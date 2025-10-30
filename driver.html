@@ -49,10 +49,10 @@ const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
 let routeControl=null;
 let beepInterval=null;
-let driverStatus="available"; // حالة السائق
+let driverStatus="available";
 let activeRideId=null;
 
-// 🔊 تفعيل الصوت في الهواتف بعد أول تفاعل
+// 🔊 تفعيل الصوت بعد أول نقرة (ضروري لهواتف أندرويد وآيفون)
 let audioCtx=null;
 document.addEventListener("click", unlockAudio, { once: true });
 document.addEventListener("touchstart", unlockAudio, { once: true });
@@ -69,7 +69,7 @@ function unlockAudio() {
   }
 }
 
-// 🔊 صوت تنبيه متكرر
+// 🔔 صوت تنبيه كل ثانية واحدة
 function startBeep(){
   stopBeep();
   if(!audioCtx){audioCtx = new (window.AudioContext || window.webkitAudioContext)();}
@@ -80,7 +80,7 @@ function startBeep(){
     osc.connect(gain);gain.connect(audioCtx.destination);
     osc.start();
     setTimeout(()=>osc.stop(),300);
-  },2000);
+  },1000); // ← هنا كل ثانية واحدة
   setTimeout(stopBeep,15000);
 }
 function stopBeep(){
@@ -92,7 +92,6 @@ function watchForRides(){
   firebase.database().ref("rides").on("child_added",snap=>{
     const ride=snap.val();
     const id=snap.key;
-
     if(driverStatus==="busy") return;
 
     if(ride.status==="جديدة"){
