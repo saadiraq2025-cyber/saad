@@ -18,7 +18,6 @@ h3{color:#2e7d32;margin:5px 0;}
 button{background:#fdd835;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;margin:5px;}
 button:hover{background:#ffee58;}
 #retry{background:#81c784;}
-.phone-box{margin-top:8px;color:#333;font-size:16px;}
 </style>
 </head>
 <body>
@@ -33,7 +32,7 @@ button:hover{background:#ffee58;}
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
 
-// 🔥 Firebase إعداد
+// 🔥 Firebase
 const app=firebase.initializeApp({
   apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
   authDomain:"taxi-15314.firebaseapp.com",
@@ -42,7 +41,7 @@ const app=firebase.initializeApp({
 });
 const db=firebase.database();
 
-// 🗺️ الخريطة
+// 🗺️ إنشاء الخريطة
 let map=L.map('map').setView([33.3152,44.3661],13);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{
   maxZoom:19,
@@ -52,7 +51,6 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.p
 let driverMarker=null;
 let currentCoords=[33.3152,44.3661];
 const retryBtn=document.getElementById("retry");
-let driverPhone="";
 
 // 📍 تحديد الموقع
 retryBtn.onclick=()=>{getLocation();};
@@ -66,7 +64,7 @@ function getLocation(){
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
     updateDriverMarker();
     retryBtn.style.display="none";
-    document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك — بانتظار الرحلات...";
+    document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
   },err=>{
     document.getElementById("rideInfo").innerText="⚠️ الرجاء السماح بالوصول إلى الموقع أو النقر على الزر أدناه.";
     retryBtn.style.display="inline-block";
@@ -83,7 +81,7 @@ setInterval(()=>{
   }
 },3000);
 
-// 🚖 أيقونة السيارة المتحركة
+// 🚖 السيارة المتحركة
 function updateDriverMarker(){
   if(!driverMarker){
     const carIcon=L.icon({
@@ -98,7 +96,7 @@ function updateDriverMarker(){
   }
 }
 
-// 🔊 الصوت (الرنين)
+// 🔊 الصوت
 let audioCtx=null,beepInterval=null;
 document.addEventListener("click",unlockAudio,{once:true});
 document.addEventListener("touchstart",unlockAudio,{once:true});
@@ -123,14 +121,14 @@ function startBeep(){
 }
 function stopBeep(){if(beepInterval){clearInterval(beepInterval);beepInterval=null;}}
 
-// ⚙️ المتغيرات العامة
+// ⚙️ متغيرات عامة
 const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
 let routeControl=null;
 let driverStatus="available";
 let activeRideId=null;
 
-// 🟢 مراقبة الرحلات الجديدة
+// 🟢 مراقبة الطلبات
 function watchForRides(){
   db.ref("rides").on("child_added",snap=>{
     const ride=snap.val();const id=snap.key;
@@ -152,33 +150,18 @@ function watchForRides(){
         stopBeep();
         driverStatus="busy";
         activeRideId=id;
-
-        // طلب رقم السائق إن لم يكن محفوظ
-        if(!driverPhone){
-          driverPhone=prompt("📞 أدخل رقم هاتفك ليظهر للراكب:", "07");
-        }
-
-        // تحديث حالة الرحلة في قاعدة البيانات
         db.ref("rides/"+id).update({
           status:"مقبولة",
-          driverPhone:driverPhone,
           notification:"✅ تم قبول الرحلة من قبل السائق"
         });
 
-        // عرض التفاصيل في لوحة السائق
         rideInfo.innerHTML=`
           ✅ تم قبول الرحلة<br>
-          <div class="phone-box">رقمك: <b style="color:#2e7d32;">${driverPhone}</b></div>
-          <div>الراكب: ${ride.riderPhone}</div>
-          <div>المسافة: ${ride.distance} كم | الأجرة: ${ride.fare} د.ع</div><br>
-          <button id="callRider">📞 اتصال بالراكب</button>
+          المسافة: ${ride.distance} كم<br>
+          الأجرة: ${ride.fare} د.ع<br><br>
+          <b>🚗 يمكنك البدء بالرحلة الآن</b>
         `;
         endBtn.disabled=false;
-
-        // 📞 زر الاتصال بالراكب
-        document.getElementById("callRider").onclick=()=>{
-          window.location.href=\`tel:${ride.riderPhone}\`;
-        };
 
         // 🗺️ رسم المسار
         if(routeControl){map.removeControl(routeControl);}
@@ -225,7 +208,6 @@ endBtn.onclick=()=>{
   activeRideId=null;
 };
 
-// 📍 تشغيل الموقع عند الفتح
 getLocation();
 });
 </script>
