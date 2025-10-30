@@ -49,18 +49,35 @@ const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
 let routeControl=null;
 let beepInterval=null;
-let driverStatus="available"; // حالة السائق (متاح/مشغول)
+let driverStatus="available"; // حالة السائق
 let activeRideId=null;
 
-// 🔊 صوت متقطع
+// 🔊 تفعيل الصوت في الهواتف بعد أول تفاعل
+let audioCtx=null;
+document.addEventListener("click", unlockAudio, { once: true });
+document.addEventListener("touchstart", unlockAudio, { once: true });
+
+function unlockAudio() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    console.log("🔊 تم تفعيل الصوت بنجاح");
+  } catch (e) {
+    console.error("فشل تفعيل الصوت:", e);
+  }
+}
+
+// 🔊 صوت تنبيه متكرر
 function startBeep(){
   stopBeep();
-  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  if(!audioCtx){audioCtx = new (window.AudioContext || window.webkitAudioContext)();}
   beepInterval=setInterval(()=>{
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
     osc.type="sine";osc.frequency.value=800;
-    osc.connect(gain);gain.connect(ctx.destination);
+    osc.connect(gain);gain.connect(audioCtx.destination);
     osc.start();
     setTimeout(()=>osc.stop(),300);
   },2000);
@@ -70,13 +87,12 @@ function stopBeep(){
   if(beepInterval){clearInterval(beepInterval);beepInterval=null;}
 }
 
-// 🟢 وظيفة مراقبة الرحلات
+// 🟢 مراقبة الرحلات
 function watchForRides(){
   firebase.database().ref("rides").on("child_added",snap=>{
     const ride=snap.val();
     const id=snap.key;
 
-    // لا يستقبل إذا مشغول
     if(driverStatus==="busy") return;
 
     if(ride.status==="جديدة"){
@@ -91,26 +107,17 @@ function watchForRides(){
         <button id="rejectRide">❌ رفض</button>
       `;
 
-      // ✅ قبول الرحلة
       document.getElementById("acceptRide").onclick=()=>{
         stopBeep();
-        driverStatus="busy"; // يصبح مشغول
+        driverStatus="busy";
         activeRideId=id;
-
         firebase.database().ref("rides/"+id).update({
           status:"مقبولة",
           notification:"✅ تم قبول الرحلة من قبل سائق آخر"
         });
-
-        rideInfo.innerHTML=`
-          ✅ تم قبول الرحلة<br>
-          الراكب: ${ride.riderPhone}<br>
-          المسافة: ${ride.distance} كم<br>
-          الأجرة: ${ride.fare} د.ع
-        `;
+        rideInfo.innerHTML=`✅ تم قبول الرحلة<br>الراكب: ${ride.riderPhone}<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع`;
         endBtn.disabled=false;
 
-        // 🗺️ رسم المسار عبر الطرق
         if(routeControl){map.removeControl(routeControl);}
         navigator.geolocation.getCurrentPosition(pos=>{
           const driverPos=[pos.coords.latitude,pos.coords.longitude];
@@ -128,7 +135,6 @@ function watchForRides(){
         });
       };
 
-      // ❌ رفض الرحلة
       document.getElementById("rejectRide").onclick=()=>{
         stopBeep();
         firebase.database().ref("rides/"+id).update({
@@ -140,7 +146,6 @@ function watchForRides(){
     }
   });
 
-  // 🔔 إذا تم قبول الرحلة من سائق آخر
   firebase.database().ref("rides").on("child_changed", snapshot => {
     const updated = snapshot.val();
     if (updated.status === "مقبولة" && driverStatus==="available") {
@@ -152,7 +157,7 @@ function watchForRides(){
   });
 }
 
-watchForRides(); // تشغيل المراقبة عند البداية
+watchForRides();
 
 // 🚗 إنهاء الرحلة
 endBtn.onclick=()=>{
@@ -165,7 +170,7 @@ endBtn.onclick=()=>{
   if(routeControl){map.removeControl(routeControl);}
   endBtn.disabled=true;
   rideInfo.innerHTML="🚗 تم إنهاء الرحلة. بانتظار طلب جديد...";
-  driverStatus="available"; // يعود متاح
+  driverStatus="available";
   activeRideId=null;
 };
 </script>
