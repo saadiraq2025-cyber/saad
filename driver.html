@@ -12,105 +12,76 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 <style>
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;background:#f5f5f5;}
-#map{height:80vh;width:100%;}
+#map{height:80vh;}
 #panel{background:#fff;text-align:center;padding:10px;box-shadow:0 -2px 5px rgba(0,0,0,0.2);}
 h3{color:#2e7d32;margin:5px 0;}
 button{background:#fdd835;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;margin:5px;}
-button:hover{background:#ffee58;}
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="panel">
   <h3>🚖 لوحة السائق</h3>
-  <div id="rideInfo">📡 يتم تحديد موقعك الآن...</div>
+  <div id="rideInfo">بانتظار الرحلات...</div>
   <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
 </div>
 
 <script>
-// 🔹 إعداد Firebase
-const app = firebase.initializeApp({
-  apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
-  authDomain: "taxi-15314.firebaseapp.com",
-  databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/",
-  projectId: "taxi-15314"
+const app=firebase.initializeApp({
+  apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
+  authDomain:"taxi-15314.firebaseapp.com",
+  databaseURL:"https://taxi-15314-default-rtdb.firebaseio.com/",
+  projectId:"taxi-15314"
 });
-const db = firebase.database();
+const db=firebase.database();
 
-// 🔹 إنشاء الخريطة عند تحميل الصفحة
-let map = L.map('map').setView([33.3152, 44.3661], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19
-}).addTo(map);
+let map=L.map('map').setView([33.3152,44.3661],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-let driverMarker = null;
-let currentCoords = [33.3152, 44.3661];
+let driverMarker=null;
+navigator.geolocation.getCurrentPosition(pos=>{
+  const coords=[pos.coords.latitude,pos.coords.longitude];
+  driverMarker=L.marker(coords).addTo(map).bindPopup("📍 موقعي الحالي").openPopup();
+  map.setView(coords,15);
+});
 
-// 🔹 الحصول على الموقع الحالي فورًا
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition((pos) => {
-    currentCoords = [pos.coords.latitude, pos.coords.longitude];
-    map.setView(currentCoords, 15);
-    driverMarker = L.marker(currentCoords).addTo(map)
-      .bindPopup("📍 موقعي الحالي").openPopup();
-    document.getElementById("rideInfo").innerHTML = "✅ تم تحديد موقعك بنجاح، بانتظار الرحلات...";
-  }, (err) => {
-    document.getElementById("rideInfo").innerHTML = "⚠️ الرجاء تفعيل GPS للسماح بالتحديد.";
-  });
+const rideInfo=document.getElementById("rideInfo");
+const endBtn=document.getElementById("endRide");
+let routeControl=null;
+let beepInterval=null;
+let driverStatus="available"; // حالة السائق (متاح/مشغول)
+let activeRideId=null;
 
-  // 🔁 تحديث الموقع كل عدة ثوانٍ
-  navigator.geolocation.watchPosition((pos) => {
-    currentCoords = [pos.coords.latitude, pos.coords.longitude];
-    if (!driverMarker) {
-      driverMarker = L.marker(currentCoords).addTo(map)
-        .bindPopup("📍 موقعي الحالي").openPopup();
-    } else {
-      driverMarker.setLatLng(currentCoords);
-    }
-  });
-}
-
-// 🔊 تفعيل الصوت
-let audioCtx = null, beepInterval = null;
-document.addEventListener("click", unlockAudio, { once: true });
-document.addEventListener("touchstart", unlockAudio, { once: true });
-function unlockAudio() {
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === "suspended") audioCtx.resume();
-  } catch (e) { console.error(e); }
-}
-function startBeep() {
+// 🔊 صوت متقطع
+function startBeep(){
   stopBeep();
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  beepInterval = setInterval(() => {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "sine"; o.frequency.value = 800;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    setTimeout(() => o.stop(), 300);
-  }, 1000);
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  beepInterval=setInterval(()=>{
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.type="sine";osc.frequency.value=800;
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start();
+    setTimeout(()=>osc.stop(),300);
+  },2000);
+  setTimeout(stopBeep,15000);
 }
-function stopBeep() { if (beepInterval) { clearInterval(beepInterval); beepInterval = null; } }
+function stopBeep(){
+  if(beepInterval){clearInterval(beepInterval);beepInterval=null;}
+}
 
-// 🔹 متغيرات النظام
-const rideInfo = document.getElementById("rideInfo");
-const endBtn = document.getElementById("endRide");
-let routeControl = null;
-let driverStatus = "available";
-let activeRideId = null;
+// 🟢 وظيفة مراقبة الرحلات
+function watchForRides(){
+  firebase.database().ref("rides").on("child_added",snap=>{
+    const ride=snap.val();
+    const id=snap.key;
 
-// 🟢 مراقبة الطلبات الجديدة
-function watchForRides() {
-  db.ref("rides").on("child_added", snap => {
-    const ride = snap.val();
-    const id = snap.key;
-    if (driverStatus === "busy") return;
+    // لا يستقبل إذا مشغول
+    if(driverStatus==="busy") return;
 
-    if (ride.status === "جديدة") {
+    if(ride.status==="جديدة"){
       startBeep();
-      rideInfo.innerHTML = `
+      rideInfo.innerHTML=`
         🚖 <b>رحلة جديدة</b><br>
         من (${ride.start[0].toFixed(4)}, ${ride.start[1].toFixed(4)})<br>
         إلى (${ride.end[0].toFixed(4)}, ${ride.end[1].toFixed(4)})<br>
@@ -120,90 +91,82 @@ function watchForRides() {
         <button id="rejectRide">❌ رفض</button>
       `;
 
-      document.getElementById("acceptRide").onclick = () => {
+      // ✅ قبول الرحلة
+      document.getElementById("acceptRide").onclick=()=>{
         stopBeep();
-        driverStatus = "busy";
-        activeRideId = id;
+        driverStatus="busy"; // يصبح مشغول
+        activeRideId=id;
 
-        const driverPhone = prompt("📱 أدخل رقم هاتفك ليتمكن الراكب من الاتصال بك:");
-        db.ref("rides/" + id).update({
-          status: "مقبولة",
-          driverPhone: driverPhone || "غير معروف",
-          driverLat: currentCoords[0],
-          driverLng: currentCoords[1],
-          notification: "✅ تم قبول الرحلة من قبل السائق"
+        firebase.database().ref("rides/"+id).update({
+          status:"مقبولة",
+          notification:"✅ تم قبول الرحلة من قبل سائق آخر"
         });
 
-        rideInfo.innerHTML = `
+        rideInfo.innerHTML=`
           ✅ تم قبول الرحلة<br>
           الراكب: ${ride.riderPhone}<br>
           المسافة: ${ride.distance} كم<br>
-          الأجرة: ${ride.fare} د.ع<br><br>
-          <button id="openWaze">📍 تتبع في Waze</button>
-          <button id="callRider">📞 اتصال بالراكب</button>
+          الأجرة: ${ride.fare} د.ع
         `;
-        endBtn.disabled = false;
+        endBtn.disabled=false;
 
-        document.getElementById("callRider").onclick = () => {
-          window.location.href = \`tel:${ride.riderPhone}\`;
-        };
-        document.getElementById("openWaze").onclick = () => {
-          const lat = ride.end[0], lng = ride.end[1];
-          window.open(\`https://waze.com/ul?ll=\${lat},\${lng}&navigate=yes\`, "_blank");
-        };
-
-        // رسم المسار
-        if (routeControl) map.removeControl(routeControl);
-        routeControl = L.Routing.control({
-          waypoints: [
-            L.latLng(currentCoords[0], currentCoords[1]),
-            L.latLng(ride.end[0], ride.end[1])
-          ],
-          router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
-          lineOptions: { styles: [{ color: 'blue', opacity: 0.8, weight: 5 }] },
-          addWaypoints: false,
-          fitSelectedRoutes: true,
-          show: false
-        }).addTo(map);
+        // 🗺️ رسم المسار عبر الطرق
+        if(routeControl){map.removeControl(routeControl);}
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const driverPos=[pos.coords.latitude,pos.coords.longitude];
+          routeControl=L.Routing.control({
+            waypoints:[
+              L.latLng(driverPos[0],driverPos[1]),
+              L.latLng(ride.end[0],ride.end[1])
+            ],
+            router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
+            lineOptions:{styles:[{color:'blue',opacity:0.8,weight:5}]},
+            addWaypoints:false,
+            fitSelectedRoutes:true,
+            show:false
+          }).addTo(map);
+        });
       };
 
-      document.getElementById("rejectRide").onclick = () => {
+      // ❌ رفض الرحلة
+      document.getElementById("rejectRide").onclick=()=>{
         stopBeep();
-        db.ref("rides/" + id).update({
-          status: "مرفوضة",
-          notification: "❌ السائق رفض الرحلة"
+        firebase.database().ref("rides/"+id).update({
+          status:"مرفوضة",
+          notification:"❌ السائق رفض الرحلة"
         });
-        rideInfo.innerHTML = "🚕 تم رفض الرحلة — بانتظار طلب جديد.";
+        rideInfo.innerHTML="🚕 تم رفض الرحلة — بانتظار طلب جديد.";
       };
     }
   });
 
-  // 🔁 تحديث موقع السائق المستمر للراكب
-  navigator.geolocation.watchPosition(pos => {
-    if (activeRideId) {
-      db.ref("rides/" + activeRideId).update({
-        driverLat: pos.coords.latitude,
-        driverLng: pos.coords.longitude
-      });
+  // 🔔 إذا تم قبول الرحلة من سائق آخر
+  firebase.database().ref("rides").on("child_changed", snapshot => {
+    const updated = snapshot.val();
+    if (updated.status === "مقبولة" && driverStatus==="available") {
+      stopBeep();
+      rideInfo.innerHTML = "🚕 تم قبول الرحلة من قبل سائق آخر — بانتظار رحلة جديدة...";
+      if (routeControl) { map.removeControl(routeControl); }
+      endBtn.disabled = true;
     }
   });
 }
 
-watchForRides();
+watchForRides(); // تشغيل المراقبة عند البداية
 
 // 🚗 إنهاء الرحلة
-endBtn.onclick = () => {
-  if (!activeRideId) return;
+endBtn.onclick=()=>{
+  if(!activeRideId) return;
   stopBeep();
-  db.ref("rides/" + activeRideId).update({
-    status: "منتهية",
-    notification: "🚗 تم إنهاء الرحلة"
+  firebase.database().ref("rides/"+activeRideId).update({
+    status:"منتهية",
+    notification:"🚗 تم إنهاء الرحلة"
   });
-  if (routeControl) map.removeControl(routeControl);
-  endBtn.disabled = true;
-  rideInfo.innerHTML = "🚗 تم إنهاء الرحلة. بانتظار طلب جديد...";
-  driverStatus = "available";
-  activeRideId = null;
+  if(routeControl){map.removeControl(routeControl);}
+  endBtn.disabled=true;
+  rideInfo.innerHTML="🚗 تم إنهاء الرحلة. بانتظار طلب جديد...";
+  driverStatus="available"; // يعود متاح
+  activeRideId=null;
 };
 </script>
 </body>
