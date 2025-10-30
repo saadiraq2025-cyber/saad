@@ -12,7 +12,8 @@
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
 #map{height:80vh;}
 #panel{background:#fff;text-align:center;padding:10px;box-shadow:0 -2px 5px rgba(0,0,0,0.2);}
-button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;}
+button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;margin:5px;}
+button:hover{background:#ffee58;}
 </style>
 </head>
 <body>
@@ -21,6 +22,7 @@ button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-w
   <h3>🚖 طلب رحلة جديدة</h3>
   <p id="status">يتم تحديد موقعك الحالي الآن...</p>
   <button id="sendRide" disabled>إرسال الطلب</button>
+  <div id="actions"></div>
 </div>
 
 <script>
@@ -38,14 +40,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).a
 let startCoords=null,endCoords=null;
 let startMarker=null,endMarker=null;
 let rideId=null;
+let driverMarker=null;
 
 navigator.geolocation.getCurrentPosition(pos=>{
   startCoords=[pos.coords.latitude,pos.coords.longitude];
   startMarker=L.marker(startCoords).addTo(map).bindPopup("📍 موقعك الحالي").openPopup();
   map.setView(startCoords,15);
   document.getElementById("status").innerText="انقر على الخريطة لتحديد نقطة النهاية.";
-},err=>{
-  document.getElementById("status").innerText="⚠️ لم يتم تحديد الموقع الحالي، استخدم الخريطة لتحديد النهاية فقط.";
 });
 
 map.on('click',function(e){
@@ -57,55 +58,52 @@ map.on('click',function(e){
 });
 
 document.getElementById("sendRide").onclick=function(){
-  if(!startCoords || !endCoords){alert("⚠️ يرجى تحديد الموقع والنهاية.");return;}
-  const phone=localStorage.getItem('phone')||"غير معروف";
-
+  const phone=localStorage.getItem('phone')||prompt("📱 أدخل رقم هاتفك:");
   const R=6371;
   const dLat=(endCoords[0]-startCoords[0])*Math.PI/180;
   const dLon=(endCoords[1]-startCoords[1])*Math.PI/180;
-  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+  const a=Math.sin(dLat/2)**2+
            Math.cos(startCoords[0]*Math.PI/180)*Math.cos(endCoords[0]*Math.PI/180)*
-           Math.sin(dLon/2)*Math.sin(dLon/2);
+           Math.sin(dLon/2)**2;
   const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   const distance=(R*c).toFixed(2);
   const fare=Math.round(distance*1000);
-
   rideId=Date.now();
-  firebase.database().ref("rides/"+rideId).set({
+  db.ref("rides/"+rideId).set({
     riderPhone:phone,
     start:startCoords,
     end:endCoords,
     distance:distance,
     fare:fare,
     status:"جديدة"
-  }).then(()=>{
-    document.getElementById("status").innerHTML=
-      `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
-    listenForUpdates();
-  }).catch(err=>{
-    document.getElementById("status").innerText="❌ حدث خطأ أثناء الإرسال: "+err;
-  });
+  }).then(()=>{document.getElementById("status").innerHTML=`✅ تم إرسال الطلب<br>بإنتظار السائق...`;listenForUpdates();});
 };
 
 // 🔹 مراقبة التحديثات
 function listenForUpdates(){
-  if(!rideId) return;
-  firebase.database().ref("rides/"+rideId).on("value",snapshot=>{
+  db.ref("rides/"+rideId).on("value",snapshot=>{
     const ride=snapshot.val();
-    if(!ride) return;
-
-    if(ride.notification){
-      alert(ride.notification);
-      document.getElementById("status").innerHTML=ride.notification;
-    }
-
+    if(!ride)return;
     if(ride.status==="مقبولة"){
-      document.getElementById("status").innerHTML=`🚕 السائق في الطريق إليك...<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع`;
+      document.getElementById("status").innerHTML=`🚕 تم قبول الرحلة!<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع`;
+      document.getElementById("actions").innerHTML=`
+        <button id="callDriver">📞 اتصال بالسائق</button>
+        <button id="trackDriver">📍 عرض موقع السائق</button>
+      `;
+      document.getElementById("callDriver").onclick=()=>{window.location.href=\`tel:\${ride.driverPhone}\`;};
+      document.getElementById("trackDriver").onclick=()=>{
+        alert("🚗 يتم عرض موقع السائق الآن...");
+        if(!driverMarker){driverMarker=L.marker([ride.driverLat,ride.driverLng]).addTo(map).bindPopup("🚖 السائق");}
+        else{driverMarker.setLatLng([ride.driverLat,ride.driverLng]);}
+        map.setView([ride.driverLat,ride.driverLng],15);
+      };
     }
-
     if(ride.status==="منتهية"){
-      document.getElementById("status").innerHTML=`🚗 تم إنهاء الرحلة — شكرًا لاستخدامك تكسي العراق الشامل`;
-      alert("🚗 تم إنهاء الرحلة بنجاح!");
+      document.getElementById("status").innerHTML="🚗 تم إنهاء الرحلة. شكرًا لاستخدامك التطبيق.";
+      document.getElementById("actions").innerHTML="";
+    }
+    if(ride.driverLat && driverMarker){
+      driverMarker.setLatLng([ride.driverLat,ride.driverLng]);
     }
   });
 }
