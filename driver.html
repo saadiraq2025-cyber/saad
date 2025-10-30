@@ -24,7 +24,7 @@ button:hover{background:#ffee58;}
 <div id="map"></div>
 <div id="panel">
   <h3>🚖 لوحة السائق</h3>
-  <div id="rideInfo">📍 يتم تحديد موقعك الآن...</div>
+  <div id="rideInfo">📍 جاري تحديد موقعك...</div>
   <button id="retry" style="display:none;">📍 تحديد موقعي الآن</button>
   <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
 </div>
@@ -32,7 +32,7 @@ button:hover{background:#ffee58;}
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
 
-// إعداد Firebase
+// 🔥 إعداد Firebase
 const app=firebase.initializeApp({
   apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
   authDomain:"taxi-15314.firebaseapp.com",
@@ -41,31 +41,30 @@ const app=firebase.initializeApp({
 });
 const db=firebase.database();
 
-// إنشاء الخريطة
+// 🗺️ إعداد الخريطة
 let map=L.map('map').setView([33.3152,44.3661],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'&copy; <a href="https://carto.com/">CARTO</a>'
+}).addTo(map);
+
 let driverMarker=null;
 let currentCoords=[33.3152,44.3661];
-
-// زر المحاولة من جديد
 const retryBtn=document.getElementById("retry");
+
+// 🔄 زر إعادة المحاولة
 retryBtn.onclick=()=>{getLocation();};
 
-// تحديد الموقع الحالي
+// 📍 تحديد الموقع
 function getLocation(){
   if(!navigator.geolocation){
     document.getElementById("rideInfo").innerText="⚠️ جهازك لا يدعم تحديد الموقع.";
     return;
   }
-  document.getElementById("rideInfo").innerText="⏳ جارٍ تحديد موقعك...";
+  document.getElementById("rideInfo").innerText="⏳ جاري تحديد موقعك...";
   navigator.geolocation.getCurrentPosition(pos=>{
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
-    if(!driverMarker){
-      driverMarker=L.marker(currentCoords).addTo(map).bindPopup("📍 موقعي الحالي").openPopup();
-    }else{
-      driverMarker.setLatLng(currentCoords);
-    }
-    map.setView(currentCoords,15);
+    updateDriverMarker();
     retryBtn.style.display="none";
     document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
   },err=>{
@@ -74,10 +73,35 @@ function getLocation(){
   },{enableHighAccuracy:true,timeout:10000});
 }
 
-// تشغيل الموقع فور التحميل
+// 🚗 تحديث موقع السائق كل 3 ثوانٍ
+setInterval(()=>{
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      currentCoords=[pos.coords.latitude,pos.coords.longitude];
+      updateDriverMarker();
+    });
+  }
+},3000);
+
+// 🚖 إنشاء أو تحريك السيارة
+function updateDriverMarker(){
+  if(!driverMarker){
+    const carIcon=L.icon({
+      iconUrl:"https://cdn-icons-png.flaticon.com/512/744/744465.png",
+      iconSize:[40,40],
+      iconAnchor:[20,20]
+    });
+    driverMarker=L.marker(currentCoords,{icon:carIcon}).addTo(map).bindPopup("🚖 موقعي الحالي");
+    map.setView(currentCoords,15);
+  }else{
+    driverMarker.setLatLng(currentCoords);
+  }
+}
+
+// 🕹️ تشغيل الموقع فورًا
 getLocation();
 
-// الصوت (للرنين)
+// 🔊 إعداد الصوت
 let audioCtx=null,beepInterval=null;
 document.addEventListener("click",unlockAudio,{once:true});
 document.addEventListener("touchstart",unlockAudio,{once:true});
@@ -102,14 +126,14 @@ function startBeep(){
 }
 function stopBeep(){if(beepInterval){clearInterval(beepInterval);beepInterval=null;}}
 
-// متغيرات عامة
+// ⚙️ متغيرات عامة
 const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
 let routeControl=null;
 let driverStatus="available";
 let activeRideId=null;
 
-// مراقبة الطلبات
+// 🟢 مراقبة الطلبات
 function watchForRides(){
   db.ref("rides").on("child_added",snap=>{
     const ride=snap.val();const id=snap.key;
@@ -126,6 +150,7 @@ function watchForRides(){
         <button id="rejectRide">❌ رفض</button>
       `;
 
+      // ✅ قبول الرحلة
       document.getElementById("acceptRide").onclick=()=>{
         stopBeep();
         driverStatus="busy";
@@ -145,18 +170,19 @@ function watchForRides(){
         `;
         endBtn.disabled=false;
 
-        // الاتصال بالراكب
+        // 📞 الاتصال بالراكب
         document.getElementById("callRider").onclick=()=>{
           window.location.href=\`tel:${ride.riderPhone}\`;
         };
 
-        // فتح Waze
+        // 🧭 فتح Waze
         document.getElementById("openWaze").onclick=()=>{
-          const lat=ride.end[0];const lng=ride.end[1];
+          const lat=ride.end[0];
+          const lng=ride.end[1];
           window.open(\`https://waze.com/ul?ll=\${lat},\${lng}&navigate=yes\`,"_blank");
         };
 
-        // رسم المسار
+        // 🗺️ رسم المسار
         if(routeControl){map.removeControl(routeControl);}
         routeControl=L.Routing.control({
           waypoints:[
@@ -171,6 +197,7 @@ function watchForRides(){
         }).addTo(map);
       };
 
+      // ❌ رفض الرحلة
       document.getElementById("rejectRide").onclick=()=>{
         stopBeep();
         db.ref("rides/"+id).update({
@@ -185,7 +212,7 @@ function watchForRides(){
 
 watchForRides();
 
-// إنهاء الرحلة
+// 🚗 إنهاء الرحلة
 endBtn.onclick=()=>{
   if(!activeRideId)return;
   stopBeep();
