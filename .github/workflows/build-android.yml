@@ -1,4 +1,4 @@
-name: 🌐 Build HTML App to Android (APK + AAB)
+name: 🌐 Build WebView Android App (APK + AAB)
 
 on:
   push:
@@ -34,15 +34,63 @@ jobs:
           api-level: 34
           build-tools: 34.0.0
 
-      - name: 📦 Install Web2App Action
-        uses: darkshredder/web-to-app-action@main
-        with:
-          build-folder-path: "."               # مجلد ملفات موقعك (index.html موجود هنا)
-          app-name: "TaxiIraqApp"
-          output-folder-path: "my-apks"
+      - name: 🧱 Create Simple WebView Project
+        run: |
+          mkdir -p android/app/src/main/java/com/taxiiraq/webview
+          mkdir -p android/app/src/main/res/layout
+          mkdir -p android/app/src/main/res/values
+          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+          mkdir -p android/app/build/outputs/apk/release
 
-      - name: 📤 Upload APK & AAB
+          cat <<'EOF' > android/app/src/main/java/com/taxiiraq/webview/MainActivity.java
+          package com.taxiiraq.webview;
+          import android.os.Bundle;
+          import android.webkit.WebView;
+          import android.webkit.WebSettings;
+          import androidx.appcompat.app.AppCompatActivity;
+
+          public class MainActivity extends AppCompatActivity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  WebView webView = new WebView(this);
+                  setContentView(webView);
+                  WebSettings webSettings = webView.getSettings();
+                  webSettings.setJavaScriptEnabled(true);
+                  webSettings.setDomStorageEnabled(true);
+                  webView.loadUrl("https://tktkbaghdad.com"); // 👈 غيّر هذا إلى رابط موقعك
+              }
+          }
+          EOF
+
+          cat <<'EOF' > android/app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.taxiiraq.webview">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application
+                  android:label="Taxi Iraq WebView"
+                  android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                  <activity android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          echo "✅ WebView Android structure created"
+
+      - name: 🔨 Build Placeholder APK
+        run: |
+          echo "No Gradle project yet — simulate build"
+          mkdir -p my-apks
+          echo "WebView APK Build Placeholder" > my-apks/info.txt
+
+      - name: 📤 Upload WebView Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TaxiIraq-Builds
+          name: TaxiIraq-WebView
           path: my-apks/
