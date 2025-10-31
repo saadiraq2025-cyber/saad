@@ -3,104 +3,303 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>تكسي العراق الشامل</title>
+  <title>تكسي العراق الشامل - تسجيل الدخول</title>
+  <!-- تحميل Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- تحميل الخط المناسب للغة العربية (Inter for Latin fallback, but Tahoma/Arial will be picked up for Arabic) -->
   <style>
+    :root {
+      /* الألوان الأساسية */
+      --color-primary: #2e7d32; /* الأخضر العميق */
+      --color-secondary: #fdd835; /* الأصفر الزاهي */
+      --color-background: #f5f5f5;
+      font-family: 'Inter', 'Tahoma', sans-serif;
+    }
+    /* دمج الخطوط العربية القياسية */
     body {
-      font-family: "Tahoma", sans-serif;
-      background: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
+      font-family: 'Tahoma', 'Arial', sans-serif;
+      background-color: var(--color-background);
     }
-    header {
-      position: absolute;
-      top: 15px;
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      color: #2e7d32;
-    }
-    .container {
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      padding: 25px;
-      width: 320px;
-      text-align: center;
-    }
-    h2 {
-      color: #2e7d32;
-      margin-bottom: 10px;
-    }
-    input, select {
-      width: 90%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      text-align: center;
-    }
-    button {
-      width: 95%;
-      padding: 10px;
-      margin-top: 10px;
-      border: none;
-      background: #fdd835;
-      color: #000;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #ffee58;
-    }
-    .switch {
-      color: #2e7d32;
-      margin-top: 15px;
-      cursor: pointer;
-      font-size: 14px;
-    }
+    .text-primary { color: var(--color-primary); }
+    .bg-secondary { background-color: var(--color-secondary); }
+    .hover\:bg-secondary-dark:hover { background-color: #fbc02d; } /* تظليل خفيف للأصفر */
   </style>
-</head>
-<body>
 
-  <header>🚕 تكسي العراق</header>
-
-  <div class="container" id="loginBox">
-    <h2>تسجيل الدخول</h2>
-    <input type="text" id="loginPhone" placeholder="رقم الهاتف">
-    <input type="password" id="loginPassword" placeholder="كلمة المرور">
-    <button onclick="login()">دخول</button>
-    <button onclick="adminLogin()">👑 دخول الأدمن</button>
-    <div class="switch" onclick="showRegister()">ليس لديك حساب؟ إنشاء حساب جديد</div>
-  </div>
-
-  <div class="container" id="registerBox" style="display:none;">
-    <h2>إنشاء حساب</h2>
-    <input type="text" id="regPhone" placeholder="رقم الهاتف">
-    <input type="password" id="regPassword" placeholder="كلمة المرور">
-    <select id="regType">
-      <option value="rider">راكب</option>
-      <option value="driver">سائق</option>
-    </select>
-    <button onclick="register()">تسجيل</button>
-    <div class="switch" onclick="showLogin()">لديك حساب؟ تسجيل الدخول</div>
-  </div>
-
-  <script type="module" src="app.js"></script>
-
+  <!-- إعداد Tailwind لاستخدام الألوان المخصصة -->
   <script>
-    function adminLogin(){
-      const pass = prompt("أدخل كلمة مرور الأدمن:");
-      if(pass === "12312344@"){
-        window.location.href = "admin.html";
-      } else {
-        alert("❌ كلمة المرور غير صحيحة");
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2e7d32', /* الأخضر */
+            secondary: '#fdd835', /* الأصفر */
+          },
+        }
       }
     }
   </script>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+  <!-- Header -->
+  <header class="absolute top-0 w-full pt-8 text-center">
+    <h1 class="text-4xl font-extrabold text-primary mb-2">
+      🚕 تكسي العراق
+    </h1>
+    <p class="text-gray-600">خدمتك في كل مكان</p>
+  </header>
+
+  <!-- Container for Auth Boxes -->
+  <div id="authContainer" class="w-full max-w-sm">
+
+    <!-- Login Box -->
+    <div id="loginBox" class="bg-white p-6 rounded-xl shadow-2xl transition-opacity duration-500 ease-in-out">
+      <h2 class="text-3xl font-bold text-primary mb-6">تسجيل الدخول</h2>
+
+      <div class="space-y-4">
+        <input type="text" id="loginPhone" placeholder="رقم الهاتف" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition">
+        <input type="password" id="loginPassword" placeholder="كلمة المرور" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition">
+      </div>
+
+      <button onclick="login()" class="w-full px-4 py-3 mt-6 bg-secondary text-gray-900 font-extrabold text-xl rounded-lg hover:bg-secondary-dark transition transform hover:scale-[1.01] shadow-md">
+        دخول
+      </button>
+
+      <button onclick="adminLogin()" class="w-full px-4 py-3 mt-3 bg-primary text-white font-bold text-lg rounded-lg hover:bg-green-700 transition transform hover:scale-[1.01] shadow-md flex items-center justify-center">
+        <span class="ml-2">👑 دخول الأدمن</span>
+      </button>
+
+      <div class="switch text-primary mt-6 cursor-pointer text-sm font-medium hover:underline" onclick="showRegister()">
+        ليس لديك حساب؟ إنشاء حساب جديد
+      </div>
+    </div>
+
+    <!-- Register Box -->
+    <div id="registerBox" class="bg-white p-6 rounded-xl shadow-2xl transition-opacity duration-500 ease-in-out absolute w-full max-w-sm top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden" style="opacity:0;">
+      <h2 class="text-3xl font-bold text-primary mb-6">إنشاء حساب</h2>
+
+      <div class="space-y-4">
+        <input type="text" id="regPhone" placeholder="رقم الهاتف" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition">
+        <input type="password" id="regPassword" placeholder="كلمة المرور" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg text-center focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition">
+        
+        <select id="regType" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg text-center appearance-none focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition">
+          <option value="rider">راكب (Passenger)</option>
+          <option value="driver">سائق (Driver)</option>
+        </select>
+      </div>
+
+      <button onclick="register()" class="w-full px-4 py-3 mt-6 bg-secondary text-gray-900 font-extrabold text-xl rounded-lg hover:bg-secondary-dark transition transform hover:scale-[1.01] shadow-md">
+        تسجيل
+      </button>
+
+      <div class="switch text-primary mt-6 cursor-pointer text-sm font-medium hover:underline" onclick="showLogin()">
+        لديك حساب بالفعل؟ تسجيل الدخول
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Message Box (Custom Alert) -->
+  <div id="messageBox" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-xs text-center">
+      <p id="messageText" class="text-lg font-bold mb-4"></p>
+      <button onclick="hideMessage()" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-green-700 transition">
+        موافق
+      </button>
+    </div>
+  </div>
+
+  <!-- Firebase & App Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+    // ----------------------------------------------------
+    // 1. إعدادات Firebase
+    // ----------------------------------------------------
+    setLogLevel('Debug');
+    
+    // المتغيرات العامة المقدمة من البيئة
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    if (Object.keys(firebaseConfig).length === 0) {
+      showMessage("❌ خطأ الإعدادات", "لم يتم توفير إعدادات Firebase. لن تعمل وظائف تسجيل الدخول/التسجيل.");
+      console.error("Firebase config is missing.");
+    }
+
+    let app, db, auth;
+
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+      console.log("Firebase Initialized.");
+
+      // وظيفة تسجيل الدخول الأولي
+      async function initializeAuth() {
+        try {
+          if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+            console.log("Signed in with custom token.");
+          } else {
+            await signInAnonymously(auth);
+            console.log("Signed in anonymously.");
+          }
+        } catch (error) {
+          console.error("Error during initial sign in:", error);
+          showMessage("خطأ في الاتصال", "فشل تسجيل الدخول الأولي. يرجى المحاولة لاحقًا.");
+        }
+      }
+      initializeAuth();
+
+    } catch (e) {
+      console.error("Error initializing Firebase:", e);
+      showMessage("خطأ", "فشل في إعداد Firebase. يرجى التحقق من الإعدادات.");
+    }
+
+    // ----------------------------------------------------
+    // 2. وظائف الواجهة (UI Functions)
+    // ----------------------------------------------------
+
+    const loginBox = document.getElementById('loginBox');
+    const registerBox = document.getElementById('registerBox');
+
+    window.showMessage = (title, message) => {
+      document.getElementById('messageText').innerHTML = `<strong class="text-primary">${title}</strong><br>${message}`;
+      document.getElementById('messageBox').classList.remove('hidden');
+      document.getElementById('messageBox').classList.add('flex');
+    };
+
+    window.hideMessage = () => {
+      document.getElementById('messageBox').classList.add('hidden');
+      document.getElementById('messageBox').classList.remove('flex');
+    };
+
+    window.showRegister = () => {
+      loginBox.style.opacity = '0';
+      setTimeout(() => {
+        loginBox.classList.add('hidden');
+        registerBox.classList.remove('hidden');
+        setTimeout(() => {
+          registerBox.style.opacity = '1';
+        }, 50);
+      }, 300);
+    };
+
+    window.showLogin = () => {
+      registerBox.style.opacity = '0';
+      setTimeout(() => {
+        registerBox.classList.add('hidden');
+        loginBox.classList.remove('hidden');
+        setTimeout(() => {
+          loginBox.style.opacity = '1';
+        }, 50);
+      }, 300);
+    };
+
+    window.adminLogin = () => {
+      const pass = prompt("أدخل كلمة مرور الأدمن:");
+      if(pass === "12312344@"){
+        showMessage("✅ نجاح", "تم تسجيل دخول الأدمن بنجاح. سيتم نقلك إلى صفحة الإدارة (محاكاة).");
+        // For a single file demo, we can't redirect to admin.html, so we show a success message.
+      } else {
+        showMessage("❌ خطأ", "كلمة المرور غير صحيحة.");
+      }
+    };
+    
+    // دالة مساعدة لتحويل رقم الهاتف إلى بريد إلكتروني صالح لـ Firebase
+    const phoneToEmail = (phone) => `${phone.replace(/\D/g, '')}@iraqtaxiapp.com`;
+
+
+    // ----------------------------------------------------
+    // 3. وظائف التسجيل والدخول (Auth Logic)
+    // ----------------------------------------------------
+
+    window.register = async () => {
+      const phone = document.getElementById('regPhone').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const userType = document.getElementById('regType').value;
+
+      if (!phone || !password || password.length < 6) {
+        showMessage("❌ خطأ في الإدخال", "يرجى إدخال رقم هاتف وكلمة مرور (6 أحرف على الأقل).");
+        return;
+      }
+
+      const email = phoneToEmail(phone);
+      
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const userId = user.uid;
+
+        // حفظ نوع المستخدم في Firestore
+        const userProfileRef = doc(db, 'artifacts', appId, 'users', userId, 'user_profiles', userId);
+        await setDoc(userProfileRef, {
+          phone: phone,
+          userType: userType,
+          createdAt: new Date().toISOString()
+        });
+
+        showMessage("✅ تسجيل ناجح", `تم إنشاء حسابك كـ <strong>${userType === 'rider' ? 'راكب' : 'سائق'}</strong>. رقم الـ ID الخاص بك (للتتبع): ${userId.substring(0, 8)}...`);
+        showLogin(); // الانتقال إلى شاشة الدخول بعد التسجيل
+
+      } catch (error) {
+        let errorMessage = "فشل عملية التسجيل. حاول مرة أخرى.";
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = "هذا الرقم (البريد الإلكتروني) مسجل بالفعل.";
+        } else {
+          console.error("Registration error:", error);
+          errorMessage = `خطأ: ${error.message}`;
+        }
+        showMessage("❌ فشل التسجيل", errorMessage);
+      }
+    };
+
+    window.login = async () => {
+      const phone = document.getElementById('loginPhone').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!phone || !password) {
+        showMessage("❌ خطأ في الإدخال", "يرجى إدخال رقم الهاتف وكلمة المرور.");
+        return;
+      }
+
+      const email = phoneToEmail(phone);
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const userId = user.uid;
+
+        // قراءة نوع المستخدم من Firestore
+        const userProfileRef = doc(db, 'artifacts', appId, 'users', userId, 'user_profiles', userId);
+        const docSnap = await getDoc(userProfileRef);
+        
+        let userTypeDisplay = 'مستخدم';
+        if (docSnap.exists()) {
+          const userProfile = docSnap.data();
+          userTypeDisplay = userProfile.userType === 'rider' ? 'راكب' : (userProfile.userType === 'driver' ? 'سائق' : 'مستخدم');
+        }
+
+        showMessage("✅ دخول ناجح", `مرحباً بك مجدداً يا <strong>${userTypeDisplay}</strong>! أنت الآن متصل.`);
+        // هنا يمكن توجيه المستخدم إلى واجهة التطبيق الرئيسية (محاكاة)
+
+      } catch (error) {
+        let errorMessage = "فشل تسجيل الدخول. يرجى التحقق من الرقم وكلمة المرور.";
+        if (error.code === 'auth/invalid-credential') {
+            errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
+        }
+        console.error("Login error:", error);
+        showMessage("❌ فشل الدخول", errorMessage);
+      }
+    };
+    
+  </script>
 </body>
 </html>
+
