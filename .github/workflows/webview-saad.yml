@@ -1,4 +1,4 @@
-name: 🚀 Build Real WebView Android APK
+name: 🚀 Build WebView Android APK (Saad)
 
 on:
   push:
@@ -20,20 +20,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🤖 Setup Android SDK
+      - name: 🤖 Setup Android SDK (Fixed)
         uses: android-actions/setup-android@v3
         with:
-          cmdline-tools-version: 10406996
-          packages: "platforms;android-34, build-tools;34.0.0"
+          packages: |
+            platform-tools
+            platforms;android-34
+            build-tools;34.0.0
+          accept-android-sdk-licenses: true
 
       - name: 🧱 Create Android WebView Project
         run: |
-          mkdir -p android/app/src/main/java/com/saadiraq/webview
+          mkdir -p android/app/src/main/java/com/saad/webview
           mkdir -p android/app/src/main/res/values
 
-          # Java activity
-          cat <<'EOF' > android/app/src/main/java/com/saadiraq/webview/MainActivity.java
-          package com.saadiraq.webview;
+          # MainActivity.java
+          cat <<'EOF' > android/app/src/main/java/com/saad/webview/MainActivity.java
+          package com.saad.webview;
           import android.os.Bundle;
           import android.webkit.WebView;
           import android.webkit.WebSettings;
@@ -48,18 +51,20 @@ jobs:
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
+                  settings.setLoadWithOverviewMode(true);
+                  settings.setUseWideViewPort(true);
                   webView.loadUrl("https://saadiraq2025-cyber.github.io/saad/");
               }
           }
           EOF
 
-          # Manifest
+          # AndroidManifest.xml
           cat <<'EOF' > android/app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.saadiraq.webview">
+              package="com.saad.webview">
               <uses-permission android:name="android.permission.INTERNET" />
               <application
-                  android:label="Taxi Iraq WebView"
+                  android:label="Saad WebView"
                   android:theme="@style/Theme.AppCompat.Light.NoActionBar">
                   <activity android:name=".MainActivity"
                       android:exported="true">
@@ -87,7 +92,7 @@ jobs:
           android {
               compileSdkVersion 34
               defaultConfig {
-                  applicationId "com.saadiraq.webview"
+                  applicationId "com.saad.webview"
                   minSdkVersion 24
                   targetSdkVersion 34
                   versionCode 1
@@ -120,5 +125,5 @@ jobs:
       - name: 📤 Upload WebView APK
         uses: actions/upload-artifact@v4
         with:
-          name: TaxiIraq-WebView
+          name: Saad-WebView
           path: my-apks/
