@@ -194,7 +194,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
         <button id="rejectRide" class="ride-action-button">❌ رفض</button>
     </div>
     
-    <button id="endRide" disabled class="panel-button">إنهاء الرحلة</button>
+    <button id="endRide" disabled class="panel-button">بدء الرحلة ➡️</button>
     <button id="chatBtn" class="panel-button">💬 الدردشة مع الراكب</button>
     
         <button id="retry" class="panel-button" style="display:none;">📍 تحديد موقعي الآن</button>
@@ -286,6 +286,7 @@ let activeRideId=null;
 let currentRide=null;
 let ridesListener = null; 
 let isInitialCheckDone = false; 
+let isRideStarted = false; // 🆕 متغير جديد لحالة بدء الرحلة
 
 // 📍 دالة تحديد الموقع
 retryBtn.onclick=()=>getLocation();
@@ -448,6 +449,11 @@ function toggleRideButtons(isAccepted) {
     chatBtn.style.display = isAccepted ? "block" : "none";
     riderPhoneDisplay.style.display = isAccepted ? "block" : "none";
     endBtn.disabled = !isAccepted;
+    // تحديث نص الزر عند التبديل
+    if (isAccepted) {
+        endBtn.innerText = isRideStarted ? "إنهاء الرحلة" : "بدء الرحلة ➡️";
+        endBtn.style.background = isRideStarted ? "#e53935" : "#2e7d32";
+    }
 }
 
 // دالة إظهار/إخفاء أزرار القبول والرفض
@@ -458,10 +464,52 @@ function showRideActions(show) {
 
 
 // **********************************************
+// 🆕 دالة تحديث المسار إلى نقطة الوصول النهائية
+// **********************************************
+function updateRouteToEndPoint() {
+    if (!currentRide || !routeControl) return;
+
+    // تحديث المسار إلى نقطة الوصول النهائية
+    const startPoint = L.latLng(currentCoords[0], currentCoords[1]);
+    const endPoint = L.latLng(currentRide.end[0], currentRide.end[1]);
+
+    routeControl.setWaypoints([startPoint, endPoint]);
+    routeControl.route();
+    
+    // تغيير واجهة المستخدم 
+    isRideStarted = true;
+    endBtn.innerText = "إنهاء الرحلة 🛑";
+    endBtn.style.background = "#e53935";
+    endBtn.onclick = endRide; // ربط الزر بدالة إنهاء الرحلة
+    
+    rideInfo.innerHTML = `✅ تم **بدء الرحلة** - وجهتك النهائية ظاهرة على الخريطة.<br>
+    المسافة: ${currentRide.distance} كم<br>الأجرة: ${currentRide.fare} د.ع<br><b>👋 عند الوصول، اضغط "إنهاء الرحلة"</b>`;
+    
+    // إرسال إشعار للراكب (اختياري)
+    db.ref("rides/" + activeRideId).update({
+        notification: "🚗 بدأ السائق الرحلة نحو وجهتك."
+    });
+}
+
+// **********************************************
+// 🆕 دالة بدء الرحلة (تسمى عند ضغط زر "بدء الرحلة")
+// **********************************************
+function startRide() {
+    if (!activeRideId || isRideStarted) return;
+    
+    // تحديث المسار للوجهة النهائية
+    updateRouteToEndPoint();
+}
+// ----------------------------------------
+
+
+// **********************************************
 // 🚀 دالة جديدة: استعادة حالة الرحلة النشطة من التخزين
 // **********************************************
 function loadActiveRideFromStorage() {
     const storedRideId = localStorage.getItem('activeRideId');
+    const storedIsStarted = localStorage.getItem('isRideStarted') === 'true'; // 🆕 استعادة حالة بدء الرحلة
+
     if (!storedRideId) return;
 
     db.ref("rides/" + storedRideId).once('value', snap => {
@@ -470,19 +518,37 @@ function loadActiveRideFromStorage() {
             driverStatus = "busy";
             activeRideId = storedRideId;
             currentRide = ride;
+            isRideStarted = storedIsStarted; // 🆕 تطبيق الحالة المستعادة
             
             initializeRideUI(ride);
 
             riderPhoneNumberSpan.innerText = ride.riderPhone || "07700000000"; 
+            
+            // تحديد المسار الصحيح بناءً على حالة بدء الرحلة
+            if (isRideStarted) {
+                // إذا كانت الرحلة قد بدأت، ارسم المسار لنقطة النهاية
+                updateRoute(ride.end);
+            } else {
+                // إذا لم تبدأ، ارسم المسار لنقطة التقاء الراكب
+                updateRoute(ride.start);
+            }
 
-            rideInfo.innerHTML = `✅ تم استعادة الرحلة (ID: ${storedRideId})<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع<br><b>🚗 يمكنك متابعة الرحلة الآن</b>`;
+
+            rideInfo.innerHTML = `✅ تم استعادة الرحلة (ID: ${storedRideId})<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع<br><b>${isRideStarted ? 'واصل نحو الوجهة النهائية' : 'توجه نحو الراكب'}</b>`;
+            
+            // ربط زر "بدء الرحلة" / "إنهاء الرحلة" بالدالة الصحيحة
+            endBtn.onclick = isRideStarted ? endRide : startRide;
+
+
         } else {
             localStorage.removeItem('activeRideId');
+            localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
             resetDriverState(false); 
         }
     }).catch(error => {
         console.error("Error loading active ride:", error);
         localStorage.removeItem('activeRideId');
+        localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
         resetDriverState(false);
     });
 }
@@ -501,11 +567,21 @@ function initializeRideUI(rideData) {
     // إعداد الشات
     chatRef = db.ref("chats/" + activeRideId); 
     listenForChatMessages(); 
+    
+    // 🆕 تعيين المسار الأولي إلى نقطة التقاء الراكب
+    updateRoute(rideData.start);
+    
+    endBtn.onclick = startRide; // 🆕 ربط الزر بوظيفة بدء الرحلة
 
-    // إعداد الخريطة
+}
+
+// **********************************************
+// ⚙️ دالة مساعدة لرسم المسار
+// **********************************************
+function updateRoute(targetCoords) {
     if(routeControl){map.removeControl(routeControl);}
     routeControl = L.Routing.control({
-        waypoints: [L.latLng(currentCoords[0], currentCoords[1]), L.latLng(rideData.end[0], rideData.end[1])],
+        waypoints: [L.latLng(currentCoords[0], currentCoords[1]), L.latLng(targetCoords[0], targetCoords[1])],
         router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
         lineOptions: { styles: [{ color: 'blue', opacity: 0.8, weight: 5 }] },
         addWaypoints: false, fitSelectedRoutes: true, show: false
@@ -605,6 +681,7 @@ function watchForRides(){
                 currentRide=acceptedRide; 
                 driverStatus="busy"; 
                 localStorage.setItem('activeRideId', id);
+                localStorage.setItem('isRideStarted', 'false'); // 🆕 تعيين حالة بدء الرحلة
 
                 db.ref("rides/"+id).update({
                   status:"مقبولة",
@@ -615,7 +692,7 @@ function watchForRides(){
                 });
                 
                 initializeRideUI(acceptedRide);
-                rideInfo.innerHTML=`✅ تم قبول الرحلة<br>المسافة: ${acceptedRide.distance} كم<br>الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 يمكنك البدء بالرحلة الآن</b>`;
+                rideInfo.innerHTML=`✅ تم قبول الرحلة<br>المسافة: ${acceptedRide.distance} كم<br>الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 توجه الآن لالتقاط الراكب.</b>`;
             }); 
           };
 
@@ -662,7 +739,7 @@ function stopWatchForRides() {
 
 
 // 🚗 إنهاء الرحلة
-endBtn.onclick=()=>{
+function endRide() {
   if(!activeRideId)return;
   stopBeep();
   db.ref("rides/"+activeRideId).update({
@@ -673,6 +750,9 @@ endBtn.onclick=()=>{
   resetDriverState(true);
   rideInfo.innerText="🚗 تم إنهاء الرحلة. بانتظار طلب جديد...";
 };
+// 🆕 ربط الزر بالدالة الافتراضية للإنهاء (ستتغير عند قبول الرحلة)
+endBtn.onclick=endRide;
+
 
 // 🏃‍♂️ تسجيل الخروج
 logoutBtn.onclick = () => {
@@ -680,6 +760,7 @@ logoutBtn.onclick = () => {
     localStorage.removeItem('phone');
     localStorage.removeItem('userType');
     localStorage.removeItem('activeRideId');
+    localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
     
     // 2. مسح الموقع من Firebase
     db.ref(`availableDrivers/${driverPhone}`).remove();
@@ -700,6 +781,8 @@ function resetDriverState(clearLocationInFirebase) {
   chatRef = null;
   
   localStorage.removeItem('activeRideId');
+  localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
+  isRideStarted = false; // 🆕 إعادة تعيين الحالة
   
   if (clearLocationInFirebase) {
       db.ref(`driverLocations/${driverPhone}`).remove();
