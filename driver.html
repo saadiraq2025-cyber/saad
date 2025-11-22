@@ -28,7 +28,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 }
 .panel-button:hover{filter: brightness(0.9);}
 
-/* 🆕 تنسيقات جديدة للوحة السائق بناءً على الصورة */
+/* 🆕 تنسيقات لوحة السائق */
 #driverPanelContent { padding: 0 15px 15px 15px; }
 
 /* 📞 عرض رقم الهاتف */
@@ -39,12 +39,12 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     padding: 10px;
     margin: 10px 15px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    display: none; /* إخفاء افتراضياً */
+    display: none;
 }
 #riderPhoneDisplay h4 { margin: 0; font-size: 16px; color: #555; }
 #riderPhoneNumber { font-size: 24px; font-weight: bold; color: #000; direction: ltr; margin-top: 5px; display: block; }
 
-/* ألوان الأزرار الجديدة */
+/* ألوان أزرار الرحلة النشطة */
 #endRide{background:#e53935;color:white; display: none;} 
 #callRiderBtn{background:#4CAF50;color:white; display: none;} 
 #chatBtn{background:#2196F3;color:white; display: none;} 
@@ -53,7 +53,12 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 /* زر تحديد الموقع وإعادة المحاولة */
 #retry{background:#81c784; margin-top: 10px; width: calc(100% - 30px);}
 
-/* تنسيقات أزرار القبول والرفض المؤقتة */
+/* 🆕 تنسيقات أزرار القبول والرفض (تظهر فقط عند وجود طلب جديد) */
+#rideActions {
+    display: none; /* إخفاء افتراضياً */
+    justify-content: space-around;
+    padding-bottom: 10px;
+}
 .ride-action-button {
     padding: 15px 20px;
     font-size: 18px;
@@ -62,7 +67,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     border: none;
     border-radius: 10px;
     margin: 5px;
-    width: 45%; /* لجعلهما بجانب بعض */
+    width: 45%; 
 }
 #acceptRide { background: #2e7d32; color: white; }
 #rejectRide { background: #e53935; color: white; }
@@ -74,11 +79,11 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     bottom: 0;
     right: 0;
     width: 100%;
-    height: 40vh; /* حجم مناسب للدردشة */
+    height: 40vh; 
     background: #fff;
     border-top: 1px solid #ccc;
     box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-    display: none; /* إخفاء الشات افتراضياً */
+    display: none; 
     z-index: 1000;
     flex-direction: column;
 }
@@ -172,6 +177,11 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 
     <div id="rideInfo">📍 جاري تحديد موقعك.</div>
     
+    <div id="rideActions">
+        <button id="acceptRide" class="ride-action-button">✅ قبول</button>
+        <button id="rejectRide" class="ride-action-button">❌ رفض</button>
+    </div>
+    
     <button id="endRide" disabled class="panel-button">إنهاء الرحلة</button>
     <button id="callRiderBtn" class="panel-button">📞 الاتصال بالراكب</button>
     <button id="chatBtn" class="panel-button">💬 الدردشة مع الراكب</button>
@@ -213,7 +223,7 @@ const userType = localStorage.getItem('userType');
 if (!driverPhone || userType !== 'driver') {
     alert("❌ يجب تسجيل الدخول كسائق للوصول لهذه الصفحة.");
     window.location.href = "index.html";
-    return; // 🛑 إيقاف التنفيذ
+    return; 
 }
 // ----------------------------------------
 
@@ -251,6 +261,12 @@ const callRiderBtn = document.getElementById("callRiderBtn");
 const riderPhoneDisplay = document.getElementById("riderPhoneDisplay");
 const riderPhoneNumberSpan = document.getElementById("riderPhoneNumber");
 
+// 🆕 عناصر أزرار القبول والرفض
+const rideActionsDiv = document.getElementById("rideActions");
+const acceptBtn = document.getElementById("acceptRide");
+const rejectBtn = document.getElementById("rejectRide");
+
+
 // ⚙️ متغيرات عامة للرحلة
 const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
@@ -277,6 +293,7 @@ function getLocation(){
     document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
     // إخفاء أزرار الرحلة في الوضع العادي
     toggleRideButtons(false);
+    hideRideActions(false); // إخفاء أزرار القبول/الرفض
     map.invalidateSize();
     loadActiveRideFromStorage(); 
     if (driverStatus !== "banned") {
@@ -286,6 +303,7 @@ function getLocation(){
     document.getElementById("rideInfo").innerText="⚠️ الرجاء السماح بالوصول إلى الموقع.";
     retryBtn.style.display="inline-block";
     toggleRideButtons(false);
+    hideRideActions(false); 
   },{enableHighAccuracy:true,timeout:10000});
 }
 
@@ -414,18 +432,18 @@ closeChatBtn.addEventListener('click', () => {
 });
 
 // ----------------------------------------
-// دالة إظهار/إخفاء أزرار الرحلة (عند القبول/الإنهاء)
+// دالة إظهار/إخفاء أزرار الرحلة النشطة
 function toggleRideButtons(isAccepted) {
     endBtn.style.display = isAccepted ? "block" : "none";
     callRiderBtn.style.display = isAccepted ? "block" : "none";
     chatBtn.style.display = isAccepted ? "block" : "none";
     riderPhoneDisplay.style.display = isAccepted ? "block" : "none";
     endBtn.disabled = !isAccepted;
+}
 
-    // في الوضع العادي، نخفي معلومات الرحلة ونظهر رسالة الانتظار
-    if (!isAccepted && !activeRideId) {
-        rideInfo.innerHTML = "✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
-    }
+// دالة إظهار/إخفاء أزرار القبول والرفض
+function showRideActions(show) {
+    rideActionsDiv.style.display = show ? "flex" : "none";
 }
 // ----------------------------------------
 
@@ -446,7 +464,6 @@ function loadActiveRideFromStorage() {
             
             initializeRideUI(ride);
 
-            // تعديل عرض رقم الهاتف ليعكس الرقم الحقيقي (إذا كان متاحاً في بيانات الرحلة)
             riderPhoneNumberSpan.innerText = ride.riderPhone || "07700000000"; 
 
             rideInfo.innerHTML = `✅ تم استعادة الرحلة (ID: ${storedRideId})<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع<br><b>🚗 يمكنك متابعة الرحلة الآن</b>`;
@@ -465,11 +482,12 @@ function loadActiveRideFromStorage() {
 // ⚙️ دالة مساعدة لتهيئة واجهة الرحلة المقبولة
 // **********************************************
 function initializeRideUI(rideData) {
-    toggleRideButtons(true);
-    
+    toggleRideButtons(true); // إظهار أزرار الرحلة النشطة
+    showRideActions(false); // إخفاء أزرار القبول/الرفض
+
     // إعداد رقم الهاتف
     const riderPhoneNumber = rideData.riderPhone;
-    riderPhoneNumberSpan.innerText = riderPhoneNumber || "07700000000"; // استخدام الرقم الافتراضي في حال عدم وجود رقم
+    riderPhoneNumberSpan.innerText = riderPhoneNumber || "07700000000"; 
 
     callRiderBtn.onclick = () => {
         if (riderPhoneNumber) {
@@ -560,24 +578,22 @@ function watchForRides(){
           stopBeep();
           startBeep();
           
-          // 💡 أهم تعديل: إخفاء أزرار الرحلة النشطة قبل عرض أزرار القبول/الرفض
+          // إخفاء أزرار الرحلة النشطة وإظهار أزرار القبول/الرفض
           toggleRideButtons(false); 
+          showRideActions(true);
           
           rideInfo.innerHTML=`🚖 <b>رحلة جديدة</b><br>
           المسافة: ${ride.distance} كم<br>
-          الأجرة: ${ride.fare} د.ع<br><br>
-          <div style="display:flex; justify-content: space-around;">
-              <button id="acceptRide" class="ride-action-button">✅ قبول</button>
-              <button id="rejectRide" class="ride-action-button">❌ رفض</button>
-          </div>`;
+          الأجرة: ${ride.fare} د.ع<br>`;
 
-          document.getElementById("acceptRide").onclick=()=>{
+          acceptBtn.onclick=()=>{
             db.ref("rides/"+id).once('value', currentSnap => {
                 const currentRideData = currentSnap.val();
                 
                 if (!currentRideData || currentRideData.status !== "جديدة" || driverStatus === "banned") {
                     stopBeep();
                     rideInfo.innerText="⚠️ آسف، تم قبول هذه الرحلة من قبل سائق آخر أو لم تعد متاحة.";
+                      showRideActions(false);
                     return;
                 }
 
@@ -602,14 +618,14 @@ function watchForRides(){
             }); 
           };
 
-          document.getElementById("rejectRide").onclick=()=>{
+          rejectBtn.onclick=()=>{
             stopBeep();
             db.ref("rides/"+id).update({
               status:"مرفوضة",
               notification:"❌ السائق رفض الرحلة"
             });
+              showRideActions(false); // إخفاء الأزرار بعد الرفض
             rideInfo.innerText="🚕 تم رفض الرحلة — بانتظار طلب جديد.";
-            toggleRideButtons(false);
           };
         }
       });
@@ -620,14 +636,10 @@ function watchForRides(){
           
           if (ride.status === "مقبولة" && id !== activeRideId) {
               // هذا الجزء يتأكد من إزالة أزرار القبول/الرفض إذا قام سائق آخر بقبولها
-              const acceptBtn = document.getElementById("acceptRide");
-              if (acceptBtn && acceptBtn.closest('#driverPanelContent')) { 
+              if (rideActionsDiv.style.display === "flex") { 
                   stopBeep();
                   rideInfo.innerHTML = "⚠️ **تم قبول الرحلة** من قبل سائق آخر. بانتظار طلب جديد...";
-                  const oldAcceptBtn = document.getElementById("acceptRide");
-                  const oldRejectBtn = document.getElementById("rejectRide");
-                  if (oldAcceptBtn) oldAcceptBtn.parentNode.remove(); // إزالة div الأزرار بالكامل
-                  toggleRideButtons(false);
+                  showRideActions(false);
               }
           }
           
@@ -680,6 +692,7 @@ logoutBtn.onclick = () => {
 function resetDriverState(clearLocationInFirebase) {
   if(routeControl){map.removeControl(routeControl);}
   toggleRideButtons(false);
+  showRideActions(false); // إخفاء أزرار القبول/الرفض عند إعادة التعيين
   chatBox.style.display = 'none'; // إخفاء الشات
   messagesDiv.innerHTML = '';
   if(chatRef) chatRef.off();
@@ -696,19 +709,12 @@ function resetDriverState(clearLocationInFirebase) {
   activeRideId=null;
   currentRide=null;
   
-  // إزالة أزرار القبول/الرفض المؤقتة إذا كانت موجودة
-  const acceptBtn = document.getElementById("acceptRide");
-  if (acceptBtn && acceptBtn.parentNode) {
-      acceptBtn.parentNode.remove();
-  }
-
   if (driverStatus !== "banned" && !ridesListener) {
       watchForRides(); 
       rideInfo.innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
   }
 }
 
-// 🛑 تم إزالة استدعاء getLocation() من هنا، وسيتم استدعاؤه داخل مراقب Firebase بعد التحقق من الحالة.
 });
 </script>
 </body>
