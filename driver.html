@@ -18,13 +18,15 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 /* تنسيقات الأزرار العامة */
 .panel-button {
     border: none;
-    padding: 15px;
+    /* تقليل الـ padding لتقليل الارتفاع بشكل كبير (مماثل لـ 1 سم طول) */
+    padding: 8px 15px; 
     border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
     /* تقليل المسافة العمودية لجعل الأزرار أقرب لبعضها */
     margin: 3px 15px; 
     font-size: 17px;
+    /* العرض يبقى كاملاً لضمان التساوي في الوسط */
     width: calc(100% - 30px);
 }
 .panel-button:hover{filter: brightness(0.9);}
@@ -32,18 +34,26 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 /* 🆕 تنسيقات لوحة السائق */
 #driverPanelContent { padding: 0 15px 15px 15px; }
 
-/* 📞 عرض رقم الهاتف (للعرض فقط الآن) */
+/* 📞 عرض رقم الهاتف (مساحة عرض أصغر) */
 #riderPhoneDisplay {
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 10px;
-    padding: 10px;
+    /* تقليل الـ padding لتقليل الارتفاع (مماثل لـ 1 سم طول) */
+    padding: 5px 10px; 
     margin: 10px 15px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     display: none;
 }
-#riderPhoneDisplay h4 { margin: 0; font-size: 16px; color: #555; }
-#riderPhoneNumber { font-size: 24px; font-weight: bold; color: #000; direction: ltr; margin-top: 5px; display: block; }
+#riderPhoneDisplay h4 { margin: 0; font-size: 14px; color: #555; } /* تصغير العنوان */
+#riderPhoneNumber { 
+    font-size: 20px; /* تصغير حجم الخط ليتناسب */
+    font-weight: bold; 
+    color: #000; 
+    direction: ltr; 
+    margin-top: 3px; /* تقليل المسافة */
+    display: block; 
+}
 
 /* ألوان أزرار الرحلة النشطة */
 #endRide{background:#e53935;color:white; display: none;} 
@@ -60,7 +70,8 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     padding-bottom: 10px;
 }
 .ride-action-button {
-    padding: 15px 20px;
+    /* تقليل الـ padding لتقليل الارتفاع (مماثل لـ 1 سم طول) */
+    padding: 8px 20px; 
     font-size: 18px;
     font-weight: bold;
     cursor: pointer;
