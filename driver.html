@@ -18,11 +18,6 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 button{background:#fdd835;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;margin:6px;font-size:17px;}
 button:hover{background:#ffee58;}
 #retry{background:#81c784;}
-#wazeBtn{background:#29b6f6;color:#fff;}
-#wazeBtn:hover{background:#4fc3f7;}
-/* 📞 زر الاتصال الجديد */
-#callRiderBtn{background:#4CAF50;color:white;}
-#callRiderBtn:hover{background:#66BB6A;}
 
 /* 💬 تنسيقات صندوق الشات */
 #chatBox {
@@ -34,7 +29,7 @@ button:hover{background:#ffee58;}
     display: none; /* إخفاء الشات افتراضياً */
 }
 #messages {
-    height: 60px; /* حجم 2x2 */
+    height: 60px; /* تم تقليل الارتفاع ليتناسب مع الازرار */
     overflow-y: auto;
     margin-bottom: 10px;
     padding: 5px;
@@ -99,8 +94,7 @@ button:hover{background:#ffee58;}
   <h3>🚖 لوحة السائق</h3>
   <div id="rideInfo">📍 جاري تحديد موقعك.</div>
   <button id="retry" style="display:none;">📍 تحديد موقعي الآن</button>
-  <button id="wazeBtn" style="display:none;">🗺️ فتح ويز</button>
-  <button id="callRiderBtn" style="display:none;">📞 الاتصال بالراكب</button> <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
+  <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
   
   <div id="chatBox">
       <h4>💬 الدردشة مع الراكب</h4>
@@ -150,8 +144,8 @@ setTimeout(()=>{ map.invalidateSize(); },1000);
 let driverMarker=null;
 let currentCoords=[33.3152,44.3661];
 const retryBtn=document.getElementById("retry");
-const wazeBtn=document.getElementById("wazeBtn");
-const callRiderBtn = document.getElementById("callRiderBtn"); 
+// const wazeBtn=document.getElementById("wazeBtn"); // 💡 تم إزالة زر ويز
+// const callRiderBtn = document.getElementById("callRiderBtn"); // 💡 تم إزالة زر الاتصال
 const expiredModal = document.getElementById('expiredModal'); // العنصر الجديد
 
 // 💬 عناصر الشات
@@ -337,17 +331,17 @@ function loadActiveRideFromStorage() {
 // **********************************************
 function initializeRideUI(rideData) {
     endBtn.disabled = false;
-    wazeBtn.style.display = "inline-block";
+    // wazeBtn.style.display = "inline-block"; // 💡 تم إزالة زر ويز
     
-    callRiderBtn.style.display = 'inline-block';
-    const riderPhoneNumber = rideData.riderPhone;
-    callRiderBtn.onclick = () => {
-        if (riderPhoneNumber) {
-            window.open(`tel:${riderPhoneNumber}`, '_self');
-        } else {
-            alert("❌ لم يتم تسجيل رقم هاتف الراكب.");
-        }
-    };
+    // callRiderBtn.style.display = 'inline-block'; // 💡 تم إزالة زر الاتصال
+    // const riderPhoneNumber = rideData.riderPhone;
+    // callRiderBtn.onclick = () => {
+    //     if (riderPhoneNumber) {
+    //         window.open(`tel:${riderPhoneNumber}`, '_self');
+    //     } else {
+    //         alert("❌ لم يتم تسجيل رقم هاتف الراكب.");
+    //     }
+    // };
 
     chatBox.style.display = 'block';
     chatRef = db.ref("chats/" + activeRideId); 
@@ -515,14 +509,14 @@ function stopWatchForRides() {
 }
 // ----------------------------------------------------
 
-// 🌍 زر فتح ويز
-wazeBtn.onclick=()=>{
-  if(!currentRide)return;
-  const destLat=currentRide.end[0];
-  const destLng=currentRide.end[1];
-  const wazeURL=`https://waze.com/ul?ll=${destLat},${destLng}&navigate=yes`;
-  window.open(wazeURL,'_blank');
-};
+// 🌍 زر فتح ويز (تم تعطيله)
+// wazeBtn.onclick=()=>{
+//   if(!currentRide)return;
+//   const destLat=currentRide.end[0];
+//   const destLng=currentRide.end[1];
+//   const wazeURL=`https://waze.com/ul?ll=${destLat},${destLng}&navigate=yes`;
+//   window.open(wazeURL,'_blank');
+// };
 
 // 🚗 إنهاء الرحلة
 endBtn.onclick=()=>{
@@ -541,8 +535,8 @@ endBtn.onclick=()=>{
 function resetDriverState() {
   if(routeControl){map.removeControl(routeControl);}
   endBtn.disabled=true;
-  wazeBtn.style.display="none";
-  callRiderBtn.style.display="none";
+//   wazeBtn.style.display="none"; // 💡 تم إزالة زر ويز
+//   callRiderBtn.style.display="none"; // 💡 تم إزالة زر الاتصال
   
   // 💬 إيقاف الشات
   chatBox.style.display = 'none';
