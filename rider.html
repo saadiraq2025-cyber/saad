@@ -68,7 +68,7 @@ button {
     display: none; /* إخفاء الشات افتراضياً */
     background: #f9f9f9;
 }
-/* 🆕 تعديل زر إظهار الشات ليتطابق مع تصميم الصورة */
+/* تعديل زر إظهار الشات */
 #toggleChatBtn {
     width: 100%;
     background: #4285F4; /* لون أزرق جذاب */
@@ -94,8 +94,8 @@ button {
     font-size: 14px;
 }
 #messages p { margin: 3px 0; padding: 5px 8px; border-radius: 5px;}
-.rider-msg { background: #e0f7fa; text-align: right; } /* تعديل لمطابقة نمط الصورة */
-.driver-msg { background: #fffde7; text-align: left; } /* تعديل لمطابقة نمط الصورة */
+.rider-msg { background: #e0f7fa; text-align: right; }
+.driver-msg { background: #fffde7; text-align: left; }
 #messageInput {
     width: 70%;
     padding: 8px;
@@ -137,8 +137,14 @@ button {
 <body>
 <div id="map"></div>
 <div id="panel">
-  <div class="info-box">
-      <p><span id="phoneLabel">رقم هاتف الراكب:</span> <span id="riderPhoneDisplay">جارِ التحميل...</span></p>
+  <div id="search-container" style="margin-bottom: 15px;">
+      <input type="text" id="destinationInput" placeholder="ابحث عن نقطة الوصول (مثلاً: بغداد الشعب)" style="width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; float: right; direction: rtl; box-sizing: border-box;">
+      <button id="searchDestinationBtn" style="width: 28%; padding: 10px; margin: 0; background: #00bcd4; color: white; float: left; box-sizing: border-box; border-radius: 5px; font-weight: bold;">بحث</button>
+      <div style="clear: both;"></div>
+  </div>
+
+  <div class="info-box" id="driverInfoBox" style="display:none;">
+      <p>📞 رقم هاتف السائق: <span id="driverPhoneDisplay"></span></p>
   </div>
     
   <h3>🚖 طلب رحلة جديدة</h3>
@@ -167,13 +173,12 @@ button {
 window.logout = function() {
     localStorage.removeItem('phone');
     localStorage.removeItem('userType');
-    // **التعديل:** إزالة أي رحلة نشطة قبل تسجيل الخروج
     localStorage.removeItem('activeRideId');
     window.location.href = "index.html";
 };
 // ----------------------------------------
 
-// 🚨 التحقق من جلسة الدخول (يجب أن يكون أول شيء)
+// 🚨 التحقق من جلسة الدخول
 const userPhone = localStorage.getItem('phone');
 const userType = localStorage.getItem('userType');
 
@@ -181,13 +186,6 @@ if (!userPhone || userType !== 'rider') {
     alert("❌ يجب تسجيل الدخول كراكب للوصول لهذه الصفحة.");
     window.location.href = "index.html";
 }
-
-// **🆕 عرض رقم الهاتف في الواجهة (التهيئة الأولية برقم الراكب)**
-const phoneLabel = document.getElementById('phoneLabel');
-const phoneDisplay = document.getElementById('riderPhoneDisplay');
-phoneLabel.innerText = 'رقم هاتف الراكب:';
-phoneDisplay.innerText = userPhone || 'غير معروف';
-// ----------------------------------------
 
 // تهيئة Firebase
 const app=firebase.initializeApp({
@@ -198,9 +196,8 @@ const app=firebase.initializeApp({
 });
 const db=firebase.database();
 
-let map=L.map('map').setView([33.3152,44.3661],13);
+let map=L.map('map').setView([33.3152,44.3661],13); // بغداد
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-// 💡 الحل لمشكلة الخريطة في متصفحات iOS (يضمن إعادة تحجيمها بعد التهيئة)
 map.whenReady(function() { 
     map.invalidateSize(); 
 });
@@ -210,16 +207,19 @@ let startCoords=null,endCoords=null;
 let startMarker=null,endMarker=null;
 let rideId=null;
 
-// ** 🆕 متغيرات متابعة السائق (تعديل جديد) **
-let driverMarker = null; // علامة موقع السائق
-let driverLocationRef = null; // مرجع Firebase لموقع السائق
-// ------------------------------------------
+let driverMarker = null; 
+let driverLocationRef = null; 
 
 // العناصر الجديدة
 const sendBtn = document.getElementById("sendRide");
 const endBtn = document.getElementById("cancelRideBtn");
-// ** 🆕 زر فتح/إغلاق الشات **
 const toggleChatBtn = document.getElementById('toggleChatBtn'); 
+
+// 🆕 عناصر الهاتف والبحث
+const driverInfoBox = document.getElementById('driverInfoBox');
+const driverPhoneDisplay = document.getElementById('driverPhoneDisplay');
+const destinationInput = document.getElementById('destinationInput');
+const searchDestinationBtn = document.getElementById('searchDestinationBtn');
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -228,50 +228,108 @@ const messageInput = document.getElementById('messageInput');
 const sendMsgBtn = document.getElementById('sendMsgBtn');
 let chatRef = null;
 
-// ** 🆕 وظيفة لتبديل عرض صندوق الدردشة **
+// ** 🆕 دالة البحث عن العنوان (Geocoding) **
+async function geocodeAddress(address) {
+    // استخدام Nominatim API مع تحديد العراق لنتائج أكثر دقة
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=iq&limit=1&accept-language=ar`;
+    
+    document.getElementById("status").innerText = `جاري البحث عن "${address}"...`;
+
+    try {
+        const response = await fetch(url, {
+            // إضافة User-Agent مطلوبة لسياسة الاستخدام لـ Nominatim
+            headers: {
+                'User-Agent': 'TaxiIraqApp/1.0 (contact@example.com)' 
+            }
+        });
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            
+            endCoords = [lat, lon];
+
+            // إزالة العلامة القديمة وتعيين الجديدة
+            if(endMarker){map.removeLayer(endMarker);}
+            
+            endMarker = L.marker(endCoords).addTo(map).bindPopup(`🏁 نقطة الوصول: ${data[0].display_name}`).openPopup();
+            
+            // تحريك الخريطة
+            map.setView(endCoords, 16); 
+            
+            if (!rideId) { 
+                document.getElementById("status").innerText=`✅ تم تحديد نقطة النهاية عبر البحث. يمكنك الآن إرسال الطلب.`;
+                sendBtn.disabled=false;
+            }
+        } else {
+            document.getElementById("status").innerText = `⚠️ لم يتم العثور على موقع لـ "${address}". حاول بعبارة مختلفة.`;
+            sendBtn.disabled=true;
+        }
+    } catch (error) {
+        console.error("Geocoding Error:", error);
+        document.getElementById("status").innerText = `❌ حدث خطأ أثناء البحث.`;
+        sendBtn.disabled=true;
+    }
+}
+
+// ** ربط البحث بالأزرار **
+searchDestinationBtn.addEventListener('click', () => {
+    const address = destinationInput.value.trim();
+    if (address) {
+        geocodeAddress(address);
+    } else {
+        alert("يرجى إدخال عنوان للبحث.");
+    }
+});
+destinationInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        searchDestinationBtn.click();
+    }
+});
+// ----------------------------------------
+
+
 toggleChatBtn.addEventListener('click', () => {
     const isChatVisible = chatBox.style.display === 'block';
     chatBox.style.display = isChatVisible ? 'none' : 'block';
     toggleChatBtn.innerHTML = isChatVisible ? '💬 الدردشة مع السائق' : '💬 إخفاء الدردشة';
 });
-// ------------------------------------------
 
 
-// ** 🆕 دالة فحص الرحلة النشطة عند تحميل الصفحة **
+// ** دالة فحص الرحلة النشطة عند تحميل الصفحة **
 function checkActiveRide() {
     const storedRideId = localStorage.getItem('activeRideId');
     if (storedRideId) {
         rideId = storedRideId;
         document.getElementById("status").innerHTML = "لديك رحلة نشطة قيد المتابعة. يتم جلب حالتها...";
-        sendBtn.style.display = 'none'; // إخفاء زر الإرسال
+        sendBtn.style.display = 'none'; 
         listenForUpdates();
     } else {
         sendBtn.style.display = 'block';
-        sendBtn.disabled = true; // يبقى معطّلاً حتى يتم تحديد نقطة النهاية (في دالة map.on('click'))
+        sendBtn.disabled = true; 
     }
 }
 // ----------------------------------------
 
-// 📍 تحديد الموقع الحالي - تم إضافة خيارات قوية لـ iOS
+// 📍 تحديد الموقع الحالي 
 navigator.geolocation.getCurrentPosition(pos=>{
   startCoords=[pos.coords.latitude,pos.coords.longitude];
   startMarker=L.marker(startCoords).addTo(map).bindPopup("📍 موقعك الحالي").openPopup();
   map.setView(startCoords,15);
-  document.getElementById("status").innerText="انقر على الخريطة لتحديد نقطة النهاية.";
+  document.getElementById("status").innerText="انقر على الخريطة لتحديد نقطة النهاية أو استخدم حقل البحث أعلاه.";
   
-  // **التعديل الجديد:** فحص حالة الرحلة عند تحميل الصفحة بعد تحديد الموقع
   checkActiveRide(); 
   
 },err=>{
-  document.getElementById("status").innerText="⚠️ لم يتم تحديد الموقع الحالي، يرجى تفعيل الموقع في إعدادات الجهاز والسماح للتطبيق بالوصول إليه (خاصة في متصفح كروم على iOS).";
-},{enableHighAccuracy:true,timeout:10000,maximumAge:0}); // خيارات قوية
+  document.getElementById("status").innerText="⚠️ لم يتم تحديد الموقع الحالي، يرجى تفعيل الموقع في إعدادات الجهاز.";
+},{enableHighAccuracy:true,timeout:10000,maximumAge:0}); 
 
 map.on('click',function(e){
   if(endMarker){map.removeLayer(endMarker);}
   endCoords=[e.latlng.lat,e.latlng.lng];
   endMarker=L.marker(endCoords).addTo(map).bindPopup("🏁 نقطة النهاية").openPopup();
   
-  // **التعديل:** تمكين الزر فقط إذا لم يكن هناك رقم رحلة نشط 
   if (!rideId) { 
     document.getElementById("status").innerText="تم تحديد النهاية. يمكنك الآن إرسال الطلب.";
     sendBtn.disabled=false;
@@ -282,8 +340,7 @@ map.on('click',function(e){
 });
 
 sendBtn.onclick=function(){
-  if(!startCoords || !endCoords){alert("⚠️ يرجى تحديد الموقع والنهاية.");return;}
-  // **الحماية الإضافية:** منع الإرسال إذا كان هناك رقم رحلة نشط بالفعل
+  if(!startCoords || !endCoords){alert("⚠️ يرجى تحديد الموقع ونقطة النهاية باستخدام الخريطة أو حقل البحث.");return;}
   if(rideId){alert("⚠️ لديك رحلة نشطة بالفعل، يرجى إنهائها قبل طلب رحلة جديدة.");return;} 
   
   const phone=userPhone||"غير معروف";
@@ -299,7 +356,6 @@ sendBtn.onclick=function(){
   const fare=Math.round(distance*1000);
 
   rideId=Date.now();
-  // **التعديل:** حفظ رقم الرحلة في LocalStorage
   localStorage.setItem('activeRideId', rideId); 
   
   firebase.database().ref("rides/"+rideId).set({
@@ -312,7 +368,7 @@ sendBtn.onclick=function(){
   }).then(()=>{
     document.getElementById("status").innerHTML=
       `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
-    sendBtn.style.display = 'none'; // إخفاء الزر فور الإرسال
+    sendBtn.style.display = 'none'; 
     listenForUpdates();
   }).catch(err=>{
     document.getElementById("status").innerText="❌ حدث خطأ أثناء الإرسال: "+err;
@@ -347,7 +403,6 @@ function listenForChatMessages() {
     chatRef.on('child_added', (snap) => {
         const message = snap.val();
         const p = document.createElement('p');
-        // هنا نعكس نمط الرسائل لتظهر رسالة الراكب على اليمين (حسب التصميم الجديد)
         p.className = (message.sender === 'rider') ? 'rider-msg' : 'driver-msg';
         p.innerText = message.text;
         messagesDiv.appendChild(p);
@@ -367,7 +422,6 @@ messageInput.addEventListener('keypress', (e) => {
 // 🔹 مراقبة التحديثات
 function listenForUpdates(){
   if(!rideId) return;
-  // إيقاف أي استماع سابق
   firebase.database().ref("rides/"+rideId).off("value");
 
   firebase.database().ref("rides/"+rideId).on("value",snapshot=>{
@@ -378,7 +432,6 @@ function listenForUpdates(){
         return;
     }
 
-    // **التعديل:** التأكد من إخفاء زر الإرسال طالما الرحلة قيد التشغيل/الانتظار
     sendBtn.style.display = 'none'; 
     
     if(ride.status==="مقبولة"){
@@ -386,14 +439,14 @@ function listenForUpdates(){
         🚕 السائق في الطريق إليك...<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع
       `;
 
-      // **🆕 إظهار رقم هاتف السائق بدلاً من الراكب**
+      // **🆕 إظهار رقم هاتف السائق**
       const driverPhoneNumber = ride.driverPhone || ride.assignedDriver;
-      phoneLabel.innerText = 'رقم هاتف السائق:';
-      phoneDisplay.innerText = driverPhoneNumber || 'غير متوفر';
+      driverInfoBox.style.display = 'block'; // إظهار الصندوق
+      driverPhoneDisplay.innerText = driverPhoneNumber || 'غير متوفر';
       // ----------------------------------------------
       
-      endBtn.style.display = 'block'; // عرض زر الإنهاء
-      toggleChatBtn.style.display = 'block'; // عرض زر فتح/إغلاق الشات
+      endBtn.style.display = 'block'; 
+      toggleChatBtn.style.display = 'block'; 
       
       // ********** إظهار صندوق الدردشة وإعداده **********
       if(!chatRef) { 
@@ -402,23 +455,19 @@ function listenForUpdates(){
       }
       // ************************************************
       
-      // ** 🗺️ منطق متابعة موقع السائق (التعديل الجديد) **
-      const driverId = ride.assignedDriver; // نفترض أن 'assignedDriver' يحتوي على رقم الهاتف/المعرف
+      // ** 🗺️ منطق متابعة موقع السائق **
+      const driverId = ride.assignedDriver; 
       if (driverId && !driverLocationRef) {
-          // 1. تحديد المرجع لموقع السائق
           driverLocationRef = db.ref(`driverLocations/${driverId}/location`);
           
-          // 2. الاستماع لتحديثات الموقع
           driverLocationRef.on('value', (locSnapshot) => {
               const location = locSnapshot.val();
               if (location && Array.isArray(location) && location.length === 2) {
                   const [lat, lng] = location;
                   
-                  // 3. تحديث موقع العلامة إذا كانت موجودة
                   if (driverMarker) {
                       driverMarker.setLatLng([lat, lng]);
                   } else {
-                      // 4. إنشاء علامة السائق لأول مرة (استخدام أيقونة مميزة)
                       const driverIcon = L.icon({
                           iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
                           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -457,42 +506,35 @@ function listenForUpdates(){
         document.getElementById("status").innerHTML = msg;
         if(ride.status === "منتهية") alert("🚗 تم إنهاء الرحلة بنجاح!");
         
-        resetRiderState(); // ستعيد تمكين زر الإرسال
+        resetRiderState(); 
     }
   });
 }
 
 // دالة مساعدة لإعادة تهيئة حالة الراكب
 function resetRiderState() {
-    // ** تم إزالة زر الاتصال **
     endBtn.style.display = 'none';
-    toggleChatBtn.style.display = 'none'; // إخفاء زر الدردشة
-    sendBtn.style.display = 'block'; // ** 🎯 إظهار زر الإرسال للرحلة الجديدة **
-    sendBtn.disabled = false; // تمكين الزر 
+    toggleChatBtn.style.display = 'none'; 
+    sendBtn.style.display = 'block'; 
+    sendBtn.disabled = false; 
     
-    // **🆕 إعادة عرض رقم هاتف الراكب**
-    phoneLabel.innerText = 'رقم هاتف الراكب:';
-    phoneDisplay.innerText = userPhone || 'غير معروف';
-    // ----------------------------------------------
+    // **🆕 إخفاء صندوق معلومات السائق**
+    driverInfoBox.style.display = 'none';
     
     // 💬 إيقاف الشات
     chatBox.style.display = 'none';
-    toggleChatBtn.innerHTML = '💬 الدردشة مع السائق'; // إعادة النص الأصلي لزر الدردشة
+    toggleChatBtn.innerHTML = '💬 الدردشة مع السائق'; 
     messagesDiv.innerHTML = '';
     if(chatRef) chatRef.off();
     chatRef = null;
-    // -------------------
     
-    // ** 🛑 إيقاف متابعة موقع السائق (التعديل الجديد) **
+    // 🛑 إيقاف متابعة موقع السائق 
     if(driverLocationRef) driverLocationRef.off();
     if(driverMarker) map.removeLayer(driverMarker);
     driverLocationRef = null;
     driverMarker = null;
-    // -------------------
     
-    // **التعديل:** إزالة رقم الرحلة من LocalStorage
     localStorage.removeItem('activeRideId');
-
     rideId = null; 
 }
 </script>
