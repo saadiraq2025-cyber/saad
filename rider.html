@@ -68,7 +68,7 @@ button {
     display: none; /* إخفاء الشات افتراضياً */
     background: #f9f9f9;
 }
-/* **🆕 تعديل زر إظهار الشات ليتطابق مع تصميم الصورة ** */
+/* 🆕 تعديل زر إظهار الشات ليتطابق مع تصميم الصورة */
 #toggleChatBtn {
     width: 100%;
     background: #4285F4; /* لون أزرق جذاب */
@@ -138,7 +138,7 @@ button {
 <div id="map"></div>
 <div id="panel">
   <div class="info-box">
-      <p>رقم هاتف الراكب: <span id="riderPhoneDisplay">جارِ التحميل...</span></p>
+      <p><span id="phoneLabel">رقم هاتف الراكب:</span> <span id="riderPhoneDisplay">جارِ التحميل...</span></p>
   </div>
     
   <h3>🚖 طلب رحلة جديدة</h3>
@@ -146,7 +146,7 @@ button {
     
   <button id="sendRide" disabled>إرسال الطلب</button>
   
-  <button id="cancelRideBtn" style="display:none;">❌ إنهاء/إلغاء الرحلة</button>
+  <button id="cancelRideBtn" style="display:none;">إنهاء الرحلة</button>
   
   <button id="toggleChatBtn" style="display:none;">💬 الدردشة مع السائق</button>
   
@@ -182,9 +182,11 @@ if (!userPhone || userType !== 'rider') {
     window.location.href = "index.html";
 }
 
-// **🆕 عرض رقم الهاتف في الواجهة**
-document.getElementById('riderPhoneDisplay').innerText = userPhone || 'غير معروف';
-
+// **🆕 عرض رقم الهاتف في الواجهة (التهيئة الأولية برقم الراكب)**
+const phoneLabel = document.getElementById('phoneLabel');
+const phoneDisplay = document.getElementById('riderPhoneDisplay');
+phoneLabel.innerText = 'رقم هاتف الراكب:';
+phoneDisplay.innerText = userPhone || 'غير معروف';
 // ----------------------------------------
 
 // تهيئة Firebase
@@ -383,8 +385,13 @@ function listenForUpdates(){
       document.getElementById("status").innerHTML=`
         🚕 السائق في الطريق إليك...<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع
       `;
+
+      // **🆕 إظهار رقم هاتف السائق بدلاً من الراكب**
+      const driverPhoneNumber = ride.driverPhone || ride.assignedDriver;
+      phoneLabel.innerText = 'رقم هاتف السائق:';
+      phoneDisplay.innerText = driverPhoneNumber || 'غير متوفر';
+      // ----------------------------------------------
       
-      // **تم إزالة زر الاتصال بالكامل**
       endBtn.style.display = 'block'; // عرض زر الإنهاء
       toggleChatBtn.style.display = 'block'; // عرض زر فتح/إغلاق الشات
       
@@ -462,6 +469,11 @@ function resetRiderState() {
     toggleChatBtn.style.display = 'none'; // إخفاء زر الدردشة
     sendBtn.style.display = 'block'; // ** 🎯 إظهار زر الإرسال للرحلة الجديدة **
     sendBtn.disabled = false; // تمكين الزر 
+    
+    // **🆕 إعادة عرض رقم هاتف الراكب**
+    phoneLabel.innerText = 'رقم هاتف الراكب:';
+    phoneDisplay.innerText = userPhone || 'غير معروف';
+    // ----------------------------------------------
     
     // 💬 إيقاف الشات
     chatBox.style.display = 'none';
