@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>لوحة تحكم الأدمن - Taxi Iraq</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<style>
+body { font-family: Tahoma; background:#f3f3f3; margin:0; padding:10px; }
+h2 { text-align:center; color:#2e7d32; margin:15px 0; }
+#form { background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px #0001; margin-bottom:20px; }
+#form input, #form select { padding:8px; width:100%; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; }
+#form button { background:#fdd835; border:none; padding:10px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer; }
+table { width:100%; background:white; border-collapse:collapse; margin-top:20px; box-shadow:0 2px 5px #0001; }
+th, td { padding:10px; border:1px solid #ddd; text-align:center; font-size:14px; }
+th { background:#2e7d32; color:white; }
+button { border:none; padding:6px 10px; border-radius:5px; cursor:pointer; font-size:12px; }
+.days { background:#2e7d32; color:white; }
+.minutes { background:#00bcd4; color:white; }
+.ban { background:#e53935; color:white; }
+.unban { background:#fdd835; }
+.del { background:#333; color:white; }
+.notifyBox { background:white;padding:15px;margin-top:20px;border-radius:8px;box-shadow:0 2px 5px #0001; }
+textarea { width:100%; height:90px; padding:10px; border:1px solid #ccc; border-radius:5px; }
+</style>
+
+</head>
+<body>
+
+<h2>👑 لوحة تحكم الأدمن - إدارة المستخدمين</h2>
+
+<!-- إضافة مستخدم -->
+<div id="form">
+    <input type="tel" id="newPhone" placeholder="رقم الهاتف مثال 9647xxxxxxxx">
+    <select id="newType">
+        <option value="driver">سائق</option>
+        <option value="rider">راكب</option>
+    </select>
+    <button onclick="addUser()">➕ إضافة مستخدم</button>
+</div>
+
+<!-- إرسال إشعار -->
+<div class="notifyBox">
+    <h3 style="text-align:center;color:#2e7d32;">📩 إرسال إشعار</h3>
+
+    <select id="notifyType" style="padding:8px;width:100%;margin-bottom:10px;border:1px solid #ccc;border-radius:5px;">
+        <option value="allDrivers">كل السائقين</option>
+        <option value="allRiders">كل الركاب</option>
+        <option value="single">رقم معين</option>
+    </select>
+
+    <input id="singlePhone" placeholder="رقم الهاتف" 
+           style="display:none;padding:8px;width:100%;margin-bottom:10px;border:1px solid #ccc;border-radius:5px;">
+
+    <textarea id="notifyMessage" placeholder="اكتب الرسالة..."></textarea>
+
+    <button onclick="sendNotification()" style="margin-top:10px;background:#fdd835;font-weight:bold;">🚀 إرسال</button>
+</div>
+
+<!-- جدول المستخدمين -->
+<table>
+<thead>
+<tr>
+<th>رقم الهاتف</th>
+<th>النوع</th>
+<th>الحالة</th>
+<th>صلاحية الاشتراك</th>
+<th>إجراءات</th>
+</tr>
+</thead>
+<tbody id="usersTable"></tbody>
+</table>
+
+<script>
+// Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
+  authDomain: "taxi-15314.firebaseapp.com",
+  databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/",
+  projectId: "taxi-15314"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const usersRef = db.ref("users");
+
+// إضافة مستخدم
+function addUser() {
+    const phone = newPhone.value.trim();
+    const type = newType.value;
+
+    if (!phone) return alert("❌ أدخل رقم الهاتف");
+
+    usersRef.child(phone).set({
+        phone: phone,
+        type: type,
+        banned: false,
+        expire: 0
+    });
+
+    alert("✅ تمت إضافة المستخدم");
+    newPhone.value = "";
+}
+
+// تحميل المستخدمين
+usersRef.on("value", snap => {
+    loadUsers(snap.val());
+});
+
+function loadUsers(users) {
+    const table = document.getElementById("usersTable");
+    table.innerHTML = "";
+
+    if (!users) return;
+
+    Object.values(users).forEach(u => {
+        const status = u.banned ? "🚫 محظور" : "✔ فعال";
+        const expire = u.expire > 0
+            ? new Date(u.expire).toLocaleString("ar-IQ")
+            : "—";
+
+        table.innerHTML += `
+        <tr>
+            <td>${u.phone}</td>
+            <td>${u.type === "driver" ? "سائق" : "راكب"}</td>
+            <td>${status}</td>
+            <td>${expire}</td>
+            <td>
+                <button class="days" onclick="activateDays('${u.phone}')">⏳ يوم</button>
+                <button class="minutes" onclick="activateMinutes('${u.phone}')">⏱ دقيقة</button>
+                <button class="ban" onclick="banUser('${u.phone}')">🚫 حظر</button>
+                <button class="unban" onclick="unbanUser('${u.phone}')">✔ إلغاء</button>
+                <button class="del" onclick="deleteUser('${u.phone}')">🗑 حذف</button>
+            </td>
+        </tr>`;
+    });
+}
+
+// تفعيل بالأيام
+function activateDays(phone) {
+    const days = prompt("كم يوم؟");
+    if (!days || isNaN(days)) return;
+
+    usersRef.child(phone).update({
+        expire: Date.now() + days * 24 * 60 * 60 * 1000,
+        banned: false
+    });
+}
+
+// تفعيل بالدقائق
+function activateMinutes(phone) {
+    const min = prompt("كم دقيقة؟");
+    if (!min || isNaN(min)) return;
+
+    usersRef.child(phone).update({
+        expire: Date.now() + min * 60 * 1000,
+        banned: false
+    });
+}
+
+// حظر / إزالة / حذف
+function banUser(phone) { usersRef.child(phone).update({ banned: true }); }
+function unbanUser(phone) { usersRef.child(phone).update({ banned: false }); }
+function deleteUser(phone) { if (confirm("هل تريد الحذف؟")) usersRef.child(phone).remove(); }
+
+// إرسال إشعار
+function sendNotification() {
+    const type = notifyType.value;
+    const msg = notifyMessage.value.trim();
+    const phone = singlePhone.value.trim();
+
+    if (!msg) return alert("❌ اكتب الرسالة");
+
+    if (type === "single" && !phone)
+        return alert("❌ أدخل رقم الهاتف");
+
+    if (type === "single") {
+        db.ref("notifications/" + phone).set({
+            message: msg,
+            time: Date.now()
+        });
+        return alert("✅ تم إرسال الإشعار");
+    }
+
+    usersRef.once("value", snap => {
+        const data = snap.val();
+
+        for (let p in data) {
+            if (type === "allDrivers" && data[p].type === "driver") {
+                db.ref("notifications/" + p).set({ message: msg, time: Date.now() });
+            }
+            if (type === "allRiders" && data[p].type === "rider") {
+                db.ref("notifications/" + p).set({ message: msg, time: Date.now() });
+            }
+        }
+
+        alert("✅ تم إرسال الإشعار");
+    });
+
+    notifyMessage.value = "";
+    singlePhone.value = "";
+}
+
+// إظهار خانة رقم الهاتف
+notifyType.addEventListener("change", () => {
+    singlePhone.style.display = notifyType.value === "single" ? "block" : "none";
+});
+</script>
+
+</body>
+</html>
