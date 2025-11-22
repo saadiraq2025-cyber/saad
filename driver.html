@@ -2,8 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>السائق - تكسي العراق الشامل</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <title>السائق - تكسي العراق الشامل</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -12,24 +11,37 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 <style>
 html,body{margin:0;padding:0;height:100%;font-family:Tahoma;font-size:18px;background:#f5f5f5;}
-#map{height:60vh;width:100%;background:#ccc; opacity: 0.1; transition: opacity 0.5s;} /* 💡 مخفي مبدئياً */
-#panel{background:#fff;text-align:center;padding:15px;box-shadow:0 -2px 5px rgba(0,0,0,0.2); opacity: 0.1; transition: opacity 0.5s;} /* 💡 مخفي مبدئياً */
+#map{height:60vh;width:100%;background:#ccc; opacity: 0.1; transition: opacity 0.5s;}
+#panel{background:#fff;text-align:center;padding:15px;box-shadow:0 -2px 5px rgba(0,0,0,0.2); opacity: 0.1; transition: opacity 0.5s;}
 h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 button{background:#fdd835;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;margin:6px;font-size:17px;}
 button:hover{background:#ffee58;}
 #retry{background:#81c784;}
 
-/* 💬 تنسيقات صندوق الشات */
+/* 📞 تنسيق رقم المتصل */
+#contactInfo {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    background: #e3f2fd;
+    display: none; /* إخفاء افتراضياً */
+}
+#contactInfo p { margin: 0; font-size: 16px; font-weight: bold; color: #1565c0; }
+.phone-number { direction: ltr; display: inline-block; margin-right: 5px; }
+
+/* 💬 تنسيقات صندوق الشات (تم التعديل) */
 #chatBox {
     border: 1px solid #ccc;
     border-radius: 8px;
     margin-top: 15px;
     padding: 10px;
     text-align: right;
-    display: none; /* إخفاء الشات افتراضياً */
+    display: none; 
 }
 #messages {
-    height: 60px; /* تم تقليل الارتفاع ليتناسب مع الازرار */
+    height: 80px; /* 🛠️ تعديل الارتفاع إلى 3 سم تقريباً (80px) */
     overflow-y: auto;
     margin-bottom: 10px;
     padding: 5px;
@@ -43,7 +55,7 @@ button:hover{background:#ffee58;}
 .rider-msg { background: #e0f7fa; text-align: right; }
 .driver-msg { background: #fffde7; text-align: left; }
 #messageInput {
-    width: 70%;
+    width: calc(100% - 90px); /* 🛠️ تعديل عرض حقل الإدخال */
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -52,7 +64,7 @@ button:hover{background:#ffee58;}
     direction: rtl;
 }
 #sendMsgBtn {
-    width: 25%;
+    width: 80px; /* 🛠️ تعديل عرض زر الإرسال إلى 3 سم تقريباً */
     padding: 8px;
     background: #00bcd4;
     color: white;
@@ -80,7 +92,7 @@ button:hover{background:#ffee58;}
     max-width: 400px;
     width: 90%;
     border: 3px solid #e53935;
-    display: none; /* إخفاء افتراضياً */
+    display: none;
 }
 #expiredModal h3 { color: #e53935; margin-top: 0; font-size: 24px; }
 #expiredModal p { margin: 10px 0; font-size: 16px; }
@@ -93,9 +105,16 @@ button:hover{background:#ffee58;}
 <div id="panel">
   <h3>🚖 لوحة السائق</h3>
   <div id="rideInfo">📍 جاري تحديد موقعك.</div>
-  <button id="retry" style="display:none;">📍 تحديد موقعي الآن</button>
-  <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
-  
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+    <button id="retry" style="display:none; flex-grow: 1; margin-left: 5px;">📍 تحديد موقعي الآن</button>
+    <button id="endRide" disabled style="flex-grow: 1; margin-right: 5px;">🚗 إنهاء الرحلة</button>
+  </div>
+
+  <div id="contactInfo">
+    <p>رقم الراكب: <span id="riderPhoneNumber" class="phone-number"></span></p>
+  </div>
+    
   <div id="chatBox">
       <h4>💬 الدردشة مع الراكب</h4>
       <div id="messages"></div>
@@ -123,7 +142,7 @@ const userType = localStorage.getItem('userType');
 if (!driverPhone || userType !== 'driver') {
     alert("❌ يجب تسجيل الدخول كسائق للوصول لهذه الصفحة.");
     window.location.href = "index.html";
-    return; // 🛑 إيقاف التنفيذ
+    return;
 }
 // ----------------------------------------
 
@@ -144,9 +163,7 @@ setTimeout(()=>{ map.invalidateSize(); },1000);
 let driverMarker=null;
 let currentCoords=[33.3152,44.3661];
 const retryBtn=document.getElementById("retry");
-// const wazeBtn=document.getElementById("wazeBtn"); // 💡 تم إزالة زر ويز
-// const callRiderBtn = document.getElementById("callRiderBtn"); // 💡 تم إزالة زر الاتصال
-const expiredModal = document.getElementById('expiredModal'); // العنصر الجديد
+const expiredModal = document.getElementById('expiredModal');
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -155,6 +172,10 @@ const messageInput = document.getElementById('messageInput');
 const sendMsgBtn = document.getElementById('sendMsgBtn');
 let chatRef = null; 
 
+// 📞 عرض رقم الراكب
+const contactInfoDiv = document.getElementById('contactInfo');
+const riderPhoneNumberSpan = document.getElementById('riderPhoneNumber');
+
 // ⚙️ متغيرات عامة للرحلة
 const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
@@ -162,8 +183,8 @@ let routeControl=null;
 let driverStatus="available";
 let activeRideId=null;
 let currentRide=null;
-let ridesListener = null; // مرجع لمستمع الرحلات
-let isInitialCheckDone = false; // 💡 علامة للتأكد من أن getLocation() يتم تشغيلها مرة واحدة فقط
+let ridesListener = null;
+let isInitialCheckDone = false;
 
 
 // 📍 دالة تحديد الموقع
@@ -176,13 +197,11 @@ function getLocation(){
   document.getElementById("rideInfo").innerText="⏳ جاري تحديد موقعك...";
   navigator.geolocation.getCurrentPosition(pos=>{
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
-    updateDriverMarker(true); // التحديث الأولي مع تحريك الخريطة
+    updateDriverMarker(true); 
     retryBtn.style.display="none";
     document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
     map.invalidateSize();
-    // 💡 بعد تحديد الموقع بنجاح، حاول استعادة الرحلة النشطة
     loadActiveRideFromStorage(); 
-    // 🟢 بدء مراقبة الرحلات بعد التأكد من الموقع (الآن يتم تشغيله فقط عند عدم الحظر)
     if (driverStatus !== "banned") {
         watchForRides();
     }
@@ -205,7 +224,6 @@ function updateDriverMarker(setMapCenter=false){
   }else{
     driverMarker.setLatLng(currentCoords);
   }
-  // ✨ تتبع موقع السائق أثناء الرحلة
   if (activeRideId) {
     map.panTo(currentCoords);
   }
@@ -213,10 +231,10 @@ function updateDriverMarker(setMapCenter=false){
 
 // ** 🚀 تحديث الموقع المستمر **
 let lastFirebaseUpdate = 0;
-const FIREBASE_UPDATE_INTERVAL = 3000; // 3 ثواني لتحديث Firebase
+const FIREBASE_UPDATE_INTERVAL = 3000;
 
 setInterval(() => {
-    if (navigator.geolocation && driverStatus !== "banned") { // 🛑 لا ترسل الموقع إذا كان محظوراً
+    if (navigator.geolocation && driverStatus !== "banned") {
         navigator.geolocation.getCurrentPosition(pos => {
             currentCoords = [pos.coords.latitude, pos.coords.longitude];
             updateDriverMarker(); 
@@ -267,13 +285,13 @@ function sendMessage(senderType) {
     }
 
     chatRef.push({
-        sender: senderType, // 'driver'
+        sender: senderType,
         text: text,
         timestamp: Date.now()
     }).then(() => {
         messageInput.value = '';
     }).catch(error => {
-        alert("❌ فشل إرسال الرسالة: " + error.message + " (تحقق من قواعد أمان Firebase)");
+        alert("❌ فشل إرسال الرسالة: " + error.message);
     });
 }
 
@@ -331,17 +349,11 @@ function loadActiveRideFromStorage() {
 // **********************************************
 function initializeRideUI(rideData) {
     endBtn.disabled = false;
-    // wazeBtn.style.display = "inline-block"; // 💡 تم إزالة زر ويز
     
-    // callRiderBtn.style.display = 'inline-block'; // 💡 تم إزالة زر الاتصال
-    // const riderPhoneNumber = rideData.riderPhone;
-    // callRiderBtn.onclick = () => {
-    //     if (riderPhoneNumber) {
-    //         window.open(`tel:${riderPhoneNumber}`, '_self');
-    //     } else {
-    //         alert("❌ لم يتم تسجيل رقم هاتف الراكب.");
-    //     }
-    // };
+    // 📞 إظهار رقم الراكب
+    const riderPhoneNumber = rideData.riderPhone || "غير معروف";
+    riderPhoneNumberSpan.innerText = riderPhoneNumber;
+    contactInfoDiv.style.display = 'block';
 
     chatBox.style.display = 'block';
     chatRef = db.ref("chats/" + activeRideId); 
@@ -359,7 +371,7 @@ function initializeRideUI(rideData) {
 
 
 // **********************************************
-// 🛑 منطق التحقق من انتهاء الاشتراك والحظر (مفعل عند التحميل)
+// 🛑 منطق التحقق من انتهاء الاشتراك والحظر
 // **********************************************
 const driverDataRef = db.ref(`users/${driverPhone}`);
 driverDataRef.on('value', snapshot => {
@@ -372,21 +384,19 @@ driverDataRef.on('value', snapshot => {
 
     // 1. التحقق من انتهاء الصلاحية وتفعيل الحظر (منطق احتياطي)
     if (expirationTime > 0 && expirationTime <= currentTime && !isBanned) {
-        // تحديث حالة الحظر في قاعدة البيانات
         driverDataRef.update({ banned: true })
             .then(() => console.log("تم حظر السائق تلقائياً لانتهاء الاشتراك."))
             .catch(error => console.error("فشل تحديث الحظر التلقائي:", error));
         
-        isBanned = true; // نحدث الحالة محلياً
+        isBanned = true;
     }
 
     // 2. تفعيل/تعطيل واجهة السائق بناءً على حالة الحظر
     if (isBanned) {
-        // إذا كان محظوراً
         stopWatchForRides(); 
-        expiredModal.style.display = 'block'; // عرض مربع الإشعار
-        document.getElementById('map').style.opacity = '0.3'; // تعتيم الخريطة
-        document.getElementById('panel').style.opacity = '0.3'; // تعتيم اللوحة
+        expiredModal.style.display = 'block';
+        document.getElementById('map').style.opacity = '0.3';
+        document.getElementById('panel').style.opacity = '0.3';
         driverStatus = "banned"; 
         
         if (activeRideId) {
@@ -395,11 +405,10 @@ driverDataRef.on('value', snapshot => {
         }
 
     } else {
-        // إذا كان فعالاً
-        expiredModal.style.display = 'none'; // إخفاء مربع الإشعار
+        expiredModal.style.display = 'none';
         document.getElementById('map').style.opacity = '1';
         document.getElementById('panel').style.opacity = '1';
-        driverStatus = activeRideId ? "busy" : "available"; // استعادة الحالة
+        driverStatus = activeRideId ? "busy" : "available";
         
         if (!ridesListener) {
             watchForRides();
@@ -408,7 +417,7 @@ driverDataRef.on('value', snapshot => {
     
     // 3. بدء عملية تحديد الموقع بعد أول تحديث لبيانات السائق
     if (!isInitialCheckDone) {
-        getLocation(); // يتم استدعاء getLocation فقط بعد استرداد البيانات لأول مرة
+        getLocation(); 
         isInitialCheckDone = true;
     }
 });
@@ -416,15 +425,13 @@ driverDataRef.on('value', snapshot => {
 
 // 🟢 مراقبة الطلبات
 function watchForRides(){
-    // منع إعادة تشغيل المستمع إذا كان فعالاً
     if (ridesListener) return;
 
-    // ... (هذا هو الكود الأصلي الذي يراقب الطلبات - تم اختصاره هنا لعدم التكرار)
     ridesListener = db.ref("rides").on("child_added",snap=>{
         const ride=snap.val();const id=snap.key;
         if(activeRideId)return; 
 
-        if(ride.status==="جديدة" && driverStatus !== "banned"){ // 💡 فحص إضافي للتأكد من حالة الحظر قبل العرض
+        if(ride.status==="جديدة" && driverStatus !== "banned"){
           startBeep();
           rideInfo.innerHTML=`🚖 <b>رحلة جديدة</b><br>
           من (${ride.start[0].toFixed(4)}, ${ride.start[1].toFixed(4)})<br>
@@ -475,7 +482,7 @@ function watchForRides(){
           };
         }
       });
-    // ... (بقية منطق child_changed)
+    
     db.ref("rides").on("child_changed", snap => {
           const ride = snap.val();
           const id = snap.key;
@@ -503,20 +510,10 @@ function watchForRides(){
 
 // دالة لإيقاف مراقبة الرحلات
 function stopWatchForRides() {
-    // إيقاف المستمعين (لا نحتاج إلى كود معقد - هذه الطريقة تعمل لإزالة كل المستمعين)
     db.ref("rides").off(); 
     ridesListener = null;
 }
 // ----------------------------------------------------
-
-// 🌍 زر فتح ويز (تم تعطيله)
-// wazeBtn.onclick=()=>{
-//   if(!currentRide)return;
-//   const destLat=currentRide.end[0];
-//   const destLng=currentRide.end[1];
-//   const wazeURL=`https://waze.com/ul?ll=${destLat},${destLng}&navigate=yes`;
-//   window.open(wazeURL,'_blank');
-// };
 
 // 🚗 إنهاء الرحلة
 endBtn.onclick=()=>{
@@ -535,8 +532,7 @@ endBtn.onclick=()=>{
 function resetDriverState() {
   if(routeControl){map.removeControl(routeControl);}
   endBtn.disabled=true;
-//   wazeBtn.style.display="none"; // 💡 تم إزالة زر ويز
-//   callRiderBtn.style.display="none"; // 💡 تم إزالة زر الاتصال
+  contactInfoDiv.style.display="none"; // 📞 إخفاء رقم الراكب
   
   // 💬 إيقاف الشات
   chatBox.style.display = 'none';
@@ -554,14 +550,12 @@ function resetDriverState() {
   activeRideId=null;
   currentRide=null;
   
-  // تأكد من تشغيل مراقبة الطلبات إذا لم يتم حظر السائق
   if (driverStatus !== "banned" && !ridesListener) {
       watchForRides(); 
       rideInfo.innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
   }
 }
 
-// 🛑 تم إزالة استدعاء getLocation() من هنا، وسيتم استدعاؤه داخل مراقب Firebase بعد التحقق من الحالة.
 });
 </script>
 </body>
