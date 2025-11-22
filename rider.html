@@ -57,7 +57,20 @@ button {
 #sendRide { background: #ffca28; color: #333; } /* لون أصفر */
 #cancelRideBtn { background: #E53935; color: white; } /* لون أحمر */
 #logoutBtn { background: #444; color: white; margin-top: 15px; } /* لون أسود/رمادي داكن */
-
+#toggleChatBtn {
+    background: #4285F4; /* لون أزرق جذاب */
+    color: white;
+}
+/* 🆕 تنسيق عرض رقم الهاتف */
+.info-box {
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
 /* 💬 تنسيقات صندوق الشات */
 #chatBox {
     border: 1px solid #ccc;
@@ -65,25 +78,11 @@ button {
     margin: 15px 0;
     padding: 10px;
     text-align: right;
-    display: none; /* إخفاء الشات افتراضياً */
+    display: none;
     background: #f9f9f9;
 }
-/* تعديل زر إظهار الشات */
-#toggleChatBtn {
-    width: 100%;
-    background: #4285F4; /* لون أزرق جذاب */
-    color: white;
-    margin: 8px 0;
-    padding: 15px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
 #messages {
-    height: 100px; /* زيادة الحجم */
+    height: 100px; 
     overflow-y: auto;
     margin-bottom: 10px;
     padding: 5px;
@@ -121,16 +120,31 @@ button {
     display: table;
     clear: both;
 }
-
-/* 🆕 تنسيق عرض رقم الهاتف */
-.info-box {
-    background: #f0f0f0;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 18px;
+/* 🆕 تنسيق حقل البحث */
+#destinationInput {
+    box-sizing: border-box;
+    width: 70%; 
+    padding: 10px; 
+    border: 1px solid #ccc; 
+    border-radius: 5px; 
+    float: right; 
+    direction: rtl; 
+}
+#searchDestinationBtn {
+    width: 28%; 
+    padding: 10px; 
+    margin: 0; 
+    background: #00bcd4; 
+    color: white; 
+    float: left; 
+    box-sizing: border-box; 
+    border-radius: 5px; 
     font-weight: bold;
-    color: #333;
+}
+#search-container::after {
+    content: "";
+    display: table;
+    clear: both;
 }
 </style>
 </head>
@@ -138,9 +152,8 @@ button {
 <div id="map"></div>
 <div id="panel">
   <div id="search-container" style="margin-bottom: 15px;">
-      <input type="text" id="destinationInput" placeholder="ابحث عن نقطة الوصول (مثلاً: بغداد الشعب)" style="width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; float: right; direction: rtl; box-sizing: border-box;">
-      <button id="searchDestinationBtn" style="width: 28%; padding: 10px; margin: 0; background: #00bcd4; color: white; float: left; box-sizing: border-box; border-radius: 5px; font-weight: bold;">بحث</button>
-      <div style="clear: both;"></div>
+      <input type="text" id="destinationInput" placeholder="ابحث عن نقطة الوصول (مثلاً: بغداد الشعب)">
+      <button id="searchDestinationBtn">بحث</button>
   </div>
 
   <div class="info-box" id="driverInfoBox" style="display:none;">
@@ -212,7 +225,7 @@ let driverLocationRef = null;
 
 // العناصر الجديدة
 const sendBtn = document.getElementById("sendRide");
-const endBtn = document.getElementById("cancelRideBtn");
+const cancelRideBtn = document.getElementById("cancelRideBtn"); // تم تغيير الاسم
 const toggleChatBtn = document.getElementById('toggleChatBtn'); 
 
 // 🆕 عناصر الهاتف والبحث
@@ -228,16 +241,15 @@ const messageInput = document.getElementById('messageInput');
 const sendMsgBtn = document.getElementById('sendMsgBtn');
 let chatRef = null;
 
-// ** 🆕 دالة البحث عن العنوان (Geocoding) **
+// ** 🆕 دالة البحث عن العنوان (Geocoding) - تم تصحيح المشكلة هنا **
 async function geocodeAddress(address) {
-    // استخدام Nominatim API مع تحديد العراق لنتائج أكثر دقة
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=iq&limit=1&accept-language=ar`;
     
-    document.getElementById("status").innerText = `جاري البحث عن "${address}"...`;
+    document.getElementById("status").innerHTML = `جاري البحث عن <b>"${address}"</b>...`;
 
     try {
         const response = await fetch(url, {
-            // إضافة User-Agent مطلوبة لسياسة الاستخدام لـ Nominatim
+            // إضافة User-Agent مطلوبة لضمان عمل Nominatim بشكل صحيح
             headers: {
                 'User-Agent': 'TaxiIraqApp/1.0 (contact@example.com)' 
             }
@@ -259,27 +271,29 @@ async function geocodeAddress(address) {
             map.setView(endCoords, 16); 
             
             if (!rideId) { 
-                document.getElementById("status").innerText=`✅ تم تحديد نقطة النهاية عبر البحث. يمكنك الآن إرسال الطلب.`;
+                document.getElementById("status").innerHTML=`✅ تم تحديد نقطة النهاية بنجاح. يمكنك الآن <b>إرسال الطلب</b>.`;
                 sendBtn.disabled=false;
             }
         } else {
-            document.getElementById("status").innerText = `⚠️ لم يتم العثور على موقع لـ "${address}". حاول بعبارة مختلفة.`;
+            document.getElementById("status").innerHTML = `❌ لم يتم العثور على موقع لـ <b>"${address}"</b>. حاول بعبارة مختلفة.`;
             sendBtn.disabled=true;
         }
     } catch (error) {
         console.error("Geocoding Error:", error);
-        document.getElementById("status").innerText = `❌ حدث خطأ أثناء البحث.`;
+        document.getElementById("status").innerHTML = `❌ حدث خطأ أثناء البحث.`;
         sendBtn.disabled=true;
     }
 }
 
 // ** ربط البحث بالأزرار **
 searchDestinationBtn.addEventListener('click', () => {
+    // يجب تعطيل زر الإرسال عند بدء البحث لتجنب الإرسال الخاطئ
+    sendBtn.disabled = true; 
     const address = destinationInput.value.trim();
     if (address) {
         geocodeAddress(address);
     } else {
-        alert("يرجى إدخال عنوان للبحث.");
+        document.getElementById("status").innerHTML = `⚠️ يرجى إدخال عنوان للبحث.`;
     }
 });
 destinationInput.addEventListener('keypress', (e) => {
@@ -303,10 +317,9 @@ function checkActiveRide() {
     if (storedRideId) {
         rideId = storedRideId;
         document.getElementById("status").innerHTML = "لديك رحلة نشطة قيد المتابعة. يتم جلب حالتها...";
-        sendBtn.style.display = 'none'; 
+        sendBtn.disabled = true; 
         listenForUpdates();
     } else {
-        sendBtn.style.display = 'block';
         sendBtn.disabled = true; 
     }
 }
@@ -368,7 +381,7 @@ sendBtn.onclick=function(){
   }).then(()=>{
     document.getElementById("status").innerHTML=
       `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
-    sendBtn.style.display = 'none'; 
+    sendBtn.disabled = true; 
     listenForUpdates();
   }).catch(err=>{
     document.getElementById("status").innerText="❌ حدث خطأ أثناء الإرسال: "+err;
@@ -432,20 +445,20 @@ function listenForUpdates(){
         return;
     }
 
-    sendBtn.style.display = 'none'; 
+    sendBtn.disabled = true; 
     
     if(ride.status==="مقبولة"){
       document.getElementById("status").innerHTML=`
         🚕 السائق في الطريق إليك...<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع
       `;
 
-      // **🆕 إظهار رقم هاتف السائق**
+      // **🆕 إظهار رقم هاتف السائق فقط**
       const driverPhoneNumber = ride.driverPhone || ride.assignedDriver;
       driverInfoBox.style.display = 'block'; // إظهار الصندوق
       driverPhoneDisplay.innerText = driverPhoneNumber || 'غير متوفر';
       // ----------------------------------------------
       
-      endBtn.style.display = 'block'; 
+      cancelRideBtn.style.display = 'block'; 
       toggleChatBtn.style.display = 'block'; 
       
       // ********** إظهار صندوق الدردشة وإعداده **********
@@ -484,7 +497,7 @@ function listenForUpdates(){
       }
       // *********************************************************
 
-      endBtn.onclick = () => {
+      cancelRideBtn.onclick = () => {
           if (confirm("هل أنت متأكد من إنهاء/إلغاء الرحلة؟")) {
               firebase.database().ref("rides/" + rideId).update({
                   status: "ملغاة من الراكب",
@@ -513,7 +526,7 @@ function listenForUpdates(){
 
 // دالة مساعدة لإعادة تهيئة حالة الراكب
 function resetRiderState() {
-    endBtn.style.display = 'none';
+    cancelRideBtn.style.display = 'none';
     toggleChatBtn.style.display = 'none'; 
     sendBtn.style.display = 'block'; 
     sendBtn.disabled = false; 
