@@ -11,37 +11,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 <style>
-/* 🛑 التعديل: تثبيت الصفحة ومنع الصعود والنزول (Scroll) */
-html,body{
-    margin:0;
-    padding:0;
-    height:100%;
-    font-family:Tahoma;
-    font-size:18px;
-    background:#f5f5f5;
-    overflow: hidden; 
-    position: fixed; 
-    width: 100%;
-}
+html,body{margin:0;padding:0;height:100%;font-family:Tahoma;font-size:18px;background:#f5f5f5;}
 #map{height:60vh;width:100%;background:#ccc; opacity: 0.1; transition: opacity 0.5s;} /* 💡 مخفي مبدئياً */
 #panel{background:#fff;text-align:center;padding:15px;box-shadow:0 -2px 5px rgba(0,0,0,0.2); opacity: 0.1; transition: opacity 0.5s;} /* 💡 مخفي مبدئياً */
 h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 button{background:#fdd835;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;margin:6px;font-size:17px;}
 button:hover{background:#ffee58;}
 #retry{background:#81c784;}
-#wazeBtn{background:#29b6f6;color:#fff;}
-#wazeBtn:hover{background:#4fc3f7;}
-/* 📞 زر الاتصال الجديد */
-#callRiderBtn{background:#4CAF50;color:white;}
-#callRiderBtn:hover{background:#66BB6A;}
-
-/* 🎯 تنسيق حاوية الأزرار الرئيسية لرفعها وتنظيمها */
-#mainActionArea {
-    margin-top: 10px;
-    display: flex;
-    justify-content: center; /* توسيط الأزرار */
-    flex-wrap: wrap; /* السماح بتعدد الأسطر */
-}
 
 /* 💬 تنسيقات صندوق الشات */
 #chatBox {
@@ -53,7 +29,7 @@ button:hover{background:#ffee58;}
     display: none; /* إخفاء الشات افتراضياً */
 }
 #messages {
-    height: 60px; /* حجم 2x2 */
+    height: 60px; /* تم تقليل الارتفاع ليتناسب مع الازرار */
     overflow-y: auto;
     margin-bottom: 10px;
     padding: 5px;
@@ -117,13 +93,8 @@ button:hover{background:#ffee58;}
 <div id="panel">
   <h3>🚖 لوحة السائق</h3>
   <div id="rideInfo">📍 جاري تحديد موقعك.</div>
-  
-  <div id="mainActionArea" style="margin-top: 10px; display: flex; justify-content: center; flex-wrap: wrap;">
-    <button id="retry" style="display:none;">📍 تحديد موقعي الآن</button>
-    <button id="wazeBtn" style="display:none;">🗺️ فتح ويز</button>
-    <button id="callRiderBtn" style="display:none;">📞 الاتصال بالراكب</button> 
-    <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
-  </div>
+  <button id="retry" style="display:none;">📍 تحديد موقعي الآن</button>
+  <button id="endRide" disabled>🚗 إنهاء الرحلة</button>
   
   <div id="chatBox">
       <h4>💬 الدردشة مع الراكب</h4>
@@ -173,9 +144,9 @@ setTimeout(()=>{ map.invalidateSize(); },1000);
 let driverMarker=null;
 let currentCoords=[33.3152,44.3661];
 const retryBtn=document.getElementById("retry");
-const wazeBtn=document.getElementById("wazeBtn");
-const callRiderBtn = document.getElementById("callRiderBtn"); 
-const expiredModal = document.getElementById('expiredModal'); 
+// const wazeBtn=document.getElementById("wazeBtn"); // 💡 تم إزالة زر ويز
+// const callRiderBtn = document.getElementById("callRiderBtn"); // 💡 تم إزالة زر الاتصال
+const expiredModal = document.getElementById('expiredModal'); // العنصر الجديد
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -187,13 +158,12 @@ let chatRef = null;
 // ⚙️ متغيرات عامة للرحلة
 const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
-const mainActionArea = document.getElementById("mainActionArea"); // 🎯 العنصر الجديد
 let routeControl=null;
 let driverStatus="available";
 let activeRideId=null;
 let currentRide=null;
-let ridesListener = null; 
-let isInitialCheckDone = false; 
+let ridesListener = null; // مرجع لمستمع الرحلات
+let isInitialCheckDone = false; // 💡 علامة للتأكد من أن getLocation() يتم تشغيلها مرة واحدة فقط
 
 
 // 📍 دالة تحديد الموقع
@@ -206,11 +176,13 @@ function getLocation(){
   document.getElementById("rideInfo").innerText="⏳ جاري تحديد موقعك...";
   navigator.geolocation.getCurrentPosition(pos=>{
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
-    updateDriverMarker(true); 
+    updateDriverMarker(true); // التحديث الأولي مع تحريك الخريطة
     retryBtn.style.display="none";
     document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
     map.invalidateSize();
+    // 💡 بعد تحديد الموقع بنجاح، حاول استعادة الرحلة النشطة
     loadActiveRideFromStorage(); 
+    // 🟢 بدء مراقبة الرحلات بعد التأكد من الموقع (الآن يتم تشغيله فقط عند عدم الحظر)
     if (driverStatus !== "banned") {
         watchForRides();
     }
@@ -233,6 +205,7 @@ function updateDriverMarker(setMapCenter=false){
   }else{
     driverMarker.setLatLng(currentCoords);
   }
+  // ✨ تتبع موقع السائق أثناء الرحلة
   if (activeRideId) {
     map.panTo(currentCoords);
   }
@@ -240,10 +213,10 @@ function updateDriverMarker(setMapCenter=false){
 
 // ** 🚀 تحديث الموقع المستمر **
 let lastFirebaseUpdate = 0;
-const FIREBASE_UPDATE_INTERVAL = 3000; 
+const FIREBASE_UPDATE_INTERVAL = 3000; // 3 ثواني لتحديث Firebase
 
 setInterval(() => {
-    if (navigator.geolocation && driverStatus !== "banned") { 
+    if (navigator.geolocation && driverStatus !== "banned") { // 🛑 لا ترسل الموقع إذا كان محظوراً
         navigator.geolocation.getCurrentPosition(pos => {
             currentCoords = [pos.coords.latitude, pos.coords.longitude];
             updateDriverMarker(); 
@@ -358,17 +331,17 @@ function loadActiveRideFromStorage() {
 // **********************************************
 function initializeRideUI(rideData) {
     endBtn.disabled = false;
-    wazeBtn.style.display = "inline-block";
+    // wazeBtn.style.display = "inline-block"; // 💡 تم إزالة زر ويز
     
-    callRiderBtn.style.display = 'inline-block';
-    const riderPhoneNumber = rideData.riderPhone;
-    callRiderBtn.onclick = () => {
-        if (riderPhoneNumber) {
-            window.open(`tel:${riderPhoneNumber}`, '_self');
-        } else {
-            alert("❌ لم يتم تسجيل رقم هاتف الراكب.");
-        }
-    };
+    // callRiderBtn.style.display = 'inline-block'; // 💡 تم إزالة زر الاتصال
+    // const riderPhoneNumber = rideData.riderPhone;
+    // callRiderBtn.onclick = () => {
+    //     if (riderPhoneNumber) {
+    //         window.open(`tel:${riderPhoneNumber}`, '_self');
+    //     } else {
+    //         alert("❌ لم يتم تسجيل رقم هاتف الراكب.");
+    //     }
+    // };
 
     chatBox.style.display = 'block';
     chatRef = db.ref("chats/" + activeRideId); 
@@ -446,30 +419,20 @@ function watchForRides(){
     // منع إعادة تشغيل المستمع إذا كان فعالاً
     if (ridesListener) return;
 
-    // 💡 إزالة جميع الأزرار القديمة في البداية
-    mainActionArea.innerHTML = `<button id="retry" style="display:none;">📍 تحديد موقعي الآن</button>
-      <button id="wazeBtn" style="display:none;">🗺️ فتح ويز</button>
-      <button id="callRiderBtn" style="display:none;">📞 الاتصال بالراكب</button> 
-      <button id="endRide" disabled>🚗 إنهاء الرحلة</button>`;
-
-
+    // ... (هذا هو الكود الأصلي الذي يراقب الطلبات - تم اختصاره هنا لعدم التكرار)
     ridesListener = db.ref("rides").on("child_added",snap=>{
         const ride=snap.val();const id=snap.key;
         if(activeRideId)return; 
 
-        if(ride.status==="جديدة" && driverStatus !== "banned"){ 
+        if(ride.status==="جديدة" && driverStatus !== "banned"){ // 💡 فحص إضافي للتأكد من حالة الحظر قبل العرض
           startBeep();
           rideInfo.innerHTML=`🚖 <b>رحلة جديدة</b><br>
           من (${ride.start[0].toFixed(4)}, ${ride.start[1].toFixed(4)})<br>
           إلى (${ride.end[0].toFixed(4)}, ${ride.end[1].toFixed(4)})<br>
           المسافة: ${ride.distance} كم<br>
-          الأجرة: ${ride.fare} د.ع<br>`; // 💡 عرض المعلومات فقط في rideInfo
-
-        // 🎯 التعديل: إظهار أزرار القبول والرفض في mainActionArea
-        mainActionArea.innerHTML = `
-            <button id="acceptRide">✅ قبول</button>
-            <button id="rejectRide">❌ رفض</button>
-        `;
+          الأجرة: ${ride.fare} د.ع<br><br>
+          <button id="acceptRide">✅ قبول</button>
+          <button id="rejectRide">❌ رفض</button>`;
 
           document.getElementById("acceptRide").onclick=()=>{
             db.ref("rides/"+id).once('value', currentSnap => {
@@ -478,7 +441,6 @@ function watchForRides(){
                 if (!currentRideData || currentRideData.status !== "جديدة" || driverStatus === "banned") {
                     stopBeep();
                     rideInfo.innerText="⚠️ آسف، تم قبول هذه الرحلة من قبل سائق آخر أو لم تعد متاحة.";
-                    mainActionArea.innerHTML = '';
                     return;
                 }
 
@@ -500,13 +462,6 @@ function watchForRides(){
                 
                 initializeRideUI(acceptedRide);
                 rideInfo.innerHTML=`✅ تم قبول الرحلة<br>المسافة: ${acceptedRide.distance} كم<br>الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 يمكنك البدء بالرحلة الآن</b>`;
-                // 🎯 التعديل: إعادة تعيين أزرار المتابعة في mainActionArea
-                mainActionArea.innerHTML = '';
-                mainActionArea.appendChild(wazeBtn);
-                mainActionArea.appendChild(callRiderBtn);
-                mainActionArea.appendChild(endBtn);
-                wazeBtn.style.display = 'inline-block';
-                callRiderBtn.style.display = 'inline-block';
             }); 
           };
 
@@ -516,8 +471,6 @@ function watchForRides(){
               status:"مرفوضة",
               notification:"❌ السائق رفض الرحلة"
             });
-            // 🎯 التعديل: مسح أزرار القبول والرفض بعد الرفض
-            mainActionArea.innerHTML = '';
             rideInfo.innerText="🚕 تم رفض الرحلة — بانتظار طلب جديد.";
           };
         }
@@ -528,11 +481,14 @@ function watchForRides(){
           const id = snap.key;
           
           if (ride.status === "مقبولة" && id !== activeRideId) {
-              // 🎯 التعديل: إزالة أزرار القبول والرفض مباشرة
-              if (mainActionArea.innerHTML.includes('acceptRide')) { 
+              const acceptBtn = document.getElementById("acceptRide");
+              if (acceptBtn && acceptBtn.closest('#panel')) { 
                   stopBeep();
                   rideInfo.innerHTML = "⚠️ **تم قبول الرحلة** من قبل سائق آخر. بانتظار طلب جديد...";
-                  mainActionArea.innerHTML = '';
+                  const oldAcceptBtn = document.getElementById("acceptRide");
+                  const oldRejectBtn = document.getElementById("rejectRide");
+                  if (oldAcceptBtn) oldAcceptBtn.remove();
+                  if (oldRejectBtn) oldRejectBtn.remove();
               }
           }
           
@@ -553,14 +509,14 @@ function stopWatchForRides() {
 }
 // ----------------------------------------------------
 
-// 🌍 زر فتح ويز
-wazeBtn.onclick=()=>{
-  if(!currentRide)return;
-  const destLat=currentRide.end[0];
-  const destLng=currentRide.end[1];
-  const wazeURL=`https://waze.com/ul?ll=${destLat},${destLng}&navigate=yes`;
-  window.open(wazeURL,'_blank');
-};
+// 🌍 زر فتح ويز (تم تعطيله)
+// wazeBtn.onclick=()=>{
+//   if(!currentRide)return;
+//   const destLat=currentRide.end[0];
+//   const destLng=currentRide.end[1];
+//   const wazeURL=`https://waze.com/ul?ll=${destLat},${destLng}&navigate=yes`;
+//   window.open(wazeURL,'_blank');
+// };
 
 // 🚗 إنهاء الرحلة
 endBtn.onclick=()=>{
@@ -579,10 +535,8 @@ endBtn.onclick=()=>{
 function resetDriverState() {
   if(routeControl){map.removeControl(routeControl);}
   endBtn.disabled=true;
-  wazeBtn.style.display="none";
-  callRiderBtn.style.display="none";
-  // 🎯 التعديل: مسح الأزرار في mainActionArea
-  mainActionArea.innerHTML = '';
+//   wazeBtn.style.display="none"; // 💡 تم إزالة زر ويز
+//   callRiderBtn.style.display="none"; // 💡 تم إزالة زر الاتصال
   
   // 💬 إيقاف الشات
   chatBox.style.display = 'none';
