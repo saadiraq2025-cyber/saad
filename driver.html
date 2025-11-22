@@ -23,7 +23,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
-    /* تقليل المسافة العمودية لجعل الأزرار أقرب لبعضها */
+    /* هامش عمودي صغير بين الأزرار */
     margin: 3px 15px; 
     font-size: 17px;
     width: calc(100% - 30px);
@@ -32,11 +32,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 
 /* 🆕 تنسيقات لوحة السائق - تم إزالة الـ padding السفلي لتقريب الأزرار من تسجيل الخروج */
 #driverPanelContent { 
-    padding: 0 15px 0 15px; /* تم تغيير القيمة الأخيرة من 15px إلى 0 */
-}
-/* 🆕 إزالة الهامش السفلي من آخر زر في لوحة المحتوى (زر الدردشة) */
-#driverPanelContent .panel-button:last-of-type {
-    margin-bottom: 0;
+    padding: 0 15px 0 15px; /* تأكيد إزالة الحشوة السفلية */
 }
 
 /* 📞 عرض رقم الهاتف (مساحة عرض أصغر) */
@@ -61,7 +57,8 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 
 /* ألوان أزرار الرحلة النشطة */
 #endRide{background:#e53935;color:white; display: none;} 
-#chatBtn{background:#2196F3;color:white; display: none;} 
+#chatBtn{background:#2196F3;color:white; display: none; margin-bottom: 0;} /* 🚨 تم إزالة الهامش السفلي من هذا الزر */
+
 /* زر تسجيل الخروج: لا يوجد هامش علوي ليلتصق بزر الدردشة */
 #logoutBtn{background:#333;color:white; display: block; margin: 0; border-radius: 0; border-top-left-radius: 10px; border-top-right-radius: 10px;}
 
