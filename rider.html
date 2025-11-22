@@ -36,34 +36,66 @@ window.onload = function () {
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 <style>
-body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
-#map{height:60vh;}
-#panel{background:#fff;text-align:center;padding:10px;box-shadow:0 -2px 5px rgba(0,0,0,0.2);}
-button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer; margin: 5px;}
+body,html{margin:0;padding:0;height:100%;font-family:Tahoma;background-color: #f5f5f5;}
+#map{height:60vh; border-bottom: 1px solid #ddd;}
+#panel{background:#fff;text-align:center;padding:15px;box-shadow:0 -2px 5px rgba(0,0,0,0.1); border-radius: 12px 12px 0 0; margin-top: -12px; position: relative; z-index: 1000;}
+
+/* تنسيق عام للأزرار لتبدو مثل الصورة */
+button {
+    width: 100%;
+    margin: 8px 0;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* تنسيقات الأزرار المحددة */
+#sendRide { background: #ffca28; color: #333; } /* لون أصفر */
+#cancelRideBtn { background: #E53935; color: white; } /* لون أحمر */
+#logoutBtn { background: #444; color: white; margin-top: 15px; } /* لون أسود/رمادي داكن */
 
 /* 💬 تنسيقات صندوق الشات */
 #chatBox {
     border: 1px solid #ccc;
     border-radius: 8px;
-    margin-top: 15px;
+    margin: 15px 0;
     padding: 10px;
     text-align: right;
     display: none; /* إخفاء الشات افتراضياً */
+    background: #f9f9f9;
+}
+/* **🆕 تعديل زر إظهار الشات ليتطابق مع تصميم الصورة ** */
+#toggleChatBtn {
+    width: 100%;
+    background: #4285F4; /* لون أزرق جذاب */
+    color: white;
+    margin: 8px 0;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 #messages {
-    height: 60px; /* تم تقليل الارتفاع ليتناسب مع الازرار */
+    height: 100px; /* زيادة الحجم */
     overflow-y: auto;
     margin-bottom: 10px;
     padding: 5px;
     border: 1px solid #eee;
     border-radius: 5px;
-    background: #fafafa;
+    background: #fff;
     text-align: right;
     font-size: 14px;
 }
 #messages p { margin: 3px 0; padding: 5px 8px; border-radius: 5px;}
-.rider-msg { background: #e0f7fa; text-align: left; }
-.driver-msg { background: #fffde7; text-align: right; }
+.rider-msg { background: #e0f7fa; text-align: right; } /* تعديل لمطابقة نمط الصورة */
+.driver-msg { background: #fffde7; text-align: left; } /* تعديل لمطابقة نمط الصورة */
 #messageInput {
     width: 70%;
     padding: 8px;
@@ -72,31 +104,51 @@ button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-w
     font-size: 15px;
     float: right;
     direction: rtl;
+    box-sizing: border-box;
 }
 #sendMsgBtn {
-    width: 25%;
+    width: 28%;
     padding: 8px;
     background: #00bcd4;
     color: white;
     font-size: 15px;
     float: left;
+    margin: 0;
+    box-sizing: border-box;
 }
 #chatBox::after {
     content: "";
     display: table;
     clear: both;
 }
-/* ⬅️ زر تسجيل الخروج */
-#logoutBtn { background: #607d8b; color: white; margin-top: 10px; width: 95%; }
+
+/* 🆕 تنسيق عرض رقم الهاتف */
+.info-box {
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="panel">
+  <div class="info-box">
+      <p>رقم هاتف الراكب: <span id="riderPhoneDisplay">جارِ التحميل...</span></p>
+  </div>
+    
   <h3>🚖 طلب رحلة جديدة</h3>
   <p id="status">يتم تحديد موقعك الحالي الآن...</p>
+    
   <button id="sendRide" disabled>إرسال الطلب</button>
-  <button id="cancelRideBtn" style="display:none; background:#E53935; color:white;">❌ إنهاء/إلغاء الرحلة</button>
+  
+  <button id="cancelRideBtn" style="display:none;">❌ إنهاء/إلغاء الرحلة</button>
+  
+  <button id="toggleChatBtn" style="display:none;">💬 الدردشة مع السائق</button>
   
   <div id="chatBox">
       <h4>💬 الدردشة مع السائق</h4>
@@ -105,7 +157,7 @@ button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-w
       <button id="sendMsgBtn">إرسال</button>
   </div>
   
-  <button id="logoutBtn" onclick="window.logout()">تسجيل الخروج</button>
+  <button id="logoutBtn" onclick="window.logout()">تسجيل الخروج 🚫</button>
   </div>
 
 <script type="module" src="app.js"></script>
@@ -129,6 +181,10 @@ if (!userPhone || userType !== 'rider') {
     alert("❌ يجب تسجيل الدخول كراكب للوصول لهذه الصفحة.");
     window.location.href = "index.html";
 }
+
+// **🆕 عرض رقم الهاتف في الواجهة**
+document.getElementById('riderPhoneDisplay').innerText = userPhone || 'غير معروف';
+
 // ----------------------------------------
 
 // تهيئة Firebase
@@ -159,8 +215,9 @@ let driverLocationRef = null; // مرجع Firebase لموقع السائق
 
 // العناصر الجديدة
 const sendBtn = document.getElementById("sendRide");
-// const callBtn = document.getElementById("callDriverBtn"); // 💡 تم إزالة زر الاتصال
 const endBtn = document.getElementById("cancelRideBtn");
+// ** 🆕 زر فتح/إغلاق الشات **
+const toggleChatBtn = document.getElementById('toggleChatBtn'); 
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -169,15 +226,25 @@ const messageInput = document.getElementById('messageInput');
 const sendMsgBtn = document.getElementById('sendMsgBtn');
 let chatRef = null;
 
+// ** 🆕 وظيفة لتبديل عرض صندوق الدردشة **
+toggleChatBtn.addEventListener('click', () => {
+    const isChatVisible = chatBox.style.display === 'block';
+    chatBox.style.display = isChatVisible ? 'none' : 'block';
+    toggleChatBtn.innerHTML = isChatVisible ? '💬 الدردشة مع السائق' : '💬 إخفاء الدردشة';
+});
+// ------------------------------------------
+
+
 // ** 🆕 دالة فحص الرحلة النشطة عند تحميل الصفحة **
 function checkActiveRide() {
     const storedRideId = localStorage.getItem('activeRideId');
     if (storedRideId) {
         rideId = storedRideId;
         document.getElementById("status").innerHTML = "لديك رحلة نشطة قيد المتابعة. يتم جلب حالتها...";
-        sendBtn.disabled = true; // تعطيل زر الإرسال إذا كان هناك رقم رحلة مخزّن
+        sendBtn.style.display = 'none'; // إخفاء زر الإرسال
         listenForUpdates();
     } else {
+        sendBtn.style.display = 'block';
         sendBtn.disabled = true; // يبقى معطّلاً حتى يتم تحديد نقطة النهاية (في دالة map.on('click'))
     }
 }
@@ -243,7 +310,7 @@ sendBtn.onclick=function(){
   }).then(()=>{
     document.getElementById("status").innerHTML=
       `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
-    sendBtn.disabled = true; // تعطيل الزر فور الإرسال
+    sendBtn.style.display = 'none'; // إخفاء الزر فور الإرسال
     listenForUpdates();
   }).catch(err=>{
     document.getElementById("status").innerText="❌ حدث خطأ أثناء الإرسال: "+err;
@@ -278,7 +345,7 @@ function listenForChatMessages() {
     chatRef.on('child_added', (snap) => {
         const message = snap.val();
         const p = document.createElement('p');
-        // هنا نعكس نمط الرسائل لتظهر رسالة الراكب على اليسار
+        // هنا نعكس نمط الرسائل لتظهر رسالة الراكب على اليمين (حسب التصميم الجديد)
         p.className = (message.sender === 'rider') ? 'rider-msg' : 'driver-msg';
         p.innerText = message.text;
         messagesDiv.appendChild(p);
@@ -309,28 +376,19 @@ function listenForUpdates(){
         return;
     }
 
-    // **التعديل:** التأكد من تعطيل الزر طالما الرحلة قيد التشغيل/الانتظار
-    sendBtn.disabled = true; 
+    // **التعديل:** التأكد من إخفاء زر الإرسال طالما الرحلة قيد التشغيل/الانتظار
+    sendBtn.style.display = 'none'; 
     
     if(ride.status==="مقبولة"){
       document.getElementById("status").innerHTML=`
         🚕 السائق في الطريق إليك...<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع
       `;
       
-      // callBtn.style.display = 'inline-block'; // 💡 تم إزالة زر الاتصال
-      endBtn.style.display = 'inline-block';
-      
-      // const driverPhoneNumber = ride.driverPhone || ride.assignedDriver; // 💡 تم إزالة منطق زر الاتصال
-      // callBtn.onclick = () => {
-      //     if (driverPhoneNumber) {
-      //         window.open(`tel:${driverPhoneNumber}`, '_self');
-      //     } else {
-      //         alert("❌ لم يتم تسجيل رقم هاتف السائق.");
-      //     }
-      // };
+      // **تم إزالة زر الاتصال بالكامل**
+      endBtn.style.display = 'block'; // عرض زر الإنهاء
+      toggleChatBtn.style.display = 'block'; // عرض زر فتح/إغلاق الشات
       
       // ********** إظهار صندوق الدردشة وإعداده **********
-      chatBox.style.display = 'block';
       if(!chatRef) { 
         chatRef = db.ref("chats/" + rideId); 
         listenForChatMessages(); 
@@ -399,12 +457,15 @@ function listenForUpdates(){
 
 // دالة مساعدة لإعادة تهيئة حالة الراكب
 function resetRiderState() {
-    // callBtn.style.display = 'none'; // 💡 تم إزالة زر الاتصال
+    // ** تم إزالة زر الاتصال **
     endBtn.style.display = 'none';
-    sendBtn.disabled = false; // ** 🎯 تمكين زر الإرسال للرحلة الجديدة **
+    toggleChatBtn.style.display = 'none'; // إخفاء زر الدردشة
+    sendBtn.style.display = 'block'; // ** 🎯 إظهار زر الإرسال للرحلة الجديدة **
+    sendBtn.disabled = false; // تمكين الزر 
     
     // 💬 إيقاف الشات
     chatBox.style.display = 'none';
+    toggleChatBtn.innerHTML = '💬 الدردشة مع السائق'; // إعادة النص الأصلي لزر الدردشة
     messagesDiv.innerHTML = '';
     if(chatRef) chatRef.off();
     chatRef = null;
