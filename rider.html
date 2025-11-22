@@ -38,7 +38,7 @@ window.onload = function () {
 <style>
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;background-color: #f5f5f5;}
 #map{height:60vh; border-bottom: 1px solid #ddd;}
-#panel{background:#fff;text-align:center;padding:15px;box-shadow:0 -2px 5px rgba(0,0,0,0.1); border-radius: 12px 12px 0 0; margin-top: -12px; position: relative; z-index: 1000;}
+#panel{background:#fff;text-align:center;padding:15px;box-shadow:0 -2px 5px rgba(0,0,0,0.1); border-radius: 12px 12px 0 0; margin-top: -12px; position: relative; z-index: 1000; display: flex; flex-direction: column; align-items: stretch;} /* 💡 تم التعديل للإعداد لمرونة المحتوى */
 
 /* تنسيق عام للأزرار لتبدو مثل الصورة */
 button {
@@ -53,15 +53,79 @@ button {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* تنسيقات الأزرار المحددة */
+/* تنسيقات الأزرار المحددة (ما قبل قبول الرحلة) */
 #sendRide { background: #ffca28; color: #333; } /* لون أصفر */
-#cancelRideBtn { background: #E53935; color: white; } /* لون أحمر */
 #logoutBtn { background: #444; color: white; margin-top: 15px; } /* لون أسود/رمادي داكن */
-#toggleChatBtn {
-    background: #4285F4; /* لون أزرق جذاب */
-    color: white;
+
+/* 🆕 تنسيقات لوحة الرحلة المقبولة (لمطابقة الصورة) */
+
+/* زر طلب المساعدة (الأخضر/الفيروزي) */
+.teal-button { 
+    background: #00bcd4; /* لون فيروزي مطابق للصورة */
+    color: white; 
+    margin-top: 0px !important; 
+    margin-bottom: 10px !important;
 }
-/* 🆕 تنسيق عرض رقم الهاتف */
+
+/* حاوية تفاصيل الرحلة والأزرار العمودية (الصف الثاني في الصورة) */
+#rideDetailsAndActions {
+    display: flex;
+    flex-direction: row; /* تفاصيل على اليمين والأزرار على اليسار (في الاتجاه RTL) */
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start; /* تبدأ العناصر من الأعلى */
+}
+
+/* بطاقة تفاصيل الرحلة (اليسار في الصورة) */
+#rideDetailsCard {
+    flex-grow: 1; 
+    background: #fff; /* خلفية بيضاء */
+    padding: 10px 0; /* لا يوجد padding في الصورة */
+    text-align: right;
+    font-size: 14px;
+    line-height: 1.5;
+}
+#rideDetailsCard p { margin: 3px 0; padding-right: 15px; }
+#rideDetailsCard b { font-size: 16px; color: #333; }
+
+/* الأزرار العمودية (اليمين في الصورة) */
+#actionButtonsVertical {
+    display: flex;
+    flex-direction: column;
+    width: 130px; /* عرض ثابت لعمود الأزرار العمودية */
+    flex-shrink: 0;
+    gap: 5px;
+}
+
+/* الأزرار العمودية (لتصبح أصغر) */
+#actionButtonsVertical button {
+    width: 100%;
+    margin: 0;
+    padding: 8px 5px;
+    font-size: 12px;
+}
+
+/* ألوان الأزرار العمودية (لمطابقة الصورة) */
+.yellow-button { background: #ffca28 !important; color: #333 !important; }
+.red-button { background: #E53935 !important; color: white !important; }
+
+/* الأزرار الأفقية (الأسفل في الصورة) */
+#actionButtonsHorizontal {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+#actionButtonsHorizontal button {
+    width: 50%;
+    margin: 0;
+    padding: 12px;
+    font-size: 14px;
+}
+.purple-button { background: #673ab7; color: white; } /* لون أرجواني */
+.blue-button { background: #2196f3; color: white; } /* لون أزرق */
+
+
+/* 🆕 تنسيق عرض رقم الهاتف (سأدمجه في البطاقة الجديدة) */
 .info-box {
     background: #f0f0f0;
     padding: 15px;
@@ -71,6 +135,19 @@ button {
     font-weight: bold;
     color: #333;
 }
+.info-box-accepted { 
+    background: #e0f0ff; /* لون خفيف لبطاقة السائق في العرض المقبول */
+    padding: 10px; 
+    margin-top: 10px; 
+    font-size: 14px; 
+    font-weight: normal; 
+    border-radius: 0; 
+    margin-bottom: 0;
+    text-align: right;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* 💬 تنسيقات صندوق الشات */
 #chatBox {
     border: 1px solid #ccc;
@@ -121,63 +198,93 @@ button {
     clear: both;
 }
 /* 🆕 تنسيق حقل البحث */
+#search-container {
+    display: flex; /* لترتيب حقل الإدخال وزر البحث جنباً إلى جنب */
+    gap: 5px; /* مسافة بين العناصر */
+}
 #destinationInput {
     box-sizing: border-box;
     width: 70%; 
     padding: 10px; 
     border: 1px solid #ccc; 
     border-radius: 5px; 
-    float: right; 
     direction: rtl; 
+    margin: 0; /* إزالة margin الافتراضي من button */
 }
 #searchDestinationBtn {
-    width: 28%; 
+    width: 30%; 
     padding: 10px; 
     margin: 0; 
     background: #00bcd4; 
     color: white; 
-    float: left; 
     box-sizing: border-box; 
     border-radius: 5px; 
     font-weight: bold;
-}
-#search-container::after {
-    content: "";
-    display: table;
-    clear: both;
+    font-size: 15px;
 }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="panel">
-  <div id="search-container" style="margin-bottom: 15px;">
-      <input type="text" id="destinationInput" placeholder="ابحث عن نقطة الوصول (مثلاً: بغداد الشعب)">
-      <button id="searchDestinationBtn">بحث</button>
-  </div>
-
-  <div class="info-box" id="driverInfoBox" style="display:none;">
-      <p>📞 رقم هاتف السائق: <span id="driverPhoneDisplay"></span></p>
-  </div>
-    
-  <h3>🚖 طلب رحلة جديدة</h3>
-  <p id="status">يتم تحديد موقعك الحالي الآن...</p>
-    
-  <button id="sendRide" disabled>إرسال الطلب</button>
-  
-  <button id="cancelRideBtn" style="display:none;">إنهاء الرحلة</button>
-  
-  <button id="toggleChatBtn" style="display:none;">💬 الدردشة مع السائق</button>
-  
-  <div id="chatBox">
-      <h4>💬 الدردشة مع السائق</h4>
-      <div id="messages"></div>
-      <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
-      <button id="sendMsgBtn">إرسال</button>
-  </div>
-  
-  <button id="logoutBtn" onclick="window.logout()">تسجيل الخروج 🚫</button>
-  </div>
+    <div id="preRideDisplay">
+    <div id="search-container" style="margin-bottom: 15px;">
+      <input type="text" id="destinationInput" placeholder="ابحث عن نقطة الوصول (مثلاً: بغداد الشعب)">
+      <button id="searchDestinationBtn">بحث</button>
+    </div>
+  
+    <div class="info-box" id="driverInfoBox" style="display:none;">
+      <p>📞 رقم هاتف السائق: <span id="driverPhoneDisplay"></span></p>
+    </div>
+  
+    <h3>🚖 طلب رحلة جديدة</h3>
+    <p id="status">يتم تحديد موقعك الحالي الآن...</p>
+    <button id="sendRide" disabled>إرسال الطلب</button>
+  </div>
+  
+    <div id="acceptedRideDisplay" style="display:none; flex-direction: column;">
+        <button id="driverAssistBtn" class="teal-button">طلب مساعدة السائق</button>
+  
+    <div id="rideDetailsAndActions">
+      <div id="rideDetailsCard">
+                <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px;">
+          <span style="font-size: 16px; font-weight: bold; color: #555;">طلب رحلة جديدة</span>
+                    <span style="font-size: 20px; margin-left: 5px;">🚕</span>
+        </div>
+                <p>من / <span id="startAreaName">...</span></p>
+        <p>إلى / <span id="endAreaName">...</span></p>
+        <p>المسافة: <b id="distanceDisplay">...</b></p>
+        <p>الأجرة: <b id="fareDisplay">...</b></p>
+        <div class="info-box-accepted">
+          <p style="margin: 0;">📞 السائق: <span id="driverPhoneDisplayAccepted"></span></p>
+        </div>
+      </div>
+  
+      <div id="actionButtonsVertical">
+                <button id="searchPlaceBtn" class="yellow-button">البحث عن مكان</button>
+        <button id="sendRequestExtraBtn" class="yellow-button">ارسل طلب</button>
+        <button id="endRideRedBtn" class="red-button">انهاء رحلة</button>
+      </div>
+    </div>
+  
+    <div id="actionButtonsHorizontal">
+            <button id="cancelRidePurpleBtn" class="purple-button">إلغاء الرحلة</button>
+      <button id="sendMessageBlueBtn" class="blue-button">إرسال</button>
+    </div>
+  </div>
+  
+    <button id="cancelRideBtn" style="display:none;">إنهاء الرحلة</button>
+  <button id="toggleChatBtn" style="display:none;">💬 الدردشة مع السائق</button>
+  
+    <div id="chatBox">
+    <h4>💬 الدردشة مع السائق</h4>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
+    <button id="sendMsgBtn">إرسال</button>
+  </div>
+  
+  <button id="logoutBtn" onclick="window.logout()">تسجيل الخروج 🚫</button>
+</div>
 
 <script type="module" src="app.js"></script>
 
@@ -202,10 +309,10 @@ if (!userPhone || userType !== 'rider') {
 
 // تهيئة Firebase
 const app=firebase.initializeApp({
-  apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
-  authDomain:"taxi-15314.firebaseapp.com",
-  databaseURL:"https://taxi-15314-default-rtdb.firebaseio.com/",
-  projectId:"taxi-15314"
+    apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
+    authDomain:"taxi-15314.firebaseapp.com",
+    databaseURL:"https://taxi-15314-default-rtdb.firebaseio.com/",
+    projectId:"taxi-15314"
 });
 const db=firebase.database();
 
@@ -223,9 +330,12 @@ let rideId=null;
 let driverMarker = null; 
 let driverLocationRef = null; 
 
-// العناصر الجديدة
+// العناصر القديمة والجديدة
+const preRideDisplay = document.getElementById('preRideDisplay');
+const acceptedRideDisplay = document.getElementById('acceptedRideDisplay');
+
 const sendBtn = document.getElementById("sendRide");
-const cancelRideBtn = document.getElementById("cancelRideBtn"); // تم تغيير الاسم
+const cancelRideBtn = document.getElementById("cancelRideBtn"); 
 const toggleChatBtn = document.getElementById('toggleChatBtn'); 
 
 // 🆕 عناصر الهاتف والبحث
@@ -233,6 +343,20 @@ const driverInfoBox = document.getElementById('driverInfoBox');
 const driverPhoneDisplay = document.getElementById('driverPhoneDisplay');
 const destinationInput = document.getElementById('destinationInput');
 const searchDestinationBtn = document.getElementById('searchDestinationBtn');
+const startAreaName = document.getElementById('startAreaName');
+const endAreaName = document.getElementById('endAreaName');
+const distanceDisplay = document.getElementById('distanceDisplay');
+const fareDisplay = document.getElementById('fareDisplay');
+const driverPhoneDisplayAccepted = document.getElementById('driverPhoneDisplayAccepted');
+
+// 🆕 أزرار الحالة المقبولة (التي تطابق الصورة)
+const endRideRedBtn = document.getElementById('endRideRedBtn');
+const cancelRidePurpleBtn = document.getElementById('cancelRidePurpleBtn');
+const sendMessageBlueBtn = document.getElementById('sendMessageBlueBtn');
+const driverAssistBtn = document.getElementById('driverAssistBtn');
+const searchPlaceBtn = document.getElementById('searchPlaceBtn');
+const sendRequestExtraBtn = document.getElementById('sendRequestExtraBtn');
+
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -310,6 +434,20 @@ toggleChatBtn.addEventListener('click', () => {
     toggleChatBtn.innerHTML = isChatVisible ? '💬 الدردشة مع السائق' : '💬 إخفاء الدردشة';
 });
 
+// ** 🆕 دالة إنهاء/إلغاء الرحلة (تم استخلاصها من listenForUpdates) **
+function handleCancelRide() {
+    if (!rideId) return;
+    if (confirm("هل أنت متأكد من إنهاء/إلغاء الرحلة؟")) {
+        firebase.database().ref("rides/" + rideId).update({
+            status: "ملغاة من الراكب",
+            notification: "❌ الراكب ألغى الرحلة"
+        }).then(() => {
+            alert("تم إلغاء الرحلة بنجاح.");
+            resetRiderState();
+            document.getElementById("status").innerText = "تم إلغاء الطلب. يمكنك طلب رحلة جديدة.";
+        });
+    }
+};
 
 // ** دالة فحص الرحلة النشطة عند تحميل الصفحة **
 function checkActiveRide() {
@@ -327,65 +465,72 @@ function checkActiveRide() {
 
 // 📍 تحديد الموقع الحالي 
 navigator.geolocation.getCurrentPosition(pos=>{
-  startCoords=[pos.coords.latitude,pos.coords.longitude];
-  startMarker=L.marker(startCoords).addTo(map).bindPopup("📍 موقعك الحالي").openPopup();
-  map.setView(startCoords,15);
-  document.getElementById("status").innerText="انقر على الخريطة لتحديد نقطة النهاية أو استخدم حقل البحث أعلاه.";
-  
-  checkActiveRide(); 
-  
+    startCoords=[pos.coords.latitude,pos.coords.longitude];
+    startMarker=L.marker(startCoords).addTo(map).bindPopup("📍 موقعك الحالي").openPopup();
+    map.setView(startCoords,15);
+    document.getElementById("status").innerText="انقر على الخريطة لتحديد نقطة النهاية أو استخدم حقل البحث أعلاه.";
+    
+    checkActiveRide(); 
+    
 },err=>{
-  document.getElementById("status").innerText="⚠️ لم يتم تحديد الموقع الحالي، يرجى تفعيل الموقع في إعدادات الجهاز.";
+    document.getElementById("status").innerText="⚠️ لم يتم تحديد الموقع الحالي، يرجى تفعيل الموقع في إعدادات الجهاز.";
 },{enableHighAccuracy:true,timeout:10000,maximumAge:0}); 
 
 map.on('click',function(e){
-  if(endMarker){map.removeLayer(endMarker);}
-  endCoords=[e.latlng.lat,e.latlng.lng];
-  endMarker=L.marker(endCoords).addTo(map).bindPopup("🏁 نقطة النهاية").openPopup();
-  
-  if (!rideId) { 
-    document.getElementById("status").innerText="تم تحديد النهاية. يمكنك الآن إرسال الطلب.";
-    sendBtn.disabled=false;
-  } else {
-    document.getElementById("status").innerText="لديك رحلة نشطة بالفعل. لا يمكنك طلب رحلة جديدة.";
-    sendBtn.disabled=true;
-  }
+    if(endMarker){map.removeLayer(endMarker);}
+    endCoords=[e.latlng.lat,e.latlng.lng];
+    endMarker=L.marker(endCoords).addTo(map).bindPopup("🏁 نقطة النهاية").openPopup();
+    
+    if (!rideId) { 
+        document.getElementById("status").innerText="تم تحديد النهاية. يمكنك الآن إرسال الطلب.";
+        sendBtn.disabled=false;
+    } else {
+        document.getElementById("status").innerText="لديك رحلة نشطة بالفعل. لا يمكنك طلب رحلة جديدة.";
+        sendBtn.disabled=true;
+    }
 });
 
 sendBtn.onclick=function(){
-  if(!startCoords || !endCoords){alert("⚠️ يرجى تحديد الموقع ونقطة النهاية باستخدام الخريطة أو حقل البحث.");return;}
-  if(rideId){alert("⚠️ لديك رحلة نشطة بالفعل، يرجى إنهائها قبل طلب رحلة جديدة.");return;} 
-  
-  const phone=userPhone||"غير معروف";
+    if(!startCoords || !endCoords){alert("⚠️ يرجى تحديد الموقع ونقطة النهاية باستخدام الخريطة أو حقل البحث.");return;}
+    if(rideId){alert("⚠️ لديك رحلة نشطة بالفعل، يرجى إنهائها قبل طلب رحلة جديدة.");return;} 
+    
+    const phone=userPhone||"غير معروف";
 
-  const R=6371;
-  const dLat=(endCoords[0]-startCoords[0])*Math.PI/180;
-  const dLon=(endCoords[1]-startCoords[1])*Math.PI/180;
-  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+
-           Math.cos(startCoords[0]*Math.PI/180)*Math.cos(endCoords[0]*Math.PI/180)*
-           Math.sin(dLon/2)*Math.sin(dLon/2);
-  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  const distance=(R*c).toFixed(2);
-  const fare=Math.round(distance*1000);
+    const R=6371;
+    const dLat=(endCoords[0]-startCoords[0])*Math.PI/180;
+    const dLon=(endCoords[1]-startCoords[1])*Math.PI/180;
+    const a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+            Math.cos(startCoords[0]*Math.PI/180)*Math.cos(endCoords[0]*Math.PI/180)*
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+    const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    const distance=(R*c).toFixed(2);
+    // تقدير الأجرة (يمكن تعديل هذه القيمة لتكون أكثر واقعية)
+    const fare=Math.round(distance*2500); 
 
-  rideId=Date.now();
-  localStorage.setItem('activeRideId', rideId); 
-  
-  firebase.database().ref("rides/"+rideId).set({
-    riderPhone:phone,
-    start:startCoords,
-    end:endCoords,
-    distance:distance,
-    fare:fare,
-    status:"جديدة"
-  }).then(()=>{
-    document.getElementById("status").innerHTML=
-      `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
-    sendBtn.disabled = true; 
-    listenForUpdates();
-  }).catch(err=>{
-    document.getElementById("status").innerText="❌ حدث خطأ أثناء الإرسال: "+err;
-  });
+    rideId=Date.now();
+    localStorage.setItem('activeRideId', rideId); 
+    
+    // حفظ أسماء المناطق بشكل مبدئي (للعرض في الواجهة الجديدة)
+    const startArea = startMarker ? startMarker.getPopup().getContent().split(': ')[1] || 'موقعك الحالي' : 'موقعك الحالي';
+    const endArea = endMarker ? endMarker.getPopup().getContent().split(': ')[1] || destinationInput.value.trim() || 'نقطة النهاية' : 'نقطة النهاية';
+    
+    firebase.database().ref("rides/"+rideId).set({
+        riderPhone:phone,
+        start:startCoords,
+        end:endCoords,
+        startAreaName: startArea.replace('📍 موقعك الحالي', 'موقعك الحالي'),
+        endAreaName: endArea.replace('🏁 نقطة النهاية', endArea.replace('نقطة النهاية: ', '')),
+        distance:distance,
+        fare:fare,
+        status:"جديدة"
+    }).then(()=>{
+        document.getElementById("status").innerHTML=
+          `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
+        sendBtn.disabled = true; 
+        listenForUpdates();
+    }).catch(err=>{
+        document.getElementById("status").innerText="❌ حدث خطأ أثناء الإرسال: "+err;
+    });
 };
 
 // 💬 منطق الشات - وظيفة إرسال الرسائل
@@ -434,104 +579,111 @@ messageInput.addEventListener('keypress', (e) => {
 
 // 🔹 مراقبة التحديثات
 function listenForUpdates(){
-  if(!rideId) return;
-  firebase.database().ref("rides/"+rideId).off("value");
+    if(!rideId) return;
+    firebase.database().ref("rides/"+rideId).off("value");
 
-  firebase.database().ref("rides/"+rideId).on("value",snapshot=>{
-    const ride=snapshot.val();
-    if(!ride) {
-        document.getElementById("status").innerHTML = `❌ تم إلغاء الرحلة. يمكنك طلب رحلة جديدة.`;
-        resetRiderState();
-        return;
-    }
+    firebase.database().ref("rides/"+rideId).on("value",snapshot=>{
+        const ride=snapshot.val();
+        if(!ride) {
+            document.getElementById("status").innerHTML = `❌ تم إلغاء الرحلة. يمكنك طلب رحلة جديدة.`;
+            resetRiderState();
+            return;
+        }
 
-    sendBtn.disabled = true; 
-    
-    if(ride.status==="مقبولة"){
-      document.getElementById("status").innerHTML=`
-        🚕 السائق في الطريق إليك...<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع
-      `;
+        if(ride.status==="مقبولة"){
+            // 🆕 إظهار واجهة الرحلة المقبولة وإخفاء واجهة الطلب
+            preRideDisplay.style.display = 'none';
+            acceptedRideDisplay.style.display = 'flex';
+            
+            // تحديث بيانات بطاقة الرحلة
+            startAreaName.innerText = ride.startAreaName || 'موقعك الحالي';
+            // للحصول على اسم المنطقة، يجب إجراء Reverse Geocoding. سأستخدم اسم المنطقة إذا كان متاحًا أو عنوان نقطة النهاية
+            endAreaName.innerText = ride.endAreaName || 'نقطة النهاية';
+            distanceDisplay.innerText = `${ride.distance} كيلو متر`;
+            fareDisplay.innerText = `${ride.fare} دينار`;
 
-      // **🆕 إظهار رقم هاتف السائق فقط**
-      const driverPhoneNumber = ride.driverPhone || ride.assignedDriver;
-      driverInfoBox.style.display = 'block'; // إظهار الصندوق
-      driverPhoneDisplay.innerText = driverPhoneNumber || 'غير متوفر';
-      // ----------------------------------------------
-      
-      cancelRideBtn.style.display = 'block'; 
-      toggleChatBtn.style.display = 'block'; 
-      
-      // ********** إظهار صندوق الدردشة وإعداده **********
-      if(!chatRef) { 
-        chatRef = db.ref("chats/" + rideId); 
-        listenForChatMessages(); 
-      }
-      // ************************************************
-      
-      // ** 🗺️ منطق متابعة موقع السائق **
-      const driverId = ride.assignedDriver; 
-      if (driverId && !driverLocationRef) {
-          driverLocationRef = db.ref(`driverLocations/${driverId}/location`);
-          
-          driverLocationRef.on('value', (locSnapshot) => {
-              const location = locSnapshot.val();
-              if (location && Array.isArray(location) && location.length === 2) {
-                  const [lat, lng] = location;
-                  
-                  if (driverMarker) {
-                      driverMarker.setLatLng([lat, lng]);
-                  } else {
-                      const driverIcon = L.icon({
-                          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
-                          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                          iconSize: [25, 41],
-                          iconAnchor: [12, 41],
-                          popupAnchor: [1, -34],
-                          shadowSize: [41, 41]
-                      });
-                      driverMarker = L.marker([lat, lng], { icon: driverIcon }).addTo(map)
-                          .bindPopup("🚕 موقع السائق الحالي").openPopup();
-                  }
-              }
-          });
-      }
-      // *********************************************************
+            // إظهار رقم هاتف السائق 
+            const driverPhoneNumber = ride.driverPhone || ride.assignedDriver;
+            driverPhoneDisplayAccepted.innerText = driverPhoneNumber || 'غير متوفر';
 
-      cancelRideBtn.onclick = () => {
-          if (confirm("هل أنت متأكد من إنهاء/إلغاء الرحلة؟")) {
-              firebase.database().ref("rides/" + rideId).update({
-                  status: "ملغاة من الراكب",
-                  notification: "❌ الراكب ألغى الرحلة"
-              }).then(() => {
-                  alert("تم إلغاء الرحلة بنجاح.");
-                  resetRiderState();
-                  document.getElementById("status").innerText = "تم إلغاء الطلب. يمكنك طلب رحلة جديدة.";
-              });
-          }
-      };
-      
-    } else if (ride.status === "منتهية" || ride.status === "ملغاة من الراكب" || ride.status === "مرفوضة") {
-        let msg = '';
-        if(ride.status === "منتهية") msg = '🚗 تم إنهاء الرحلة — شكرًا لاستخدامك تكسي العراق الشامل';
-        if(ride.status === "ملغاة من الراكب") msg = '❌ تم إلغاء الرحلة بواسطتك.';
-        if(ride.status === "مرفوضة") msg = '❌ السائق رفض الرحلة. يمكنك المحاولة مجدداً.';
+            // ربط الأزرار الجديدة بوظائفها 
+            endRideRedBtn.onclick = handleCancelRide;
+            cancelRidePurpleBtn.onclick = handleCancelRide;
+            sendMessageBlueBtn.onclick = () => { sendMessage('rider'); }; 
+            driverAssistBtn.onclick = () => {
+                // إرسال رسالة مساعدة للسائق عبر الشات
+                messageInput.value = "هل يمكنني طلب مساعدة؟";
+                sendMessage('rider');
+            };
+            // تعطيل زر إرسال الطلب الإضافي في الواجهة الجديدة
+            sendRequestExtraBtn.disabled = true;
+            // زر البحث الإضافي في الواجهة الجديدة يمكن ربطه بالبحث الأصلي إذا لزم الأمر
+            searchPlaceBtn.onclick = searchDestinationBtn.onclick; 
+            
+            // إعداد الشات
+            if(!chatRef) { 
+                chatRef = db.ref("chats/" + rideId); 
+                listenForChatMessages(); 
+            }
+            
+            // ** 🗺️ منطق متابعة موقع السائق **
+            const driverId = ride.assignedDriver; 
+            if (driverId && !driverLocationRef) {
+                driverLocationRef = db.ref(`driverLocations/${driverId}/location`);
+                
+                driverLocationRef.on('value', (locSnapshot) => {
+                    const location = locSnapshot.val();
+                    if (location && Array.isArray(location) && location.length === 2) {
+                        const [lat, lng] = location;
+                        
+                        if (driverMarker) {
+                            driverMarker.setLatLng([lat, lng]);
+                        } else {
+                            const driverIcon = L.icon({
+                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                                iconSize: [25, 41],
+                                iconAnchor: [12, 41],
+                                popupAnchor: [1, -34],
+                                shadowSize: [41, 41]
+                            });
+                            driverMarker = L.marker([lat, lng], { icon: driverIcon }).addTo(map)
+                                .bindPopup("🚕 موقع السائق الحالي").openPopup();
+                        }
+                    }
+                });
+            }
         
-        document.getElementById("status").innerHTML = msg;
-        if(ride.status === "منتهية") alert("🚗 تم إنهاء الرحلة بنجاح!");
-        
-        resetRiderState(); 
-    }
-  });
+        } else if (ride.status === "منتهية" || ride.status === "ملغاة من الراكب" || ride.status === "مرفوضة") {
+            let msg = '';
+            if(ride.status === "منتهية") msg = '🚗 تم إنهاء الرحلة — شكرًا لاستخدامك تكسي العراق الشامل';
+            if(ride.status === "ملغاة من الراكب") msg = '❌ تم إلغاء الرحلة بواسطتك.';
+            if(ride.status === "مرفوضة") msg = '❌ السائق رفض الرحلة. يمكنك المحاولة مجدداً.';
+            
+            document.getElementById("status").innerHTML = msg;
+            if(ride.status === "منتهية") alert("🚗 تم إنهاء الرحلة بنجاح!");
+            
+            resetRiderState(); 
+        } else {
+             // حالة "جديدة" أو "بانتظار سائق"
+             preRideDisplay.style.display = 'block';
+             acceptedRideDisplay.style.display = 'none';
+             document.getElementById("status").innerHTML=`✅ تم إرسال الطلب<br>المسافة: <b>${ride.distance}</b> كم — الأجرة: <b>${ride.fare}</b> د.ع<br>بإنتظار السائق...`;
+        }
+    });
 }
 
 // دالة مساعدة لإعادة تهيئة حالة الراكب
 function resetRiderState() {
+    // 🆕 إخفاء واجهة الرحلة المقبولة وإظهار واجهة الطلب
+    preRideDisplay.style.display = 'block';
+    acceptedRideDisplay.style.display = 'none';
+
     cancelRideBtn.style.display = 'none';
     toggleChatBtn.style.display = 'none'; 
-    sendBtn.style.display = 'block'; 
     sendBtn.disabled = false; 
     
-    // **🆕 إخفاء صندوق معلومات السائق**
+    // إخفاء صندوق معلومات السائق
     driverInfoBox.style.display = 'none';
     
     // 💬 إيقاف الشات
