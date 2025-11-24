@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>لوحة تحكم الأدمن - Taxi Iraq</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+<style>
+body { font-family: Tahoma; background:#f3f3f3; margin:0; padding:10px; }
+h2 { text-align:center; color:#2e7d32; margin:15px 0; }
+#form { background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px #0001; margin-bottom:20px; }
+#form input, #form select { padding:8px; width:100%; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; }
+#form button { background:#fdd835; border:none; padding:10px; width:100%; border-radius:5px; font-weight:bold; cursor:pointer; }
+table { width:100%; background:white; border-collapse:collapse; margin-top:20px; box-shadow:0 2px 5px #0001; }
+th, td { padding:10px; border:1px solid #ddd; text-align:center; font-size:14px; }
+th { background:#2e7d32; color:white; }
+button { border:none; padding:6px 10px; border-radius:5px; cursor:pointer; font-size:12px; }
+.days { background:#2e7d32; color:white; }
+.minutes { background:#00bcd4; color:white; }
+.ban { background:#e53935; color:white; }
+.unban { background:#fdd835; }
+.del { background:#333; color:white; }
+.notifyBox { background:white;padding:15px;margin-top:20px;border-radius:8px;box-shadow:0 2px 5px #0001; }
+textarea { width:100%; height:90px; padding:10px; border:1px solid #ccc; border-radius:5px; }
+</style>
+
+</head>
+<body>
+
+<h2>👑 لوحة تحكم الأدمن - إدارة المستخدمين</h2>
+
+<div class="notifyBox">
+    <h3>📣 إرسال رسالة/إشعار إلى المستخدمين</h3>
+    <select id="notifyType">
+        <option value="single">إلى مستخدم واحد (برقم الهاتف)</option>
+        <option value="allDrivers">إلى جميع السائقين</option>
+        <option value="allRiders">إلى جميع الركاب</option>
+    </select>
+    <input type="text" id="singlePhone" placeholder="رقم الهاتف (إذا كان الخيار: إلى مستخدم واحد)">
+    <textarea id="notifyMessage" placeholder="اكتب رسالة الإشعار هنا..."></textarea>
+    <button onclick="sendNotification()">إرسال الرسالة</button>
+</div>
+
+<div id="form">
+    <h3>إدارة اشتراكات المستخدمين</h3>
+    </div>
+
+
+<table>
+    <thead>
+        <tr>
+            <th>الهاتف</th>
+            <th>النوع</th>
+            <th>الحالة</th>
+            <th>الانتهاء</th>
+            <th>الإجراءات</th>
+        </tr>
+    </thead>
+    <tbody id="usersTable">
+        </tbody>
+</table>
+
+<script>
+    // ** Firebase Init **
+    var firebaseConfig = {
+        apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
+        authDomain: "taxi-15314.firebaseapp.com",
+        databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/",
+        projectId: "taxi-15314"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+    var usersRef = db.ref("users");
+    
+    // ** العناصر للوصول السريع **
+    const usersTable = document.getElementById("usersTable");
+    const notifyType = document.getElementById("notifyType");
+    const singlePhone = document.getElementById("singlePhone");
+    const notifyMessage = document.getElementById("notifyMessage");
+
+    // ** 🛠️ وظائف إدارة المستخدمين **
+    function activateDays(phone) {
+        const now = Date.now();
+        const expire = now + (24 * 60 * 60 * 1000); // 1 Day
+        usersRef.child(phone).update({
+            banned: false,
+            expire: expire
+        });
+    }
+
+    function activateMinutes(phone) {
+        const now = Date.now();
+        const expire = now + (60 * 1000); // 1 Minute
+        usersRef.child(phone).update({
+            banned: false,
+            expire: expire
+        });
+    }
+
+    function banUser(phone) { usersRef.child(phone).update({ banned: true }); }
+    function unbanUser(phone) { usersRef.child(phone).update({ banned: false }); }
+    function deleteUser(phone) { if (confirm("هل تريد الحذف؟")) usersRef.child(phone).remove(); }
+    
+    // ** 📣 وظيفة إرسال الرسالة/الإشعار (المطلوبة) **
+    function sendNotification() {
+        const type = notifyType.value;
+        const msg = notifyMessage.value.trim();
+        const phone = singlePhone.value.trim();
+
+        if (!msg) return alert("❌ اكتب الرسالة");
+
+        if (type === "single" && !phone)
+            return alert("❌ أدخل رقم الهاتف");
+
+        if (type === "single") {
+            // إرسال إشعار لمستخدم واحد
+            db.ref("notifications/" + phone).set({
+                message: msg,
+                time: Date.now()
+            });
+            alert("✅ تم إرسال الرسالة إلى " + phone);
+
+        } else {
+            // إرسال إشعار لجميع السائقين/الركاب
+            usersRef.once("value", snap => {
+                const data = snap.val();
+                let count = 0;
+
+                for (let p in data) {
+                    const userType = data[p].type;
+                    
+                    if ((type === "allDrivers" && userType === "driver") || 
+                        (type === "allRiders" && userType === "rider")) {
+                        
+                        db.ref("notifications/" + p).set({ 
+                            message: msg, 
+                            time: Date.now() 
+                        });
+                        count++;
+                    }
+                }
+
+                alert(`✅ تم إرسال الرسالة إلى ${count} مستخدم.`);
+            });
+        }
+
+        // مسح الحقول بعد الإرسال
+        notifyMessage.value = "";
+        singlePhone.value = "";
+    }
+    
+    // ** 🔄 وظيفة جلب وعرض المستخدمين **
+    usersRef.on("value", snap => {
+        usersTable.innerHTML = ""; // مسح الجدول
+        const users = snap.val();
+
+        if (!users) return;
+
+        // تحويل الكائن إلى مصفوفة للفرز
+        const usersArray = Object.keys(users).map(key => ({ phone: key, ...users[key] }));
+        
+        // عرض المستخدمين
+        usersArray.forEach(u => {
+            const row = usersTable.insertRow();
+            const isBanned = u.banned;
+            const expireTime = u.expire || 0;
+            const now = Date.now();
+            
+            let status = "فعال";
+            if (isBanned) {
+                status = "محظور";
+            } else if (u.type === "driver" && expireTime > 0 && expireTime < now) {
+                // حظر السائقين تلقائياً عند انتهاء الاشتراك
+                usersRef.child(u.phone).update({ banned: true });
+                status = "محظور (منتهي)";
+            } else if (u.type === "driver" && expireTime > now) {
+                status = "فعال (مشترك)";
+            }
+
+            // تنسيق تاريخ الانتهاء
+            let expire = "---";
+            if (expireTime > 0) {
+                const date = new Date(expireTime);
+                expire = date.toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' });
+            }
+
+
+            row.innerHTML = `
+                <td>${u.phone}</td>
+                <td>${u.type === "driver" ? "سائق" : "راكب"}</td>
+                <td>${status}</td>
+                <td>${expire}</td>
+                <td>
+                    <button class="days" onclick="activateDays('${u.phone}')">⏳ يوم</button>
+                    <button class="minutes" onclick="activateMinutes('${u.phone}')">⏱ دقيقة</button>
+                    <button class="ban" onclick="banUser('${u.phone}')">🚫 حظر</button>
+                    <button class="unban" onclick="unbanUser('${u.phone}')">✅ إلغاء حظر</button>
+                    <button class="del" onclick="deleteUser('${u.phone}')">🗑️ حذف</button>
+                </td>
+            `;
+        });
+    });
+</script>
+</body>
+</html>
