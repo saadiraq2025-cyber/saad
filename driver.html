@@ -282,7 +282,7 @@ let currentCoords=[33.3152,44.3661];
 const retryBtn=document.getElementById("retry");
 const expiredModal = document.getElementById('expiredModal');
 const logoutBtn = document.getElementById('logoutBtn');
-const recenterBtn = document.getElementById('recenterBtn'); // 🆕 عنصر الزر الجديد
+const recenterBtn = document.getElementById('recenterBtn'); 
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -303,22 +303,25 @@ const acceptBtn = document.getElementById("acceptRide");
 const rejectBtn = document.getElementById("rejectRide");
 
 
-// ⚙️ متغيرات عامة للرحلة
+// ⚙️ متغيرات عامة للرحلة والمستمعين
 const rideInfo=document.getElementById("rideInfo");
 const endBtn=document.getElementById("endRide");
 let routeControl=null;
 let driverStatus="available";
 let activeRideId=null;
 let currentRide=null;
-let ridesListener = null; 
+// 🆕 تم تقسيم المستمعين لضمان تشغيلهم بشكل صحيح
+let newRidesListener = null; 
+let rideChangesListener = null;
 let isInitialCheckDone = false; 
-let isRideStarted = false; // 🆕 متغير جديد لحالة بدء الرحلة
+let isRideStarted = false; 
+
 
 // 📍 دالة تحديد الموقع
-retryBtn.onclick=()=>getLocation(true); // 🆕 تحديث لاستخدام getLocation مع التركيز
-recenterBtn.onclick=()=>getLocation(true); // 🆕 ربط الزر الجديد بدالة تحديد الموقع مع التركيز
+retryBtn.onclick=()=>getLocation(true); 
+recenterBtn.onclick=()=>getLocation(true); 
 
-function getLocation(setMapCenter = false){ // 🆕 إضافة معامل لتحديد ما إذا كان يجب تركيز الخريطة
+function getLocation(setMapCenter = false){ 
   if(!navigator.geolocation){
     document.getElementById("rideInfo").innerText="⚠️ جهازك لا يدعم تحديد الموقع.";
     return;
@@ -326,7 +329,7 @@ function getLocation(setMapCenter = false){ // 🆕 إضافة معامل لتح
   document.getElementById("rideInfo").innerText="⏳ جاري تحديد موقعك...";
   navigator.geolocation.getCurrentPosition(pos=>{
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
-    updateDriverMarker(setMapCenter); // 🆕 استخدام المعامل
+    updateDriverMarker(setMapCenter); 
     retryBtn.style.display="none";
     // إظهار رسالة الحالة العادية
     document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
@@ -336,7 +339,7 @@ function getLocation(setMapCenter = false){ // 🆕 إضافة معامل لتح
     map.invalidateSize();
     loadActiveRideFromStorage(); 
     if (driverStatus !== "banned") {
-        watchForRides();
+        watchForRides(); // 🆕 سيتم استدعاؤها هنا
     }
   },err=>{
     document.getElementById("rideInfo").innerText="⚠️ الرجاء السماح بالوصول إلى الموقع.";
@@ -359,7 +362,7 @@ function updateDriverMarker(setMapCenter=false){
   }else{
     driverMarker.setLatLng(currentCoords);
   }
-  if (activeRideId || setMapCenter) { // 🆕 التركيز عند وجود رحلة نشطة أو عند طلب المستخدم
+  if (activeRideId || setMapCenter) { 
     map.panTo(currentCoords);
   }
 }
@@ -507,7 +510,7 @@ function updateRouteToEndPoint() {
     
     // تغيير واجهة المستخدم 
     isRideStarted = true;
-    localStorage.setItem('isRideStarted', 'true'); // 🆕 حفظ الحالة
+    localStorage.setItem('isRideStarted', 'true'); 
     endBtn.innerText = "إنهاء الرحلة 🛑";
     endBtn.style.background = "#e53935";
     endBtn.onclick = endRide; // ربط الزر بدالة إنهاء الرحلة
@@ -538,7 +541,7 @@ function startRide() {
 // **********************************************
 function loadActiveRideFromStorage() {
     const storedRideId = localStorage.getItem('activeRideId');
-    const storedIsStarted = localStorage.getItem('isRideStarted') === 'true'; // 🆕 استعادة حالة بدء الرحلة
+    const storedIsStarted = localStorage.getItem('isRideStarted') === 'true'; 
 
     if (!storedRideId) return;
 
@@ -548,7 +551,7 @@ function loadActiveRideFromStorage() {
             driverStatus = "busy";
             activeRideId = storedRideId;
             currentRide = ride;
-            isRideStarted = storedIsStarted; // 🆕 تطبيق الحالة المستعادة
+            isRideStarted = storedIsStarted; 
             
             initializeRideUI(ride);
 
@@ -572,13 +575,13 @@ function loadActiveRideFromStorage() {
 
         } else {
             localStorage.removeItem('activeRideId');
-            localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
+            localStorage.removeItem('isRideStarted'); 
             resetDriverState(false); 
         }
     }).catch(error => {
         console.error("Error loading active ride:", error);
         localStorage.removeItem('activeRideId');
-        localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
+        localStorage.removeItem('isRideStarted'); 
         resetDriverState(false);
     });
 }
@@ -621,8 +624,70 @@ function updateRoute(targetCoords) {
 
 
 // **********************************************
-// 🛑 منطق التحقق من انتهاء الاشتراك والحظر (مفعل عند التحميل)
+// 🆕 دالة لمعالجة طلب رحلة جديد (مفصولة عن الاستماع)
 // **********************************************
+function handleNewRideRequest(ride, id) {
+    // التأكد من عدم وجود رحلة نشطة أو حظر
+    if(activeRideId || driverStatus === "banned") return; 
+
+    stopBeep();
+    startBeep();
+    
+    // إظهار أزرار القبول/الرفض
+    toggleRideButtons(false); 
+    showRideActions(true);
+    
+    rideInfo.innerHTML=`🚖 <b>رحلة جديدة</b><br>
+    المسافة: ${ride.distance} كم<br>
+    الأجرة: ${ride.fare} د.ع<br>`;
+
+    acceptBtn.onclick=()=>{
+        db.ref("rides/"+id).once('value', currentSnap => {
+            const currentRideData = currentSnap.val();
+            
+            if (!currentRideData || currentRideData.status !== "جديدة" || driverStatus === "banned") {
+                stopBeep();
+                rideInfo.innerText="⚠️ آسف، تم قبول هذه الرحلة من قبل سائق آخر أو لم تعد متاحة.";
+                showRideActions(false);
+                return;
+            }
+
+            const acceptedRide = currentRideData; 
+            
+            stopBeep();
+            activeRideId=id;
+            currentRide=acceptedRide; 
+            driverStatus="busy"; 
+            localStorage.setItem('activeRideId', id);
+            localStorage.setItem('isRideStarted', 'false'); 
+
+            db.ref("rides/"+id).update({
+                status:"مقبولة",
+                notification:"✅ تم قبول الرحلة من قبل السائق",
+                assignedDriver:driverPhone, 
+                driverPhone:driverPhone,
+                acceptedAt:Date.now()
+            });
+            
+            initializeRideUI(acceptedRide);
+            rideInfo.innerHTML=`✅ تم قبول الرحلة<br>المسافة: ${acceptedRide.distance} كم<br>الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 توجه الآن لالتقاط الراكب.</b>`;
+        }); 
+    };
+
+    rejectBtn.onclick=()=>{
+        stopBeep();
+        db.ref("rides/"+id).update({
+            status:"مرفوضة",
+            notification:"❌ السائق رفض الرحلة"
+        });
+        showRideActions(false); 
+        rideInfo.innerText="🚕 تم رفض الرحلة — بانتظار طلب جديد.";
+    };
+}
+// ----------------------------------------
+
+
+// 🛑 منطق التحقق من انتهاء الاشتراك والحظر (مفعل عند التحميل)
 const driverDataRef = db.ref(`users/${driverPhone}`);
 driverDataRef.on('value', snapshot => {
     const userData = snapshot.val();
@@ -660,111 +725,75 @@ driverDataRef.on('value', snapshot => {
         document.getElementById('panel').style.opacity = '1';
         driverStatus = activeRideId ? "busy" : "available";
         
-        if (!ridesListener) {
+        // 🆕 بدء مراقبة التغييرات والرحلات الجديدة
+        if (!isInitialCheckDone) {
+            monitorRideChanges(); 
+        }
+        if (!newRidesListener) {
             watchForRides();
         }
     }
     
     // 3. بدء عملية تحديد الموقع بعد أول تحديث لبيانات السائق
     if (!isInitialCheckDone) {
-        getLocation(true); // 🆕 التأكد من التركيز على الخريطة عند التحميل الأولي
+        getLocation(true); 
         isInitialCheckDone = true;
     }
 });
 
 
-// 🟢 مراقبة الطلبات
+// 🟢 مراقبة الطلبات الجديدة (الرحلات بحالة "جديدة")
 function watchForRides(){
-    if (ridesListener) return;
+    if (newRidesListener) return;
 
-    ridesListener = db.ref("rides").on("child_added",snap=>{
-        const ride=snap.val();const id=snap.key;
-        if(activeRideId)return; 
+    // 🔑 هذا الاستعلام يضمن جلب الرحلات الموجودة مُسبقاً والرحلات التي تأتي لاحقاً
+    let newRidesQueryRef = db.ref("rides").orderByChild("status").equalTo("جديدة");
 
-        if(ride.status==="جديدة" && driverStatus !== "banned"){
-          stopBeep();
-          startBeep();
-          
-          // إخفاء أزرار الرحلة النشطة وإظهار أزرار القبول/الرفض
-          toggleRideButtons(false); 
-          showRideActions(true);
-          
-          rideInfo.innerHTML=`🚖 <b>رحلة جديدة</b><br>
-          المسافة: ${ride.distance} كم<br>
-          الأجرة: ${ride.fare} د.ع<br>`;
-
-          acceptBtn.onclick=()=>{
-            db.ref("rides/"+id).once('value', currentSnap => {
-                const currentRideData = currentSnap.val();
-                
-                if (!currentRideData || currentRideData.status !== "جديدة" || driverStatus === "banned") {
-                    stopBeep();
-                    rideInfo.innerText="⚠️ آسف، تم قبول هذه الرحلة من قبل سائق آخر أو لم تعد متاحة.";
-                      showRideActions(false);
-                    return;
-                }
-
-                const acceptedRide = currentRideData; 
-                
-                stopBeep();
-                activeRideId=id;
-                currentRide=acceptedRide; 
-                driverStatus="busy"; 
-                localStorage.setItem('activeRideId', id);
-                localStorage.setItem('isRideStarted', 'false'); // 🆕 تعيين حالة بدء الرحلة
-
-                db.ref("rides/"+id).update({
-                  status:"مقبولة",
-                  notification:"✅ تم قبول الرحلة من قبل السائق",
-                  assignedDriver:driverPhone, 
-                  driverPhone:driverPhone,
-                  acceptedAt:Date.now()
-                });
-                
-                initializeRideUI(acceptedRide);
-                // ⚠️ هنا يتم استدعاء initializeRideUI التي بدورها ترسم المسار إلى نقطة التقاط الراكب (rideData.start)
-                rideInfo.innerHTML=`✅ تم قبول الرحلة<br>المسافة: ${acceptedRide.distance} كم<br>الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 توجه الآن لالتقاط الراكب.</b>`;
-            }); 
-          };
-
-          rejectBtn.onclick=()=>{
-            stopBeep();
-            db.ref("rides/"+id).update({
-              status:"مرفوضة",
-              notification:"❌ السائق رفض الرحلة"
-            });
-              showRideActions(false); 
-            rideInfo.innerText="🚕 تم رفض الرحلة — بانتظار طلب جديد.";
-          };
-        }
-      });
-
-    db.ref("rides").on("child_changed", snap => {
-          const ride = snap.val();
-          const id = snap.key;
-          
-          if (ride.status === "مقبولة" && id !== activeRideId) {
-              
-              if (rideActionsDiv.style.display === "flex") { 
-                  stopBeep();
-                  rideInfo.innerHTML = "⚠️ **تم قبول الرحلة** من قبل سائق آخر. بانتظار طلب جديد...";
-                  showRideActions(false);
-              }
-          }
-          
-          if (id === activeRideId && ride.status === "ملغاة من الراكب") {
-              alert("❌ انتباه: الراكب ألغى الرحلة!");
-              resetDriverState(true);
-              rideInfo.innerText="❌ الراكب ألغى الرحلة. بانتظار طلب جديد...";
-          }
-      });
-
+    newRidesListener = newRidesQueryRef.on("child_added", snap=>{
+        const ride=snap.val();
+        const id=snap.key;
+        
+        // معالجة الطلب الجديد الموجود أو القادم
+        handleNewRideRequest(ride, id);
+    });
 }
 
-// دالة لإيقاف مراقبة الرحلات
+// 🔄 مراقبة تغييرات الرحلة (إلغاء أو قبول من سائق آخر)
+function monitorRideChanges() {
+    if (rideChangesListener) return;
+
+    // هذا المستمع يراقب التغييرات على جميع الرحلات
+    rideChangesListener = db.ref("rides").on("child_changed", snap => {
+        const ride = snap.val();
+        const id = snap.key;
+        
+        // 1. حالة قبول الرحلة من سائق آخر
+        if (ride.status === "مقبولة" && id !== activeRideId) {
+            
+            // إخفاء الأزرار إذا كانت ظاهرة لأن الرحلة لم تعد متاحة
+            if (rideActionsDiv.style.display === "flex") { 
+                stopBeep();
+                rideInfo.innerHTML = "⚠️ **تم قبول الرحلة** من قبل سائق آخر. بانتظار طلب جديد...";
+                showRideActions(false);
+            }
+        }
+        
+        // 2. حالة إلغاء الرحلة من الراكب
+        if (id === activeRideId && ride.status === "ملغاة من الراكب") {
+            alert("❌ انتباه: الراكب ألغى الرحلة!");
+            resetDriverState(true);
+            rideInfo.innerText="❌ الراكب ألغى الرحلة. بانتظار طلب جديد...";
+        }
+    });
+}
+
+
+// دالة لإيقاف مراقبة الرحلات الجديدة فقط
 function stopWatchForRides() {
-    db.ref("rides").off(); 
-    ridesListener = null;
+    if (newRidesListener) {
+        db.ref("rides").orderByChild("status").equalTo("جديدة").off("child_added", newRidesListener);
+        newRidesListener = null;
+    }
 }
 // ----------------------------------------------------
 
@@ -791,7 +820,7 @@ logoutBtn.onclick = () => {
     localStorage.removeItem('phone');
     localStorage.removeItem('userType');
     localStorage.removeItem('activeRideId');
-    localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
+    localStorage.removeItem('isRideStarted'); 
     
     // 2. مسح الموقع من Firebase
     db.ref(`availableDrivers/${driverPhone}`).remove();
@@ -812,8 +841,8 @@ function resetDriverState(clearLocationInFirebase) {
   chatRef = null;
   
   localStorage.removeItem('activeRideId');
-  localStorage.removeItem('isRideStarted'); // 🆕 مسح الحالة
-  isRideStarted = false; // 🆕 إعادة تعيين الحالة
+  localStorage.removeItem('isRideStarted'); 
+  isRideStarted = false; 
   
   if (clearLocationInFirebase) {
       db.ref(`driverLocations/${driverPhone}`).remove();
@@ -824,7 +853,7 @@ function resetDriverState(clearLocationInFirebase) {
   activeRideId=null;
   currentRide=null;
   
-  if (driverStatus !== "banned" && !ridesListener) {
+  if (driverStatus !== "banned" && !newRidesListener) {
       watchForRides(); 
       rideInfo.innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
   }
