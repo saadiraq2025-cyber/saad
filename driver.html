@@ -174,10 +174,35 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 #expiredModal p { margin: 10px 0; font-size: 16px; }
 #expiredModal .zain-cash-number { font-size: 24px; color: #00bcd4; font-weight: bold; direction: ltr; display: block; background: #eee; padding: 5px; border-radius: 5px; }
 
+/* 📍 تنسيق زر تحديد الموقع على الخريطة */
+#recenterBtn {
+    position: absolute;
+    top: 10px; /* المسافة من الأعلى */
+    right: 10px; /* المسافة من اليمين (لأن الاتجاه RTL) */
+    z-index: 500; /* ليكون فوق الخريطة */
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    cursor: pointer;
+    line-height: 38px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #2e7d32;
+    padding: 0;
+}
+#recenterBtn:hover {
+    background-color: #f4f4f4;
+}
 </style>
 </head>
 <body>
-<div id="map"></div>
+<div id="map">
+    <button id="recenterBtn" title="تحديد موقعي">📍</button>
+</div>
 <div id="panel">
   <div id="driverPanelContent">
     <h3>🚖 لوحة السائق</h3>
@@ -257,6 +282,7 @@ let currentCoords=[33.3152,44.3661];
 const retryBtn=document.getElementById("retry");
 const expiredModal = document.getElementById('expiredModal');
 const logoutBtn = document.getElementById('logoutBtn');
+const recenterBtn = document.getElementById('recenterBtn'); // 🆕 عنصر الزر الجديد
 
 // 💬 عناصر الشات
 const chatBox = document.getElementById('chatBox');
@@ -289,8 +315,10 @@ let isInitialCheckDone = false;
 let isRideStarted = false; // 🆕 متغير جديد لحالة بدء الرحلة
 
 // 📍 دالة تحديد الموقع
-retryBtn.onclick=()=>getLocation();
-function getLocation(){
+retryBtn.onclick=()=>getLocation(true); // 🆕 تحديث لاستخدام getLocation مع التركيز
+recenterBtn.onclick=()=>getLocation(true); // 🆕 ربط الزر الجديد بدالة تحديد الموقع مع التركيز
+
+function getLocation(setMapCenter = false){ // 🆕 إضافة معامل لتحديد ما إذا كان يجب تركيز الخريطة
   if(!navigator.geolocation){
     document.getElementById("rideInfo").innerText="⚠️ جهازك لا يدعم تحديد الموقع.";
     return;
@@ -298,7 +326,7 @@ function getLocation(){
   document.getElementById("rideInfo").innerText="⏳ جاري تحديد موقعك...";
   navigator.geolocation.getCurrentPosition(pos=>{
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
-    updateDriverMarker(true); 
+    updateDriverMarker(setMapCenter); // 🆕 استخدام المعامل
     retryBtn.style.display="none";
     // إظهار رسالة الحالة العادية
     document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
@@ -331,7 +359,7 @@ function updateDriverMarker(setMapCenter=false){
   }else{
     driverMarker.setLatLng(currentCoords);
   }
-  if (activeRideId) {
+  if (activeRideId || setMapCenter) { // 🆕 التركيز عند وجود رحلة نشطة أو عند طلب المستخدم
     map.panTo(currentCoords);
   }
 }
@@ -639,7 +667,7 @@ driverDataRef.on('value', snapshot => {
     
     // 3. بدء عملية تحديد الموقع بعد أول تحديث لبيانات السائق
     if (!isInitialCheckDone) {
-        getLocation(); 
+        getLocation(true); // 🆕 التأكد من التركيز على الخريطة عند التحميل الأولي
         isInitialCheckDone = true;
     }
 });
