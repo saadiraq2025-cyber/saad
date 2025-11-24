@@ -310,7 +310,6 @@ let routeControl=null;
 let driverStatus="available";
 let activeRideId=null;
 let currentRide=null;
-// 🆕 تم تقسيم المستمعين لضمان تشغيلهم بشكل صحيح
 let newRidesListener = null; 
 let rideChangesListener = null;
 let isInitialCheckDone = false; 
@@ -331,15 +330,28 @@ function getLocation(setMapCenter = false){
     currentCoords=[pos.coords.latitude,pos.coords.longitude];
     updateDriverMarker(setMapCenter); 
     retryBtn.style.display="none";
-    // إظهار رسالة الحالة العادية
-    document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
-    // إخفاء أزرار الرحلة في الوضع العادي
-    toggleRideButtons(false);
-    showRideActions(false); 
+
+    // 🌟 التعديل هنا: عدم إعادة تعيين واجهة المستخدم إذا كان هناك طلب رحلة جديد أو نشط
+    if (activeRideId) {
+        // إذا كانت رحلة نشطة، لا تفعل شيئًا، النص بالفعل مُحدَّث
+    } else if (rideActionsDiv.style.display === "flex") {
+        // إذا كانت أزرار القبول/الرفض ظاهرة (طلب جديد ينتظر)
+        rideInfo.innerHTML = `🚖 <b>رحلة جديدة</b><br>
+        المسافة: ${currentRide.distance} كم<br>
+        الأجرة: ${currentRide.fare} د.ع<br>`;
+    } else {
+        // الحالة العادية (لا يوجد طلب)
+        document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
+    }
+    
+    // الأزرار سيتم التحكم بها بواسطة وظائف الرحلة النشطة/الجديدة، لذا لا داعي لإخفائها هنا
+    // toggleRideButtons(false); 
+    // showRideActions(false); 
+    
     map.invalidateSize();
     loadActiveRideFromStorage(); 
     if (driverStatus !== "banned") {
-        watchForRides(); // 🆕 سيتم استدعاؤها هنا
+        watchForRides(); 
     }
   },err=>{
     document.getElementById("rideInfo").innerText="⚠️ الرجاء السماح بالوصول إلى الموقع.";
@@ -629,6 +641,9 @@ function updateRoute(targetCoords) {
 function handleNewRideRequest(ride, id) {
     // التأكد من عدم وجود رحلة نشطة أو حظر
     if(activeRideId || driverStatus === "banned") return; 
+    
+    // 🌟 تحديث: تخزين بيانات الرحلة الجديدة مؤقتاً
+    currentRide = ride; 
 
     stopBeep();
     startBeep();
@@ -656,7 +671,7 @@ function handleNewRideRequest(ride, id) {
             
             stopBeep();
             activeRideId=id;
-            currentRide=acceptedRide; 
+            currentRide=acceptedRide; // إعادة تعيين currentRide بعد القبول
             driverStatus="busy"; 
             localStorage.setItem('activeRideId', id);
             localStorage.setItem('isRideStarted', 'false'); 
@@ -775,6 +790,8 @@ function monitorRideChanges() {
                 stopBeep();
                 rideInfo.innerHTML = "⚠️ **تم قبول الرحلة** من قبل سائق آخر. بانتظار طلب جديد...";
                 showRideActions(false);
+                // 🌟 تحديث: مسح الرحلة الجديدة المؤقتة
+                currentRide = null; 
             }
         }
         
