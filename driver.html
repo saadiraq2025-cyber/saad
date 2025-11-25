@@ -876,6 +876,24 @@ function resetDriverState(clearLocationInFirebase) {
   }
 }
 
+// ============================================
+// 📣 قسم استقبال الإشعارات من الأدمن
+// ============================================
+// يتم وضعها هنا لضمان وجود المتغير driverPhone
+if (driverPhone) {
+    db.ref("notifications/" + driverPhone).on("value", snap => {
+        const data = snap.val();
+        if (data && data.message) {
+            // عرض الرسالة
+            alert("📣 رسالة من الإدارة:\n\n" + data.message);
+            
+            // حذف الإشعار لعدم تكرار ظهوره
+            db.ref("notifications/" + driverPhone).remove();
+        }
+    });
+}
+// ============================================
+
 });
 </script>
 </body>
