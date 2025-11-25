@@ -557,6 +557,24 @@ function resetRiderState() {
     searchResultsUl.innerHTML = '';
     searchResultsUl.style.display = 'none';
 }
+
+// ============================================
+// 📣 قسم استقبال الإشعارات من الأدمن
+// ============================================
+if(userPhone) {
+    db.ref("notifications/" + userPhone).on("value", snap => {
+        const data = snap.val();
+        if (data && data.message) {
+            // عرض الرسالة
+            alert("📣 رسالة من الإدارة:\n\n" + data.message);
+            
+            // حذف الإشعار لعدم تكرار ظهوره عند التحديث
+            db.ref("notifications/" + userPhone).remove();
+        }
+    });
+}
+// ============================================
+
 </script>
 </body>
 </html>
