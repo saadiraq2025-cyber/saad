@@ -561,6 +561,7 @@ function resetRiderState() {
 // ============================================
 // 📣 قسم استقبال الإشعارات من الأدمن
 // ============================================
+// التأكد من أن db و userPhone تم تعريفهما في الأعلى
 if(userPhone) {
     db.ref("notifications/" + userPhone).on("value", snap => {
         const data = snap.val();
