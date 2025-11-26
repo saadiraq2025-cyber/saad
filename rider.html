@@ -196,6 +196,10 @@ let startCoords=null,endCoords=null;
 let startMarker=null,endMarker=null;
 let rideId=null;
 
+// ** 🎯 متغير جديد لتخزين اسم نقطة النهاية **
+let endLocationName = null;
+// ------------------------------------------
+
 // ** 🆕 متغيرات متابعة السائق (تعديل جديد) **
 let driverMarker = null; // علامة موقع السائق
 let driverLocationRef = null; // مرجع Firebase لموقع السائق
@@ -263,13 +267,16 @@ function selectSearchResult(lat, lng, name) {
     // 1. إخفاء وإفراغ قائمة النتائج
     searchResultsUl.innerHTML = '';
     searchResultsUl.style.display = 'none';
-    searchInput.value = name.split(',').slice(0, 3).reverse().join(', '); // تحديث حقل البحث
+    
+    // 🎯 حفظ اسم الموقع كنقطة نهاية (للعرض على لوحة السائق)
+    endLocationName = name.split(',').slice(0, 3).reverse().join(', '); 
+    searchInput.value = endLocationName; // تحديث حقل البحث
 
     // 2. تحديث نقطة النهاية على الخريطة
     const latlng = L.latLng(parseFloat(lat), parseFloat(lng));
     if(endMarker){map.removeLayer(endMarker);}
     endCoords = [latlng.lat, latlng.lng];
-    endMarker = L.marker(endCoords).addTo(map).bindPopup(`🏁 نقطة النهاية: ${name}`).openPopup();
+    endMarker = L.marker(endCoords).addTo(map).bindPopup(`🏁 نقطة النهاية: ${endLocationName}`).openPopup();
     map.setView(endCoords, 15); // نقل عرض الخريطة إلى النقطة المحددة
 
     // 3. تحديث حالة الـ panel
@@ -338,6 +345,9 @@ map.on('click',function(e){
   endCoords=[e.latlng.lat,e.latlng.lng];
   endMarker=L.marker(endCoords).addTo(map).bindPopup("🏁 نقطة النهاية").openPopup();
   
+  // 🎯 تحديد اسم نقطة النهاية الافتراضي عند النقر على الخريطة
+  endLocationName = `نقطة على الخريطة (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`;
+
   // **التعديل:** تمكين الزر فقط إذا لم يكن هناك رقم رحلة نشط 
   if (!rideId) { 
     document.getElementById("status").innerText="تم تحديد نقطة الوصول بالنقر على الخريطة. يمكنك الآن إرسال الطلب."; // ⬅️ تعديل بسيط في النص
@@ -375,7 +385,9 @@ sendBtn.onclick=function(){
     end:endCoords,
     distance:distance,
     fare:fare,
-    status:"جديدة"
+    status:"جديدة",
+    // 🎯 إضافة اسم نقطة النهاية ليعرض للسائق
+    endLocationName: endLocationName || "نقطة غير مسماة"
   }).then(()=>{
     document.getElementById("status").innerHTML=
       `✅ تم إرسال الطلب<br>المسافة: <b>${distance}</b> كم — الأجرة: <b>${fare}</b> د.ع<br>بإنتظار السائق...`;
@@ -551,6 +563,8 @@ function resetRiderState() {
     localStorage.removeItem('activeRideId');
 
     rideId = null; 
+    // 🎯 إعادة تعيين اسم نقطة النهاية
+    endLocationName = null;
     
     // تنظيف واجهة البحث
     searchInput.value = '';
