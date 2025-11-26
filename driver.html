@@ -334,11 +334,12 @@ function getLocation(setMapCenter = false){
     // 🌟 التعديل هنا: عدم إعادة تعيين واجهة المستخدم إذا كان هناك طلب رحلة جديد أو نشط
     if (activeRideId) {
         // إذا كانت رحلة نشطة، لا تفعل شيئًا، النص بالفعل مُحدَّث
-    } else if (rideActionsDiv.style.display === "flex") {
-        // إذا كانت أزرار القبول/الرفض ظاهرة (طلب جديد ينتظر)
+    } else if (rideActionsDiv.style.display === "flex" && currentRide) {
+        // 🆕 عرض أسماء المناطق للطلب الجديد المعلق
         rideInfo.innerHTML = `🚖 <b>رحلة جديدة</b><br>
-        المسافة: ${currentRide.distance} كم<br>
-        الأجرة: ${currentRide.fare} د.ع<br>`;
+        من: <b>${currentRide.startArea || 'غير محدد'}</b><br>
+        إلى: <b>${currentRide.endArea || 'غير محدد'}</b><br>
+        المسافة: ${currentRide.distance} كم — الأجرة: ${currentRide.fare} د.ع`;
     } else {
         // الحالة العادية (لا يوجد طلب)
         document.getElementById("rideInfo").innerText="✅ تم تحديد موقعك بنجاح — بانتظار الرحلات...";
@@ -527,7 +528,8 @@ function updateRouteToEndPoint() {
     endBtn.style.background = "#e53935";
     endBtn.onclick = endRide; // ربط الزر بدالة إنهاء الرحلة
     
-    rideInfo.innerHTML = `✅ تم **بدء الرحلة** - وجهتك النهائية ظاهرة على الخريطة.<br>
+    // 🆕 عرض اسم منطقة الوصول في واجهة المستخدم
+    rideInfo.innerHTML = `✅ تم **بدء الرحلة** - وجهتك النهائية: <b>${currentRide.endArea || 'غير محدد'}</b> ظاهرة على الخريطة.<br>
     المسافة: ${currentRide.distance} كم<br>الأجرة: ${currentRide.fare} د.ع<br><b>👋 عند الوصول، اضغط "إنهاء الرحلة"</b>`;
     
     // إرسال إشعار للراكب (اختياري)
@@ -578,8 +580,15 @@ function loadActiveRideFromStorage() {
                 updateRoute(ride.start);
             }
 
+            // 🆕 عرض أسماء المناطق عند استعادة الرحلة
+            const startName = ride.startArea || 'غير محدد';
+            const endName = ride.endArea || 'غير محدد';
+            const actionText = isRideStarted ? `واصل نحو الوجهة النهائية: ${endName}` : `توجه نحو الراكب في: ${startName}`;
 
-            rideInfo.innerHTML = `✅ تم استعادة الرحلة (ID: ${storedRideId})<br>المسافة: ${ride.distance} كم<br>الأجرة: ${ride.fare} د.ع<br><b>${isRideStarted ? 'واصل نحو الوجهة النهائية' : 'توجه نحو الراكب'}</b>`;
+            rideInfo.innerHTML = `✅ تم استعادة الرحلة (ID: ${storedRideId})<br>
+            من: <b>${startName}</b><br>
+            إلى: <b>${endName}</b><br>
+            المسافة: ${ride.distance} كم — الأجرة: ${ride.fare} د.ع<br><b>${actionText}</b>`;
             
             // ربط زر "بدء الرحلة" / "إنهاء الرحلة" بالدالة الصحيحة
             endBtn.onclick = isRideStarted ? endRide : startRide;
@@ -652,9 +661,14 @@ function handleNewRideRequest(ride, id) {
     toggleRideButtons(false); 
     showRideActions(true);
     
+    // 🆕 عرض أسماء المناطق
+    const startName = ride.startArea || 'غير محدد';
+    const endName = ride.endArea || 'غير محدد';
+    
     rideInfo.innerHTML=`🚖 <b>رحلة جديدة</b><br>
-    المسافة: ${ride.distance} كم<br>
-    الأجرة: ${ride.fare} د.ع<br>`;
+    من: <b>${startName}</b><br>
+    إلى: <b>${endName}</b><br>
+    المسافة: ${ride.distance} كم — الأجرة: ${ride.fare} د.ع`;
 
     acceptBtn.onclick=()=>{
         db.ref("rides/"+id).once('value', currentSnap => {
@@ -685,7 +699,14 @@ function handleNewRideRequest(ride, id) {
             });
             
             initializeRideUI(acceptedRide);
-            rideInfo.innerHTML=`✅ تم قبول الرحلة<br>المسافة: ${acceptedRide.distance} كم<br>الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 توجه الآن لالتقاط الراكب.</b>`;
+            // 🆕 عرض أسماء المناطق عند القبول
+            const acceptedStartName = acceptedRide.startArea || 'غير محدد';
+            const acceptedEndName = acceptedRide.endArea || 'غير محدد';
+            
+            rideInfo.innerHTML=`✅ تم قبول الرحلة<br>
+            من: <b>${acceptedStartName}</b><br>
+            إلى: <b>${acceptedEndName}</b><br>
+            المسافة: ${acceptedRide.distance} كم — الأجرة: ${acceptedRide.fare} د.ع<br><b>🚗 توجه الآن لالتقاط الراكب.</b>`;
         }); 
     };
 
