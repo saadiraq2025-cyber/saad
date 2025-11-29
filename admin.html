@@ -44,10 +44,14 @@ textarea { width:100%; height:90px; padding:10px; border:1px solid #ccc; border-
     <button onclick="sendNotification()">إرسال الرسالة</button>
 </div>
 
+<!-- 🟨 مربع البحث الجديد -->
+<input type="text" id="searchBox" placeholder="🔍 ابحث عن رقم الهاتف..." 
+onkeyup="searchUsers()" 
+style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radius:6px;">
+
 <div id="form">
     <h3>إدارة اشتراكات المستخدمين</h3>
-    </div>
-
+</div>
 
 <table>
     <thead>
@@ -59,8 +63,7 @@ textarea { width:100%; height:90px; padding:10px; border:1px solid #ccc; border-
             <th>الإجراءات</th>
         </tr>
     </thead>
-    <tbody id="usersTable">
-        </tbody>
+    <tbody id="usersTable"></tbody>
 </table>
 
 <script>
@@ -75,127 +78,107 @@ textarea { width:100%; height:90px; padding:10px; border:1px solid #ccc; border-
     var db = firebase.database();
     var usersRef = db.ref("users");
     
-    // ** العناصر للوصول السريع **
-    const usersTable = document.getElementById("usersTable");
-    const notifyType = document.getElementById("notifyType");
-    const singlePhone = document.getElementById("singlePhone");
-    const notifyMessage = document.getElementById("notifyMessage");
-
-    // ** 🛠️ وظائف إدارة المستخدمين **
+    // ** 🛠️ وظائف تفعيل الاشتراكات **
     function activateDays(phone) {
         const now = Date.now();
-        const expire = now + (24 * 60 * 60 * 1000); // 1 Day
-        usersRef.child(phone).update({
-            banned: false,
-            expire: expire
-        });
+        const expire = now + (24*60*60*1000);
+        usersRef.child(phone).update({ banned:false, expire:expire });
     }
 
     function activateMinutes(phone) {
         const now = Date.now();
-        const expire = now + (60 * 1000); // 1 Minute
-        usersRef.child(phone).update({
-            banned: false,
-            expire: expire
+        const expire = now + (60*1000);
+        usersRef.child(phone).update({ banned:false, expire:expire });
+    }
+
+    // ✔ وظيفة التفعيل الشهري الجديد
+    function activateMonth(phone) {
+        const now = Date.now();
+        const expire = now + (30 * 24 * 60 * 60 * 1000); 
+        usersRef.child(phone).update({ banned:false, expire:expire });
+    }
+
+    function banUser(phone) { usersRef.child(phone).update({ banned:true }); }
+    function unbanUser(phone) { usersRef.child(phone).update({ banned:false }); }
+    function deleteUser(phone) { if(confirm("هل تريد الحذف؟")) usersRef.child(phone).remove(); }
+
+    // ** 🟨 البحث الجديد **
+    function searchUsers() {
+        let value = document.getElementById("searchBox").value.trim();
+        let rows = document.querySelectorAll("#usersTable tr");
+        rows.forEach(r => {
+            let phone = r.children[0].innerText;
+            r.style.display = phone.includes(value) ? "" : "none";
         });
     }
 
-    function banUser(phone) { usersRef.child(phone).update({ banned: true }); }
-    function unbanUser(phone) { usersRef.child(phone).update({ banned: false }); }
-    function deleteUser(phone) { if (confirm("هل تريد الحذف؟")) usersRef.child(phone).remove(); }
-    
-    // ** 📣 وظيفة إرسال الرسالة/الإشعار (المطلوبة) **
+    // ** 📣 إرسال الإشعار **
     function sendNotification() {
         const type = notifyType.value;
         const msg = notifyMessage.value.trim();
         const phone = singlePhone.value.trim();
-
         if (!msg) return alert("❌ اكتب الرسالة");
 
-        if (type === "single" && !phone)
-            return alert("❌ أدخل رقم الهاتف");
+        if (type === "single" && !phone) return alert("❌ أدخل رقم الهاتف");
 
         if (type === "single") {
-            // إرسال إشعار لمستخدم واحد
-            db.ref("notifications/" + phone).set({
-                message: msg,
-                time: Date.now()
-            });
-            alert("✅ تم إرسال الرسالة إلى " + phone);
-
+            db.ref("notifications/" + phone).set({ message:msg, time:Date.now() });
+            alert("تم الإرسال");
         } else {
-            // إرسال إشعار لجميع السائقين/الركاب
             usersRef.once("value", snap => {
-                const data = snap.val();
-                let count = 0;
-
+                const data = snap.val(); let count = 0;
                 for (let p in data) {
-                    const userType = data[p].type;
-                    
-                    if ((type === "allDrivers" && userType === "driver") || 
-                        (type === "allRiders" && userType === "rider")) {
-                        
-                        db.ref("notifications/" + p).set({ 
-                            message: msg, 
-                            time: Date.now() 
-                        });
+                    if ((type==="allDrivers" && data[p].type==="driver") ||
+                        (type==="allRiders" && data[p].type==="rider")) {
+
+                        db.ref("notifications/"+p).set({ message:msg, time:Date.now() });
                         count++;
                     }
                 }
-
-                alert(`✅ تم إرسال الرسالة إلى ${count} مستخدم.`);
+                alert("تم الإرسال إلى "+count);
             });
         }
-
-        // مسح الحقول بعد الإرسال
         notifyMessage.value = "";
         singlePhone.value = "";
     }
-    
-    // ** 🔄 وظيفة جلب وعرض المستخدمين **
-    usersRef.on("value", snap => {
-        usersTable.innerHTML = ""; // مسح الجدول
-        const users = snap.val();
 
+    // ** عرض المستخدمين **
+    usersRef.on("value", snap => {
+        usersTable.innerHTML = "";
+        const users = snap.val();
         if (!users) return;
 
-        // تحويل الكائن إلى مصفوفة للفرز
-        const usersArray = Object.keys(users).map(key => ({ phone: key, ...users[key] }));
-        
-        // عرض المستخدمين
-        usersArray.forEach(u => {
+        Object.keys(users).forEach(p => {
+            let u = users[p];
             const row = usersTable.insertRow();
             const isBanned = u.banned;
             const expireTime = u.expire || 0;
             const now = Date.now();
             
             let status = "فعال";
-            if (isBanned) {
-                status = "محظور";
-            } else if (u.type === "driver" && expireTime > 0 && expireTime < now) {
-                // حظر السائقين تلقائياً عند انتهاء الاشتراك
-                usersRef.child(u.phone).update({ banned: true });
+            if (isBanned) status = "محظور";
+            else if (u.type==="driver" && expireTime > 0 && expireTime < now) {
+                usersRef.child(u.phone).update({ banned:true });
                 status = "محظور (منتهي)";
-            } else if (u.type === "driver" && expireTime > now) {
+            } else if (u.type==="driver" && expireTime > now) {
                 status = "فعال (مشترك)";
             }
 
-            // تنسيق تاريخ الانتهاء
             let expire = "---";
             if (expireTime > 0) {
                 const date = new Date(expireTime);
-                expire = date.toLocaleString('ar-IQ', { dateStyle: 'short', timeStyle: 'short' });
+                expire = date.toLocaleString('ar-IQ',{dateStyle:'short', timeStyle:'short'});
             }
-
 
             row.innerHTML = `
                 <td>${u.phone}</td>
-                <td>${u.type === "driver" ? "سائق" : "راكب"}</td>
+                <td>${u.type==="driver" ? "سائق" : "راكب"}</td>
                 <td>${status}</td>
                 <td>${expire}</td>
                 <td>
                     <button class="days" onclick="activateDays('${u.phone}')">⏳ يوم</button>
                     <button class="minutes" onclick="activateMinutes('${u.phone}')">⏱ دقيقة</button>
+                    <button class="days" onclick="activateMonth('${u.phone}')">📅 شهر</button>
                     <button class="ban" onclick="banUser('${u.phone}')">🚫 حظر</button>
                     <button class="unban" onclick="unbanUser('${u.phone}')">✅ إلغاء حظر</button>
                     <button class="del" onclick="deleteUser('${u.phone}')">🗑️ حذف</button>
