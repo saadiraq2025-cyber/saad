@@ -38,6 +38,13 @@ window.onload = function () {
 <style>
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
 #map{height:60vh;}
+/* تم إضافة تنسيقات لتوسيط لوحة الدردشة إذا كانت خارج الـ panel */
+#chatBoxContainer {
+    padding: 10px; 
+    background: #f8f8f8; /* خلفية خفيفة */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
 #panel{background:#fff;text-align:center;padding:10px;box-shadow:0 -2px 5px rgba(0,0,0,0.2);}
 button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer; margin: 5px;}
 
@@ -84,13 +91,14 @@ button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-w
 #chatBox {
     border: 1px solid #ccc;
     border-radius: 8px;
-    margin-top: 15px;
+    margin-top: 5px; /* تم تقليل الهامش ليتناسب مع الموقع الجديد */
     padding: 10px;
     text-align: right;
+    background: #fff; /* خلفية بيضاء داخل الحاوية */
     display: none; /* إخفاء الشات افتراضياً */
 }
 #messages {
-    height: 60px; /* حجم 2x2 */
+    height: 80px; /* تم زيادة حجم الشات ليظهر بشكل أفضل */
     overflow-y: auto;
     margin-bottom: 10px;
     padding: 5px;
@@ -131,6 +139,15 @@ button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-w
 </head>
 <body>
 <div id="map"></div>
+
+<div id="chatBoxContainer">
+    <div id="chatBox">
+        <h4>💬 الدردشة مع السائق</h4>
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
+        <button id="sendMsgBtn">إرسال</button>
+    </div>
+</div>
 <div id="panel">
   <h3>🚖 طلب رحلة جديدة</h3>
   
@@ -140,12 +157,6 @@ button{background:#ffca28;border:none;padding:10px 20px;border-radius:8px;font-w
   </div>
   <p id="status">يتم تحديد موقعك الحالي الآن...</p>
   
-  <div id="chatBox">
-      <h4>💬 الدردشة مع السائق</h4>
-      <div id="messages"></div>
-      <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
-      <button id="sendMsgBtn">إرسال</button>
-  </div>
   <button id="sendRide" disabled>إرسال الطلب</button>
   <button id="cancelRideBtn" style="display:none; background:#E53935; color:white;">❌ إنهاء/إلغاء الرحلة</button>
   
