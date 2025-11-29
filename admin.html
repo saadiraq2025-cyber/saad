@@ -44,10 +44,23 @@ textarea { width:100%; height:90px; padding:10px; border:1px solid #ccc; border-
     <button onclick="sendNotification()">إرسال الرسالة</button>
 </div>
 
-<!-- 🟨 مربع البحث الجديد -->
+<!-- 🟨 مربع البحث -->
 <input type="text" id="searchBox" placeholder="🔍 ابحث عن رقم الهاتف..." 
 onkeyup="searchUsers()" 
 style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radius:6px;">
+
+<!-- 🟦 مربع عدد السواق والركاب -->
+<div id="countBox" style="
+background:white;
+padding:12px;
+margin-top:15px;
+border-radius:8px;
+box-shadow:0 2px 5px #0001;
+font-weight:bold;
+text-align:center;
+color:#2e7d32;">
+🚖 عدد السائقين: <span id="driversCount">0</span> — 🧍 عدد الركاب: <span id="ridersCount">0</span>
+</div>
 
 <div id="form">
     <h3>إدارة اشتراكات المستخدمين</h3>
@@ -67,7 +80,7 @@ style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radi
 </table>
 
 <script>
-    // ** Firebase Init **
+    // Firebase Init
     var firebaseConfig = {
         apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
         authDomain: "taxi-15314.firebaseapp.com",
@@ -77,8 +90,21 @@ style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radi
     firebase.initializeApp(firebaseConfig);
     var db = firebase.database();
     var usersRef = db.ref("users");
-    
-    // ** 🛠️ وظائف تفعيل الاشتراكات **
+
+    // 🔷 حساب عدد السائقين والركاب
+    function updateCounts(users) {
+        let drivers = 0, riders = 0;
+
+        Object.keys(users).forEach(p => {
+            if (users[p].type === "driver") drivers++;
+            if (users[p].type === "rider") riders++;
+        });
+
+        document.getElementById("driversCount").innerText = drivers;
+        document.getElementById("ridersCount").innerText = riders;
+    }
+
+    // اشتراكات
     function activateDays(phone) {
         const now = Date.now();
         const expire = now + (24*60*60*1000);
@@ -91,10 +117,9 @@ style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radi
         usersRef.child(phone).update({ banned:false, expire:expire });
     }
 
-    // ✔ وظيفة التفعيل الشهري الجديد
     function activateMonth(phone) {
         const now = Date.now();
-        const expire = now + (30 * 24 * 60 * 60 * 1000); 
+        const expire = now + (30 * 24 * 60 * 60 * 1000);
         usersRef.child(phone).update({ banned:false, expire:expire });
     }
 
@@ -102,7 +127,7 @@ style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radi
     function unbanUser(phone) { usersRef.child(phone).update({ banned:false }); }
     function deleteUser(phone) { if(confirm("هل تريد الحذف؟")) usersRef.child(phone).remove(); }
 
-    // ** 🟨 البحث الجديد **
+    // بحث
     function searchUsers() {
         let value = document.getElementById("searchBox").value.trim();
         let rows = document.querySelectorAll("#usersTable tr");
@@ -112,7 +137,7 @@ style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radi
         });
     }
 
-    // ** 📣 إرسال الإشعار **
+    // إرسال إشعار
     function sendNotification() {
         const type = notifyType.value;
         const msg = notifyMessage.value.trim();
@@ -142,19 +167,23 @@ style="padding:10px;width:100%;margin-top:15px;border:1px solid #888;border-radi
         singlePhone.value = "";
     }
 
-    // ** عرض المستخدمين **
+    // عرض المستخدمين
     usersRef.on("value", snap => {
-        usersTable.innerHTML = "";
         const users = snap.val();
+        usersTable.innerHTML = "";
         if (!users) return;
+
+        // تحديث العد
+        updateCounts(users);
 
         Object.keys(users).forEach(p => {
             let u = users[p];
             const row = usersTable.insertRow();
+
             const isBanned = u.banned;
             const expireTime = u.expire || 0;
             const now = Date.now();
-            
+
             let status = "فعال";
             if (isBanned) status = "محظور";
             else if (u.type==="driver" && expireTime > 0 && expireTime < now) {
