@@ -123,11 +123,16 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     color: #555; 
     direction: rtl; /* إعادة الاتجاه للعناوين */
 } 
+/* 🌟 التعديل هنا: تنسيق الارتباط التشعبي للرقم */
 #floatingInfo #riderPhoneNumber { 
     font-size: 20px; 
     font-weight: bold; 
-    color: #000; 
+    color: #2196F3; /* لون الارتباط */
+    text-decoration: none; /* إزالة خط الارتباط */
     display: block; 
+}
+#floatingInfo #riderPhoneNumber:hover { 
+    text-decoration: underline; /* إضافة خط عند التمرير */
 }
 
 
@@ -282,7 +287,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     <div id="floatingInfo">
         <div id="riderPhoneDisplay">
             <h4>رقم هاتف الراكب</h4>
-            <span id="riderPhoneNumber">07700000000</span> 
+            <a id="riderPhoneNumber" href="tel:07700000000">07700000000</a> 
         </div>
     </div>
 </div>
@@ -375,7 +380,8 @@ let chatRef = null;
 // 📞 عناصر الاتصال (تم تغيير موقعها في HTML)
 const floatingInfoDiv = document.getElementById("floatingInfo"); // 🆕 الحاوية العائمة
 const riderPhoneDisplay = document.getElementById("riderPhoneDisplay");
-const riderPhoneNumberSpan = document.getElementById("riderPhoneNumber");
+// 🌟 التعديل هنا: جلب عنصر الـ a الجديد
+const riderPhoneNumberLink = document.getElementById("riderPhoneNumber");
 
 // 🆕 عناصر أزرار القبول والرفض
 const rideActionsDiv = document.getElementById("rideActions");
@@ -691,7 +697,9 @@ function loadActiveRideFromStorage() {
             
             initializeRideUI(ride); // هذا سيعين زر البدء/الإنهاء ويفعل ملء الشاشة عند القبول
 
-            riderPhoneNumberSpan.innerText = ride.riderPhone || "07700000000"; 
+            // 🌟 التعديل هنا: تحديث رابط ورقم الاتصال عند الاستعادة
+            riderPhoneNumberLink.innerText = ride.riderPhone || "07700000000";
+            riderPhoneNumberLink.href = `tel:${ride.riderPhone || ''}`; 
             
             // تحديد المسار الصحيح بناءً على حالة بدء الرحلة
             if (isRideStarted) {
@@ -739,9 +747,10 @@ function initializeRideUI(rideData) {
     toggleRideButtons(true); // إظهار أزرار الرحلة النشطة (وهذا سيفعل ملء الشاشة)
     showRideActions(false); // إخفاء أزرار القبول/الرفض
 
-    // إعداد رقم الهاتف (للعرض فقط)
+    // 🌟 التعديل هنا: تحديث رابط ورقم الاتصال
     const riderPhoneNumber = rideData.riderPhone;
-    riderPhoneNumberSpan.innerText = riderPhoneNumber || "07700000000"; 
+    riderPhoneNumberLink.innerText = riderPhoneNumber || "07700000000"; 
+    riderPhoneNumberLink.href = `tel:${riderPhoneNumber || ''}`;
 
     // إعداد الشات
     chatRef = db.ref("chats/" + activeRideId); 
@@ -1056,6 +1065,10 @@ function resetDriverState(clearLocationInFirebase) {
   localStorage.removeItem('isRideStarted'); 
   isRideStarted = false; 
   pendingRideId = null; // 🆕 مسح الطلب المعلق
+  
+  // 🌟 التعديل هنا: إعادة الرقم إلى القيمة الافتراضية والرابط فارغ
+  riderPhoneNumberLink.innerText = "07700000000";
+  riderPhoneNumberLink.href = "tel:07700000000";
   
   if (clearLocationInFirebase) {
       // إزالة الموقع المؤقت (في حال كانت حالة السائق busy)
