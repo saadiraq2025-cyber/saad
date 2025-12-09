@@ -88,8 +88,9 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 /* 🆕 الكلاس العائم - تم تعديل 'top' و 'transform' لجعله في منتصف اليسار */
 .floating-end-btn {
     position: absolute;
-    top: 10px; /* 🚨 التعديل هنا: لجعله في الزاوية اليسرى العليا */
-    transform: none; /* 🚨 التعديل هنا: إزالة التوسيط العمودي */
+    /* 🚨 التعديل هنا لجعله في الوسط عمودياً */
+    top: 50%; 
+    transform: translateY(-50%); 
     left: 10px; /* لجعله في الزاوية اليسرى */
     z-index: 600; 
     width: auto !important; /* ليتناسب مع المحتوى */
@@ -101,8 +102,9 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 #floatingInfo {
     position: absolute;
     /* 🚨 سيتم ضبط 'top' لاحقاً في JS ليكون تحت زر الانهاء/البدء */
-    top: 50%; 
-    transform: translateY(-50%); 
+    /* 🚨 تم تغيير الـ top هنا ليكون متمركزاً افتراضياً مع إزالة الـ translateY */
+    top: 10px; 
+    transform: none; 
     left: 10px;
     z-index: 600;
     display: none; /* يتم التحكم بظهوره في JS */
@@ -637,23 +639,35 @@ function toggleRideButtons(isAccepted) {
     if (isAccepted) {
         endBtn.style.display = "block";
         endBtn.classList.add('floating-end-btn');
+        
+        // 🚨 التعديل لتوسيط الزر عمودياً
+        endBtn.style.top = '50%';
+        endBtn.style.transform = 'translateY(-50%)';
+        
         recenterBtn.style.display = 'none'; // إخفاء زر تحديد الموقع العادي
         
         // 🆕 **التعديل الهام هنا:** ضبط موقع الـ floatingInfo ليكون تحت زر الإنهاء
-        const endBtnHeight = endBtn.offsetHeight || 40; // قيمة افتراضية
-        // 10px المسافة العلوية لزر الإنهاء + ارتفاع الزر + 10px مسافة فاصلة
-        const newTop = 10 + endBtnHeight + 10; 
-        floatingInfoDiv.style.top = `${newTop}px`; 
-        floatingInfoDiv.style.transform = 'none'; // إزالة التوسيط
+        // نحتاج لانتظار تطبيق الـ CSS للتأكد من حجم الزر
+        setTimeout(() => {
+            const endBtnRect = endBtn.getBoundingClientRect(); 
+            // 10px المسافة العلوية لزر الإنهاء + ارتفاع الزر + 10px مسافة فاصلة
+            const newTop = endBtnRect.bottom + 10; 
+            floatingInfoDiv.style.top = `${newTop}px`; 
+            floatingInfoDiv.style.transform = 'none'; // إزالة التوسيط
+        }, 50);
+
         
     } else {
         endBtn.style.display = "none";
         endBtn.classList.remove('floating-end-btn');
+        endBtn.style.top = '10px'; // إعادة ضبط الوضع الافتراضي للـ CSS
+        endBtn.style.transform = 'none';
+        
         recenterBtn.style.display = 'block'; // إظهار زر تحديد الموقع العادي
         
         // 🆕 إعادة ضبط الـ floatingInfo إلى الوضع الافتراضي (للتنظيف)
-        floatingInfoDiv.style.top = '50%';
-        floatingInfoDiv.style.transform = 'translateY(-50%)';
+        floatingInfoDiv.style.top = '10px'; // إعادة ضبط الوضع الافتراضي للـ CSS
+        floatingInfoDiv.style.transform = 'none';
     }
     
     // 5. 🛠️ التعديل الخامس: التحكم بوضع ملء الشاشة للواجهة (يتم تفعيل وضع ملء الشاشة عند القبول مباشرة)
@@ -787,8 +801,10 @@ function loadActiveRideFromStorage() {
             // ربط زر "بدء الرحلة" / "إنهاء الرحلة" بالدالة الصحيحة
             endBtn.onclick = isRideStarted ? endRide : startRide;
             
-            // التأكد من تطبيق تنسيق الزر العائم
+            // التأكد من تطبيق تنسيق الزر العائم وتوسيطه
             endBtn.classList.add('floating-end-btn');
+            endBtn.style.top = '50%';
+            endBtn.style.transform = 'translateY(-50%)';
 
 
         } else {
