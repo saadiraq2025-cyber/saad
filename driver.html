@@ -98,7 +98,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 /* 🆕 تنسيق الحاوية العائمة الجديدة لرقم الهاتف */
 #floatingInfo {
     position: absolute;
-    top: calc(50% + 55px); /* أسفل زر الإنهاء بحوالي 55 بكسل */
+    top: 50%; /* 🚨 تم تعديل هذا لاحقاً في JS ليكون تحت زر الانهاء */
     transform: translateY(-50%); 
     left: 10px;
     z-index: 600;
@@ -107,7 +107,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     direction: ltr; /* لتسهيل عرض الأرقام */
 }
 
-#floatingInfo #riderPhoneDisplay {
+#floatingInfo > div {
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 10px;
@@ -115,6 +115,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     box-shadow: 0 1px 5px rgba(0,0,0,0.3);
     width: auto;
     white-space: nowrap; /* لمنع انقسام النص */
+    margin-bottom: 5px; /* فاصل بين حاوية الهاتف وزر Waze */
 }
 
 #floatingInfo #riderPhoneDisplay h4 { 
@@ -133,6 +134,29 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
 }
 #floatingInfo #riderPhoneNumber:hover { 
     text-decoration: underline; /* إضافة خط عند التمرير */
+}
+
+/* 🆕 تنسيق زر Waze */
+#wazeBtn {
+    background: #00bcd4; /* لون Waze */
+    color: white;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+    display: block; /* لجعله يأخذ عرض الحاوية */
+    text-decoration: none; /* لأنه رابط */
+    line-height: 1;
+}
+#wazeBtn span {
+    margin-right: 5px;
+    font-size: 18px;
+}
+#wazeBtn:hover {
+    filter: brightness(0.9);
 }
 
 
@@ -289,6 +313,7 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
             <h4>رقم هاتف الراكب</h4>
             <a id="riderPhoneNumber" href="tel:07700000000">07700000000</a> 
         </div>
+        <a id="wazeBtn" href="#" target="_blank"><span>🗺️</span> الملاحة (Waze)</a>
     </div>
 </div>
 <div id="panel">
@@ -382,6 +407,9 @@ const floatingInfoDiv = document.getElementById("floatingInfo"); // 🆕 الح�
 const riderPhoneDisplay = document.getElementById("riderPhoneDisplay");
 // 🌟 التعديل هنا: جلب عنصر الـ a الجديد
 const riderPhoneNumberLink = document.getElementById("riderPhoneNumber"); 
+// 🆕 عنصر زر Waze
+const wazeBtn = document.getElementById("wazeBtn");
+
 
 // 🆕 عناصر أزرار القبول والرفض
 const rideActionsDiv = document.getElementById("rideActions");
@@ -604,10 +632,19 @@ function toggleRideButtons(isAccepted) {
         endBtn.style.display = "block";
         endBtn.classList.add('floating-end-btn');
         recenterBtn.style.display = 'none'; // إخفاء زر تحديد الموقع العادي
+        
+        // 🆕 ضبط موقع الـ floatingInfo ليكون تحت زر الإنهاء
+        floatingInfoDiv.style.top = `${endBtn.offsetTop + endBtn.offsetHeight + 10}px`; 
+        floatingInfoDiv.style.transform = 'none'; // إزالة التوسيط
+        
     } else {
         endBtn.style.display = "none";
         endBtn.classList.remove('floating-end-btn');
         recenterBtn.style.display = 'block'; // إظهار زر تحديد الموقع العادي
+        
+        // 🆕 إعادة ضبط الـ floatingInfo إلى الوضع الافتراضي (للتنظيف)
+        floatingInfoDiv.style.top = '50%';
+        floatingInfoDiv.style.transform = 'translateY(-50%)';
     }
     
     // 5. 🛠️ التعديل الخامس: التحكم بوضع ملء الشاشة للواجهة (يتم تفعيل وضع ملء الشاشة عند القبول مباشرة)
@@ -656,6 +693,9 @@ function updateRouteToEndPoint() {
     endBtn.style.background = "#e53935";
     endBtn.onclick = endRide; // ربط الزر بدالة إنهاء الرحلة
     
+    // 🆕 تحديث زر Waze إلى نقطة الوصول
+    updateWazeButton(currentRide.end[0], currentRide.end[1], 'الوجهة النهائية');
+    
     // 🆕 عرض اسم منطقة الوصول في واجهة المستخدم (في حال الإخفاء، لا نحتاجه، لكن نبقيه لتجنب مشاكل)
     rideInfo.innerHTML = `✅ تم **بدء الرحلة** - وجهتك النهائية: <b>${currentRide.endArea || 'غير محدد'}</b> ظاهرة على الخريطة.<br>
     المسافة: ${currentRide.distance} كم<br>الأجرة: ${currentRide.fare} د.ع<br><b>👋 عند الوصول، اضغط "إنهاء الرحلة"</b>`;
@@ -676,6 +716,16 @@ function startRide() {
     updateRouteToEndPoint();
 }
 // ----------------------------------------
+
+// **********************************************
+// 🆕 دالة مساعدة لتحديث رابط زر Waze
+// **********************************************
+function updateWazeButton(lat, lon, label = 'الوجهة') {
+    // 🗺️ رابط Waze: https://www.waze.com/ul?ll=<lat>%2C<lon>&navigate=yes&zoom=17
+    const wazeUrl = `https://www.waze.com/ul?ll=${lat}%2C${lon}&navigate=yes&zoom=17`;
+    wazeBtn.href = wazeUrl;
+    wazeBtn.innerHTML = `<span>🗺️</span> الملاحة لـ (${label})`;
+}
 
 
 // **********************************************
@@ -705,9 +755,14 @@ function loadActiveRideFromStorage() {
             if (isRideStarted) {
                 // إذا كانت الرحلة قد بدأت، ارسم المسار لنقطة النهاية
                 updateRoute(ride.end);
+                // 🆕 تحديث زر Waze لنقطة النهاية
+                updateWazeButton(ride.end[0], ride.end[1], 'الوجهة النهائية');
+                
             } else {
                 // إذا لم تبدأ، ارسم المسار لنقطة التقاء الراكب
                 updateRoute(ride.start);
+                // 🆕 تحديث زر Waze لنقطة التقاء الراكب
+                updateWazeButton(ride.start[0], ride.start[1], 'الراكب');
             }
 
             // 🆕 عرض أسماء المناطق عند استعادة الرحلة
@@ -758,6 +813,9 @@ function initializeRideUI(rideData) {
     
     // 🆕 تعيين المسار الأولي إلى نقطة التقاء الراكب
     updateRoute(rideData.start);
+    
+    // 🆕 تعيين زر Waze إلى نقطة التقاء الراكب
+    updateWazeButton(rideData.start[0], rideData.start[1], 'الراكب');
     
     endBtn.onclick = startRide; // 🆕 ربط الزر بوظيفة بدء الرحلة
 
@@ -1069,6 +1127,9 @@ function resetDriverState(clearLocationInFirebase) {
   // 🌟 التعديل هنا: إعادة الرقم إلى القيمة الافتراضية والرابط فارغ
   riderPhoneNumberLink.innerText = "07700000000";
   riderPhoneNumberLink.href = "tel:07700000000";
+  // 🆕 إعادة ضبط رابط Waze
+  wazeBtn.href = "#";
+  wazeBtn.innerHTML = `<span>🗺️</span> الملاحة (Waze)`;
   
   if (clearLocationInFirebase) {
       // إزالة الموقع المؤقت (في حال كانت حالة السائق busy)
