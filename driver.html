@@ -79,15 +79,17 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     display: none;
     /* 🆕 تصفير التنسيقات العامة */
     width: auto;
+    /* 🚨 تم تعديل padding لتتوافق مع floating-end-btn */
     padding: 8px 15px;
-    margin: 0;
+    /* 🚨 التعديل هنا: إزالة margin-bottom لزر البدء/الإنهاء العائم */
+    margin: 0; 
     border-radius: 10px;
 } 
 /* 🆕 الكلاس العائم - تم تعديل 'top' و 'transform' لجعله في منتصف اليسار */
 .floating-end-btn {
     position: absolute;
-    top: 50%; /* 🔄 لجعله في منتصف الشاشة عمودياً */
-    transform: translateY(-50%); /* 🔄 لمركزه تماماً */
+    top: 10px; /* 🚨 التعديل هنا: لجعله في الزاوية اليسرى العليا */
+    transform: none; /* 🚨 التعديل هنا: إزالة التوسيط العمودي */
     left: 10px; /* لجعله في الزاوية اليسرى */
     z-index: 600; 
     width: auto !important; /* ليتناسب مع المحتوى */
@@ -116,7 +118,8 @@ h3{color:#2e7d32;margin:5px 0;font-size:22px;}
     box-shadow: 0 1px 5px rgba(0,0,0,0.3);
     width: auto;
     white-space: nowrap; /* لمنع انقسام النص */
-    margin-bottom: 10px; /* 🆕 **التعديل هنا:** زيادة الفاصل بين الهاتف وزر Waze */
+    /* 🚨 التعديل هنا: زيادة الفاصل بين الهاتف وزر Waze */
+    margin-bottom: 15px; 
 }
 
 #floatingInfo #riderPhoneDisplay h4 { 
@@ -636,8 +639,11 @@ function toggleRideButtons(isAccepted) {
         endBtn.classList.add('floating-end-btn');
         recenterBtn.style.display = 'none'; // إخفاء زر تحديد الموقع العادي
         
-        // 🆕 ضبط موقع الـ floatingInfo ليكون تحت زر الإنهاء
-        floatingInfoDiv.style.top = `${endBtn.offsetTop + endBtn.offsetHeight + 15}px`; /* 🆕 زيادة المسافة هنا لتبعد الأزرار عن بعض */
+        // 🆕 **التعديل الهام هنا:** ضبط موقع الـ floatingInfo ليكون تحت زر الإنهاء
+        const endBtnHeight = endBtn.offsetHeight || 40; // قيمة افتراضية
+        // 10px المسافة العلوية لزر الإنهاء + ارتفاع الزر + 10px مسافة فاصلة
+        const newTop = 10 + endBtnHeight + 10; 
+        floatingInfoDiv.style.top = `${newTop}px`; 
         floatingInfoDiv.style.transform = 'none'; // إزالة التوسيط
         
     } else {
