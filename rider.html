@@ -230,7 +230,6 @@ button{
     color:white;
 }
 
-
 /* إخفاء العناصر القديمة أو إعادة تصميمها */
 #driverInfo{display:none;}
 #logoutBtn{display:none; width:auto; background:#607d8b; padding:10px 20px;}
@@ -318,7 +317,7 @@ const startPointValue = document.getElementById("startPointValue");
 const endPointValue = document.getElementById("endPointValue");
 const mainActionBtn = document.getElementById("mainActionBtn");
 const cancelRideBtn = document.getElementById("cancelRideBtn");
-const callDriverBtn = document.getElementById("callDriverBtn");
+const callDriverBtn = document.getElementById("callDriverBtn"); // **جديد**
 const costDisplay = document.getElementById("costDisplay");
 const fareValue = document.getElementById("fareValue");
 const oldStatus = document.getElementById("status"); // تم إخفاؤه
@@ -417,10 +416,10 @@ async function updateUIForStage() {
     costDisplay.style.display = 'none';
     changeStartBtn.style.display = 'none';
     changeEndBtn.style.display = 'none';
-    callDriverBtn.style.display = 'none'; 
-    cancelRideBtn.style.display = 'none'; 
+    cancelRideBtn.style.display = 'none';
+    callDriverBtn.style.display = 'none'; // **جديد**
     
-    // إعادة نص زر الاتصال للحالة الافتراضية
+    // **جديد:** إعادة نص زر الاتصال للحالة الافتراضية
     callDriverBtn.innerText = '📞 اتصال بالسائق';
 
     if (rideId) {
@@ -730,7 +729,7 @@ function cleanupRide(){
     rideRef = null;
     driverRef = null;
     currentDriverPhone = null;
-    driverPhoneForCall = null; 
+    driverPhoneForCall = null; // **تحديث:** مسح رقم السائق
     localStorage.removeItem('activeRideId');
     clearRideMarkers();
     
@@ -744,8 +743,8 @@ function cleanupRide(){
     
     // إخفاء زر الإلغاء والاتصال
     cancelRideBtn.style.display='none';
-    callDriverBtn.style.display='none';
-    callDriverBtn.innerText = '📞 اتصال بالسائق'; // إعادة تعيين النص
+    callDriverBtn.style.display='none'; // **تحديث**
+    callDriverBtn.innerText = '📞 اتصال بالسائق'; // **تحديث** إعادة تعيين النص
 }
 
 async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, endLng, rideStatus){
@@ -809,7 +808,7 @@ function startMonitoringRide(id){
         fareValue.innerText = fare;
         costDisplay.style.display = 'block';
         
-        // **جديد:** جلب رقم السائق وتحديث زر الاتصال بشكل مستقل وغير متزامن
+        // **تحديث:** جلب رقم السائق وتحديث زر الاتصال بشكل مستقل وغير متزامن
         if (r.driverPhone) {
             db.ref("drivers/" + r.driverPhone).once('value').then(driverSnapshot => {
                 const driverData = driverSnapshot.val();
@@ -835,17 +834,17 @@ function startMonitoringRide(id){
         } else if (r.status === "مقبولة" && r.driverPhone) {
             mainActionBtn.style.display = 'none';
             cancelRideBtn.style.display='inline-block';
-            callDriverBtn.style.display='inline-block'; 
+            callDriverBtn.style.display='inline-block'; // **تحديث**
             
             if (r.driverPhone !== currentDriverPhone) {
                 // هذا الجزء يعمل عند أول قبول فقط
                 currentDriverPhone = r.driverPhone;
 
-                // انتظار جلب الرقم للتنبيه
+                // انتظار جلب الرقم للتنبيه (لضمان ظهور الرقم في التنبيه)
                 db.ref("drivers/" + r.driverPhone).once('value').then(driverSnapshot => {
                     const driverData = driverSnapshot.val();
-                    const phone = (driverData && driverData.phone) ? driverData.phone : '';
-                    alert(`🚖 تم قبول الرحلة! السائق قادم إليك. رقم السائق: ${phone}`);
+                    const phone = (driverData && driverData.phone) ? driverData.phone : 'غير متاح';
+                    alert(`🚖 تم قبول الرحلة! السائق قادم إليك. رقم السائق: ${phone}`); // **تحديث التنبيه**
                 });
                 
                 startMonitoringDriver(r.driverPhone, r_startLat, r_startLng, r_endLat, r_endLng, r.status);
@@ -854,16 +853,17 @@ function startMonitoringRide(id){
         } else if (r.status === "بدأت") {
              mainActionBtn.style.display = 'none';
              cancelRideBtn.style.display='inline-block';
-             callDriverBtn.style.display='inline-block'; 
+             callDriverBtn.style.display='inline-block'; // **تحديث**
              
              if (r.driverPhone !== currentDriverPhone) {
                 // هذا الجزء يعمل عند أول بداية للرحلة
                 currentDriverPhone = r.driverPhone;
                 
+                // انتظار جلب الرقم للتنبيه
                 db.ref("drivers/" + r.driverPhone).once('value').then(driverSnapshot => {
                     const driverData = driverSnapshot.val();
-                    const phone = (driverData && driverData.phone) ? driverData.phone : '';
-                    alert(`🚦 الرحلة بدأت! في طريقك إلى ${getShortAreaName(r.endArea)}. رقم السائق: ${phone}`);
+                    const phone = (driverData && driverData.phone) ? driverData.phone : 'غير متاح';
+                    alert(`🚦 الرحلة بدأت! في طريقك إلى ${getShortAreaName(r.endArea)}. رقم السائق: ${phone}`); // **تحديث التنبيه**
                 });
                 
                 startMonitoringDriver(r.driverPhone, r_startLat, r_startLng, r_endLat, r_endLng, r.status);
@@ -890,11 +890,12 @@ function initGeolocation() {
       // بمجرد تحديد الموقع الأول، نبدأ بالتحقق من الرحلة النشطة
       rideId = localStorage.getItem('activeRideId');
       if(rideId){
-        // إذا وجد rideId، نبدأ مراقبة الرحلة (هذا يخفي زر تثبيت الانطلاق)
-        startMonitoringRide(rideId);
+        map.whenReady(() => {
+            startMonitoringRide(rideId);
+        });
       } else {
         // إذا لم يكن هناك rideId، نذهب إلى مرحلة تحديد الانطلاق (هذا يظهر زر تثبيت الانطلاق)
-        currentStage = "settingStart";
+        currentStage = "settingStart"; // **تحديث:** لضمان العودة إلى مرحلة التحديد
         await updateUIForStage(); 
       }
       
@@ -910,9 +911,11 @@ function initGeolocation() {
         
         rideId = localStorage.getItem('activeRideId');
          if(rideId){
-            startMonitoringRide(rideId);
+            map.whenReady(() => {
+                startMonitoringRide(rideId);
+            });
          } else {
-            currentStage = "settingStart";
+            currentStage = "settingStart"; // **تحديث:** لضمان العودة إلى مرحلة التحديد
             await updateUIForStage();
          }
         
