@@ -670,7 +670,8 @@ callDriverBtn.onclick = function() {
     if (driverPhoneForCall) {
         window.location.href = `tel:${driverPhoneForCall}`;
     } else {
-        alert("⚠️ لا يمكن الاتصال. رقم السائق غير متاح حاليًا."); // **رسالة التنبيه المطلوبة**
+        // **رسالة التنبيه المطلوبة**
+        alert("⚠️ لا يمكن الاتصال. رقم السائق غير متاح حاليًا."); 
     }
 };
 
@@ -766,9 +767,11 @@ async function startMonitoringRide(id){ // جعل الدالة غير متزام
 
         // **منطق جلب رقم السائق وتحديث زر الاتصال**
         if (r.driverPhone) {
+            // جلب البيانات من مسار السائقين
             const driverSnapshot = await db.ref("drivers/" + r.driverPhone).once('value');
             const driverData = driverSnapshot.val();
             
+            // التحقق من وجود رقم الهاتف في بيانات السائق
             if (driverData && driverData.phone) {
                 driverPhoneForCall = driverData.phone;
                 callDriverBtn.innerText = `📞 اتصال بالسائق (${driverPhoneForCall})`;
