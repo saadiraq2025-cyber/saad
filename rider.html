@@ -309,7 +309,7 @@ let driverRoute=null;
 let rideRef=null; 
 let driverRef=null; 
 let currentDriverPhone=null;
-let driverPhoneForCall = null; 
+let driverPhoneForCall = null; // **جديد:** لتخزين رقم السائق للاستخدام في زر الاتصال
 
 // ---------------- مراجع العناصر ----------------
 const pin = document.getElementById("map-center-pin");
@@ -317,7 +317,7 @@ const startPointValue = document.getElementById("startPointValue");
 const endPointValue = document.getElementById("endPointValue");
 const mainActionBtn = document.getElementById("mainActionBtn");
 const cancelRideBtn = document.getElementById("cancelRideBtn");
-const callDriverBtn = document.getElementById("callDriverBtn");
+const callDriverBtn = document.getElementById("callDriverBtn"); // **جديد:** زر الاتصال
 const costDisplay = document.getElementById("costDisplay");
 const fareValue = document.getElementById("fareValue");
 const oldStatus = document.getElementById("status"); 
@@ -584,7 +584,7 @@ function displaySearchResults(results) {
 // ---------------- وظائف التحكم بالأزرار ----------------
 
 mainActionBtn.onclick = async function() {
-    if (mainActionBtn.disabled) return; // منع النقر إذا كان معطل (كزر حالة)
+    if (mainActionBtn.disabled) return; 
 
     if (currentStage === "settingStart") {
         if (!startCoords || !startAreaName) return;
@@ -665,11 +665,12 @@ cancelRideBtn.onclick=function(){
     initGeolocation(); 
 };
 
+// **جديد:** وظيفة زر الاتصال بالسائق
 callDriverBtn.onclick = function() {
     if (driverPhoneForCall) {
         window.location.href = `tel:${driverPhoneForCall}`;
     } else {
-        alert("لا يمكن الاتصال. رقم السائق غير متاح حاليًا.");
+        alert("⚠️ لا يمكن الاتصال. رقم السائق غير متاح حاليًا."); // **رسالة التنبيه المطلوبة**
     }
 };
 
@@ -684,7 +685,6 @@ function clearRideMarkers(){
 }
 
 async function drawStreetRoute(lat1, lng1, lat2, lng2, color, dashArray = '') {
-    // ... (منطق رسم المسار باستخدام OSRM) ...
     if(driverRoute) map.removeLayer(driverRoute); 
     driverRoute = L.polyline([[lat1, lng1], [lat2, lng2]], { color: color, dashArray: dashArray, weight: 5 }).addTo(map);
     map.fitBounds(driverRoute.getBounds());
@@ -709,7 +709,7 @@ function cleanupRide(){
     
     cancelRideBtn.style.display='none';
     callDriverBtn.style.display='none'; 
-    callDriverBtn.innerText = '📞 اتصال بالسائق'; 
+    callDriverBtn.innerText = '📞 اتصال بالسائق'; // إعادة النص الأصلي
 }
 
 async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, endLng, rideStatus){
@@ -735,17 +735,18 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
     });
 }
 
-function startMonitoringRide(id){
+async function startMonitoringRide(id){ // جعل الدالة غير متزامنة
     rideRef = db.ref("rides/"+id);
-    // **التعديل:** لا نخفي الزر الرئيسي، بل نعتمد عليه كزر حالة
-    // mainActionBtn.style.display='none'; // تم إزالة هذا السطر
+    
     pin.style.display = 'none';
     costDisplay.style.display = 'none';
     
-    cancelRideBtn.style.display='inline-block'; 
+    // إخفاء زر الإلغاء والاتصال في البداية حتى تظهر حالة الرحلة
+    cancelRideBtn.style.display='none'; 
     callDriverBtn.style.display='none'; 
+    callDriverBtn.innerText = '📞 اتصال بالسائق'; 
 
-    rideRef.on('value', snap => {
+    rideRef.on('value', async snap => { // جعل دالة المعالجة غير متزامنة
         const r = snap.val();
         if(!r) {
             cleanupRide();
@@ -759,26 +760,30 @@ function startMonitoringRide(id){
         const r_endLat = r.endLat;
         const r_endLng = r.endLng;
 
-        const distance = r.distance || 0;
         const fare = r.fare ? r.fare.toLocaleString('ar-IQ') : '---';
-        
         fareValue.innerText = fare;
         costDisplay.style.display = 'block';
-        
-        // **الإصلاح:** جلب رقم السائق وتحديث زر الاتصال بشكل مستقل وغير متزامن
+
+        // **منطق جلب رقم السائق وتحديث زر الاتصال**
         if (r.driverPhone) {
-            db.ref("drivers/" + r.driverPhone).once('value').then(driverSnapshot => {
-                const driverData = driverSnapshot.val();
-                if (driverData && driverData.phone) {
-                    driverPhoneForCall = driverData.phone;
-                    callDriverBtn.innerText = `📞 اتصال بالسائق (${driverPhoneForCall})`;
-                }
-            }).catch(e => console.error("Error fetching driver data:", e));
+            const driverSnapshot = await db.ref("drivers/" + r.driverPhone).once('value');
+            const driverData = driverSnapshot.val();
+            
+            if (driverData && driverData.phone) {
+                driverPhoneForCall = driverData.phone;
+                callDriverBtn.innerText = `📞 اتصال بالسائق (${driverPhoneForCall})`;
+            } else {
+                driverPhoneForCall = null;
+                callDriverBtn.innerText = `📞 اتصال بالسائق (رقم غير متاح)`;
+            }
+        } else {
+            driverPhoneForCall = null;
+            callDriverBtn.innerText = `📞 اتصال بالسائق`;
         }
 
 
         if (r.status === "جديدة") {
-            // **التعديل:** تحديث الزر الرئيسي ليصبح زر حالة انتظار
+            // تحديث الزر الرئيسي ليصبح زر حالة انتظار
             mainActionBtn.innerText=`✅ تم الإرسال. في انتظار قبول السائق...`;
             mainActionBtn.style.display = 'block'; 
             mainActionBtn.disabled = true; 
@@ -789,11 +794,8 @@ function startMonitoringRide(id){
             clearRideMarkers();
             
         } else if (r.status === "مقبولة" && r.driverPhone) {
-            // **التعديل:** تحديث الزر الرئيسي ليصبح زر حالة مقبول
-            mainActionBtn.innerText=`🚖 تم قبول الرحلة. السائق قادم إليك.`; 
-            mainActionBtn.style.display = 'block'; // ضمان الرؤية
-            mainActionBtn.disabled = true; 
-            mainActionBtn.style.background = '#008080'; // لون أخضر داكن
+            // إخفاء زر الحالة الرئيسي وإظهار أزرار الإجراء
+            mainActionBtn.style.display = 'none';
             
             cancelRideBtn.style.display='inline-block';
             callDriverBtn.style.display='inline-block'; 
@@ -801,21 +803,15 @@ function startMonitoringRide(id){
             if (r.driverPhone !== currentDriverPhone) {
                 currentDriverPhone = r.driverPhone;
 
-                db.ref("drivers/" + r.driverPhone).once('value').then(driverSnapshot => {
-                    const driverData = driverSnapshot.val();
-                    const phone = (driverData && driverData.phone) ? driverData.phone : 'غير متاح';
-                    alert(`🚖 تم قبول الرحلة! السائق قادم إليك. رقم السائق: ${phone}`); 
-                });
+                // **رسالة التنبيه عند القبول مع رقم السائق**
+                alert(`🚖 تم قبول الرحلة! السائق قادم إليك. رقم السائق: ${driverPhoneForCall || 'غير متاح'}`); 
                 
                 startMonitoringDriver(r.driverPhone, r_startLat, r_startLng, r_endLat, r_endLng, r.status);
             } 
             
         } else if (r.status === "بدأت") {
-             // **التعديل:** تحديث الزر الرئيسي ليصبح زر حالة بدأت
-             mainActionBtn.innerText=`🚦 الرحلة بدأت. في طريقك للوجهة.`; 
-             mainActionBtn.style.display = 'block'; // ضمان الرؤية
-             mainActionBtn.disabled = true; 
-             mainActionBtn.style.background = '#004d40'; // لون أخضر أغمق
+             // إخفاء زر الحالة الرئيسي وإظهار أزرار الإجراء
+             mainActionBtn.style.display = 'none';
              
              cancelRideBtn.style.display='inline-block';
              callDriverBtn.style.display='inline-block'; 
@@ -823,11 +819,8 @@ function startMonitoringRide(id){
              if (r.driverPhone !== currentDriverPhone) {
                 currentDriverPhone = r.driverPhone;
                 
-                db.ref("drivers/" + r.driverPhone).once('value').then(driverSnapshot => {
-                    const driverData = driverSnapshot.val();
-                    const phone = (driverData && driverData.phone) ? driverData.phone : 'غير متاح';
-                    alert(`🚦 الرحلة بدأت! في طريقك إلى ${getShortAreaName(r.endArea)}. رقم السائق: ${phone}`);
-                });
+                // **رسالة التنبيه عند البدء مع رقم السائق**
+                alert(`🚦 الرحلة بدأت! في طريقك إلى ${getShortAreaName(r.endArea)}. رقم السائق: ${driverPhoneForCall || 'غير متاح'}`);
                 
                 startMonitoringDriver(r.driverPhone, r_startLat, r_startLng, r_endLat, r_endLng, r.status);
             } 
