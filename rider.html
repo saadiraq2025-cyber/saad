@@ -309,7 +309,7 @@ let driverRoute=null;
 let rideRef=null; 
 let driverRef=null; 
 let currentDriverPhone=null;
-let driverPhoneForCall = null; // **جديد:** لتخزين رقم السائق للاستخدام في زر الاتصال
+let driverPhoneForCall = null; // **لتخزين رقم السائق للاستخدام في زر الاتصال**
 
 // ---------------- مراجع العناصر ----------------
 const pin = document.getElementById("map-center-pin");
@@ -317,7 +317,7 @@ const startPointValue = document.getElementById("startPointValue");
 const endPointValue = document.getElementById("endPointValue");
 const mainActionBtn = document.getElementById("mainActionBtn");
 const cancelRideBtn = document.getElementById("cancelRideBtn");
-const callDriverBtn = document.getElementById("callDriverBtn"); // **جديد:** زر الاتصال
+const callDriverBtn = document.getElementById("callDriverBtn"); 
 const costDisplay = document.getElementById("costDisplay");
 const fareValue = document.getElementById("fareValue");
 const oldStatus = document.getElementById("status"); 
@@ -665,12 +665,12 @@ cancelRideBtn.onclick=function(){
     initGeolocation(); 
 };
 
-// **جديد:** وظيفة زر الاتصال بالسائق
+// **وظيفة زر الاتصال بالسائق**
 callDriverBtn.onclick = function() {
     if (driverPhoneForCall) {
         window.location.href = `tel:${driverPhoneForCall}`;
     } else {
-        // **رسالة التنبيه المطلوبة**
+        // رسالة التنبيه المطلوبة في حال فشل جلب الرقم
         alert("⚠️ لا يمكن الاتصال. رقم السائق غير متاح حاليًا."); 
     }
 };
@@ -697,7 +697,7 @@ function cleanupRide(){
     rideRef = null;
     driverRef = null;
     currentDriverPhone = null;
-    driverPhoneForCall = null; 
+    // **ملاحظة:** تم إزالة تعيين driverPhoneForCall = null; لكي يبقى الرقم متاحًا للاتصال حتى بعد انتهاء الرحلة رسمياً.
     localStorage.removeItem('activeRideId');
     clearRideMarkers();
     
@@ -776,7 +776,7 @@ async function startMonitoringRide(id){ // جعل الدالة غير متزام
                 driverPhoneForCall = driverData.phone;
                 callDriverBtn.innerText = `📞 اتصال بالسائق (${driverPhoneForCall})`;
             } else {
-                driverPhoneForCall = null;
+                driverPhoneForCall = null; // لا يوجد رقم هاتف متاح
                 callDriverBtn.innerText = `📞 اتصال بالسائق (رقم غير متاح)`;
             }
         } else {
@@ -896,6 +896,7 @@ window.logout=function(){
     localStorage.removeItem('phone');
     localStorage.removeItem('userType');
     localStorage.removeItem('activeRideId');
+    // **ملاحظة:** لا يجب مسح driverPhoneForCall هنا أيضاً
     window.location.href="index.html";
 };
 
