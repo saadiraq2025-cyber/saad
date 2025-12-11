@@ -211,12 +211,29 @@ button{
     border-bottom: none;
 }
 
+/* أنماط الأزرار الإضافية */
+.action-group {
+    display: flex;
+    gap: 10px;
+    padding: 0 10px 5px;
+}
+.action-group button {
+    width: 50%; /* تقاسم العرض */
+    margin: 0;
+}
+#callDriverBtn {
+    background: #4CAF50; /* لون أخضر للاتصال */
+    display: none;
+}
+#cancelRideBtn{
+    background:#E53935;
+    color:white;
+}
+
+
 /* إخفاء العناصر القديمة أو إعادة تصميمها */
 #driverInfo{display:none;}
 #logoutBtn{display:none; width:auto; background:#607d8b; padding:10px 20px;}
-#cancelRideBtn{background:#E53935;color:white; display:none;}
-
-
 </style>
 </head>
 <body>
@@ -254,7 +271,10 @@ button{
 
     <p id="status" style="display:none;"></p> <button id="mainActionBtn">تثبيت الانطلاق</button>
     
-    <button id="cancelRideBtn" style="display:none;">❌ إنهاء/إلغاء الرحلة</button>
+    <div class="action-group">
+        <button id="callDriverBtn" style="display:none;">📞 اتصال بالسائق</button>
+        <button id="cancelRideBtn" style="display:none;">❌ إنهاء/إلغاء الرحلة</button>
+    </div>
 </div>
 
 <script>
@@ -290,6 +310,7 @@ let driverRoute=null;
 let rideRef=null; 
 let driverRef=null; 
 let currentDriverPhone=null;
+let driverPhoneForCall = null; // **جديد:** لتخزين رقم السائق عند القبول
 
 // ---------------- مراجع العناصر ----------------
 const pin = document.getElementById("map-center-pin");
@@ -297,6 +318,7 @@ const startPointValue = document.getElementById("startPointValue");
 const endPointValue = document.getElementById("endPointValue");
 const mainActionBtn = document.getElementById("mainActionBtn");
 const cancelRideBtn = document.getElementById("cancelRideBtn");
+const callDriverBtn = document.getElementById("callDriverBtn"); // **جديد**
 const costDisplay = document.getElementById("costDisplay");
 const fareValue = document.getElementById("fareValue");
 const oldStatus = document.getElementById("status"); // تم إخفاؤه
@@ -395,7 +417,8 @@ async function updateUIForStage() {
     costDisplay.style.display = 'none';
     changeStartBtn.style.display = 'none';
     changeEndBtn.style.display = 'none';
-    cancelRideBtn.style.display = 'none';
+    callDriverBtn.style.display = 'none'; // **تعديل**
+    cancelRideBtn.style.display = 'none'; // **تعديل**
 
     if (rideId) {
         // حالة الرحلة قيد المراقبة
@@ -670,6 +693,16 @@ cancelRideBtn.onclick=function(){
     initGeolocation(); // إعادة تحديد الموقع الحالي وتحديث الواجهة
 };
 
+// **جديد:** زر الاتصال بالسائق
+callDriverBtn.onclick = function() {
+    if (driverPhoneForCall) {
+        // فتح تطبيق الهاتف مع الرقم
+        window.location.href = `tel:${driverPhoneForCall}`;
+    } else {
+        alert("لا يمكن الاتصال. رقم السائق غير متاح حاليًا.");
+    }
+};
+
 
 // ---------------- وظائف المراقبة والتنظيف والمسار ----------------
 
@@ -699,6 +732,7 @@ function cleanupRide(){
     rideRef = null;
     driverRef = null;
     currentDriverPhone = null;
+    driverPhoneForCall = null; // **تنظيف الرقم**
     localStorage.removeItem('activeRideId');
     clearRideMarkers();
     
@@ -712,14 +746,22 @@ function cleanupRide(){
     
     // يتم تحديث الواجهة عند استدعاء initGeolocation لاحقاً
     
-    // إخفاء زر الإلغاء
+    // إخفاء زر الإلغاء والاتصال
     cancelRideBtn.style.display='none';
-    
+    callDriverBtn.style.display='none';
 }
 
 async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, endLng, rideStatus){
     driverRef = db.ref("drivers/"+driverPhone);
     
+    // **جلب بيانات السائق عند قبوله للرحلة**
+    db.ref("drivers/"+driverPhone).once('value', driverSnapshot => {
+        const driverData = driverSnapshot.val();
+        if (driverData && driverData.phone) {
+            driverPhoneForCall = driverData.phone;
+        }
+    });
+
     driverRef.on('value', async snap => { 
         const d = snap.val();
         if(!d || !d.lat || !d.lng) return;
@@ -756,10 +798,12 @@ function startMonitoringRide(id){
     mainActionBtn.style.display='none';
     pin.style.display = 'none';
     costDisplay.style.display = 'none';
-    cancelRideBtn.style.display='inline-block';
+    // نعرض فقط زر الإلغاء في البداية حتى تتم المراقبة
+    callDriverBtn.style.display='none'; 
+    cancelRideBtn.style.display='inline-block'; 
 
     // مراقبة حالة الرحلة
-    rideRef.on('value', snap => {
+    rideRef.on('value', async snap => { // تم جعلها async لدعم جلب بيانات السائق
         const r = snap.val();
         if(!r) {
             cleanupRide();
@@ -785,21 +829,35 @@ function startMonitoringRide(id){
             mainActionBtn.disabled = true; // لمنع الضغط عليه وهو قيد الانتظار
             mainActionBtn.style.background = '#607d8b'; // لون مختلف للانتظار
             clearRideMarkers();
+            callDriverBtn.style.display='none'; // إخفاء زر الاتصال
             
         } else if (r.status === "مقبولة" && r.driverPhone) {
             mainActionBtn.style.display = 'none';
             cancelRideBtn.style.display='inline-block';
-            alert(`🚖 تم قبول الرحلة! السائق قادم إليك.`);
+            callDriverBtn.style.display='inline-block'; // **عرض زر الاتصال**
             
             if (r.driverPhone !== currentDriverPhone) {
                 if(driverRef) driverRef.off(); 
                 currentDriverPhone = r.driverPhone;
+                
+                // **جلب رقم السائق وعرضه في تنبيه**
+                const driverSnapshot = await db.ref("drivers/" + r.driverPhone).once('value');
+                const driverData = driverSnapshot.val();
+                
+                if (driverData && driverData.phone) {
+                    driverPhoneForCall = driverData.phone;
+                    alert(`🚖 تم قبول الرحلة! السائق قادم إليك. رقم السائق: ${driverPhoneForCall}`);
+                } else {
+                    alert(`🚖 تم قبول الرحلة! السائق قادم إليك.`);
+                }
+                
                 startMonitoringDriver(r.driverPhone, r_startLat, r_startLng, r_endLat, r_endLng, r.status);
             } 
             
         } else if (r.status === "بدأت") {
              mainActionBtn.style.display = 'none';
              cancelRideBtn.style.display='inline-block';
+             callDriverBtn.style.display='inline-block'; // **عرض زر الاتصال**
              alert(`🚦 الرحلة بدأت! في طريقك إلى ${getShortAreaName(r.endArea)}`);
 
              if (r.driverPhone !== currentDriverPhone) {
