@@ -273,10 +273,13 @@ const app=firebase.initializeApp({
 });
 const db=firebase.database();
 
-// ** 🆕 التعديل: تغيير طبقة الخريطة إلى OpenStreetMap (OSM) **
+// ** تم الإبقاء على طبقة Google Maps كما هي لتطابق الفيديو المرفق **
 let map=L.map('map').setView([33.3603, 44.5066],14); 
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+L.tileLayer(
+  "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=AIzaSyD7TtwniAdUtB8-pnTny4ZwE6gqX36SGUk",
+  { maxZoom: 20 }
+).addTo(map);
 
 map.whenReady(()=>map.invalidateSize());
 
@@ -302,7 +305,7 @@ const mainActionBtn = document.getElementById("mainActionBtn");
 const cancelRideBtn = document.getElementById("cancelRideBtn");
 const costDisplay = document.getElementById("costDisplay");
 const fareValue = document.getElementById("fareValue");
-const oldStatus = document.getElementById("status"); // تم إخفاؤه
+const oldStatus = document.getElementById("status");
 const changeStartBtn = document.getElementById("changeStartPointBtn");
 const changeEndBtn = document.getElementById("changeEndPointBtn");
 
@@ -399,12 +402,10 @@ async function updateUIForStage() {
     changeStartBtn.style.display = 'none';
     changeEndBtn.style.display = 'none';
     cancelRideBtn.style.display = 'none';
-    oldStatus.style.display = 'none'; // ** 🆕 إخفاء رسالة الحالة القديمة في وضع الاختيار **
+    oldStatus.style.display = 'none'; // ** إخفاء رسالة الحالة في وضع الاختيار **
 
     if (rideId) {
         // حالة الرحلة قيد المراقبة
-        // يتم التعامل مع الأزرار والعرض من خلال startMonitoringRide
-        // نتأكد من إخفاء أزرار التثبيت في هذه الحالة
         return; 
     }
 
