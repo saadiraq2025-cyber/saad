@@ -17,31 +17,36 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
-/* --------------------------------- إعادة هيكلة التصميم ليتطابق مع الفيديو --------------------------------- */
+/* --------------------------------- إعادة هيكلة التصميم ليتطابق 100% مع الفيديو --------------------------------- */
 
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
 #map{height:100vh;position:relative;} 
 
-/* 1. الحاوية الرئيسية السفلية (Panel) - تحتوي على جميع الشرائط والأزرار */
+/* 1. إخفاء شريط البحث العلوي بالكامل لتطابق الفيديو (الخريطة تغطي الشاشة) */
+#searchContainer, #searchResults {
+    display: none !important;
+}
+#map{height:100vh; padding-top: 0;}
+
+/* 2. الحاوية الرئيسية السفلية (Panel) - لتجميع الشرائط والأزرار فوق الخريطة */
 #panel{
     position:fixed;
     bottom:0;
     left:0;
     right:0;
-    /* نجعلها شفافة أو غير مرئية لتظهر الشرائط العائمة فوق الخريطة */
+    /* نجعلها شفافة تماماً لتبدو الشرائط عائمة */
     background: transparent; 
     text-align:center;
-    padding:0; /* نترك الشرائط تحدد التباعد */
+    padding:0 0 20px 0; /* مسافة من أسفل الشاشة */
     z-index: 1000;
-    /* استخدام Flexbox لعرض الشرائط فوق بعضها من الأسفل للأعلى */
+    /* استخدام Flexbox لعرض الشرائط فوق بعضها من الأسفل للأعلى (عكس ترتيب العناصر في الكود) */
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px; /* المسافة بين الشرائط */
-    padding-bottom: 20px; /* مسافة من أسفل الشاشة */
 }
 
-/* نمط الأزرار الرئيسية (مثل "تثبيت الانطلاق") */
+/* 3. نمط الأزرار الرئيسية (تثبيت الانطلاق / تثبيت الوصول) */
 .main-action-button {
     background:#f97316; /* لون برتقالي مطابق للفيديو */
     color:white;
@@ -50,19 +55,24 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     border-radius:10px;
     font-weight:bold;
     cursor:pointer;
-    width:calc(90% - 20px); /* عرض ثابت تقريباً */
+    width:90%; 
     max-width: 400px;
     font-size: 1.1em;
-    margin-top: 10px; /* مسافة من الشريط العلوي */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* ظل واضح */
 }
 
-/* نمط الشريط العائم لنقاط الانطلاق والوصول */
-.info-bar {
+/* نمط زر "إرسال الطلب" النهائي (لون أزرق مطابق لـ 00:20 في الفيديو) */
+.send-request-btn {
+    background:#007BFF; /* أزرق قوي */
+}
+
+/* 4. نمط الشريط العائم لنقاط الانطلاق والوصول والتحكم */
+.control-bar {
     width: 90%;
     max-width: 400px;
-    background: rgba(255, 255, 255, 0.95); /* خلفية بيضاء شفافة قليلاً */
+    background: white; /* خلفية بيضاء صلبة */
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -71,22 +81,8 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     text-align: right;
 }
 
-.info-bar .point-icon {
-    font-size: 1.2em;
-    margin-left: 10px;
-    flex-shrink: 0;
-}
-
-/* أيقونة نقطة الانطلاق - برتقالية */
-#start-point-bar .point-icon {
-    color: #f97316;
-}
-/* أيقونة نقطة الوصول - حمراء */
-#end-point-bar .point-icon {
-    color: #e53935;
-}
-
-.info-bar .point-text {
+/* تنسيق النصوص داخل الشريط */
+.control-bar .point-text {
     flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -94,73 +90,67 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     text-align: right;
 }
 
-.info-bar .point-label {
-    font-weight: bold;
+.control-bar .point-label {
+    font-weight: normal; /* ليس عريضاً جداً كما في الفيديو */
+    color: #888;
+    font-size: 0.8em;
+    display: inline;
+    margin-left: 5px;
+}
+
+.control-bar .point-value {
     color: #333;
-    display: block;
-    font-size: 0.85em;
-}
-
-.info-bar .point-value {
-    color: #666;
-    display: block;
     font-size: 1em;
-    font-weight: normal;
+    font-weight: bold; /* المنطقة المختارة هي العريضة */
 }
 
-.info-bar .point-action {
-    background: none;
+/* تنسيق زر "تغيير" في الأشرطة */
+.change-action-btn {
+    background: #eee; /* خلفية فاتحة للزر */
     border: none;
-    color: #f97316;
+    color: #f97316; /* نص برتقالي */
     font-weight: bold;
     cursor: pointer;
-    padding: 0 5px;
+    padding: 5px 10px;
     white-space: nowrap;
     flex-shrink: 0;
     font-size: 0.9em;
-    margin-right: -5px; /* لسحبه قليلاً لليمين */
+    border-radius: 5px;
 }
 
-/* 2. شريط عرض التكلفة (مطابق للفيديو) */
+/* 5. شريط عرض التكلفة (مطابق لـ 00:20 في الفيديو) */
 #costDisplay {
     width: 90%;
     max-width: 400px;
-    background: #4CAF50; /* أخضر مائل للزيتوني - لون جديد مطابق للفيديو */
+    background: #00796b; /* لون أخضر/أزرق غامق مطابق */
     color: white; 
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: bold;
-    padding: 10px 15px;
-    margin-top: 5px; /* مسافة بينه وبين الشريط الذي فوقه */
+    padding: 12px 15px;
     border-radius: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-#costDisplay strong {
-    color: #FFEB3B; /* لون أصفر براق للأجرة */
-    font-size: 1.4em;
-    margin-left: 5px;
+#costDisplay .cost-value {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-right: 5px;
 }
-#costDisplay span {
-    color: #CFD8DC; /* دينار عراقي بلون رمادي فاتح */
+#costDisplay .cost-unit {
+    color: #eee;
     font-size: 0.9em;
 }
 
-/* 3. زر إلغاء/إنهاء الرحلة */
-#cancelRideBtn{
-    background:#E53935;
-    color:white; 
-    display:none;
-}
-/* نمط رسالة الحالة (لرحلة نشطة) */
+/* 6. رسالة الحالة (تظهر عند إرسال الطلب) */
 #panel p#status {
     width: 90%;
     max-width: 400px;
     font-size: 1.0em;
     font-weight: normal;
-    margin: 5px auto; 
+    margin: 0 auto; /* تم تعديل الهامش ليلائم تصميم الأشرطة */
     line-height: 1.4;
     color: #333;
     padding: 10px 15px;
@@ -168,15 +158,15 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     background: #ffffff;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     text-align: right;
+    display: none;
 }
 #panel p#status b a {
-    color: #f97316; /* لون برتقالي لرابط الهاتف */
+    color: #00796b; 
     text-decoration: none;
     font-size: 1.1em;
 }
 
-
-/* دبوس الخريطة - كما في الملف الأصلي */
+/* دبوس الخريطة - مطابق للتصميم الأصلي */
 #map-center-pin {
     position: absolute;
     top: 50%;
@@ -188,12 +178,6 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     pointer-events: none; 
     display: none; 
-}
-
-
-/* إخفاء شريط البحث العلوي تماماً ليتطابق مع الفيديو */
-#searchContainer, #searchResults {
-    display: none !important;
 }
 
 /* إخفاء العناصر غير المستخدمة/القديمة */
@@ -208,37 +192,45 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
 <div id="map"></div>
 <div id="map-center-pin">📍</div>
 
+<div id="searchContainer" style="display:none;">
+    <button id="back-button" onclick="history.back()">&#x2039;</button> 
+    <input type="text" id="search-input" placeholder="أبحث عن مكان" />
+    <span id="search-icon">🔍</span>
+</div>
+<div id="searchResults" style="display:none;"></div>
+
+
 <div id="panel">
 
-    <div id="start-point-bar" class="info-bar">
-        <span class="point-icon">⦿</span>
-        <div class="point-text">
-            <span class="point-label">نقطة الانطلاق</span>
-            <span id="startPointValue" class="point-value">جاري التحقق من المنطقة...</span>
+    <p id="status" style="display:none;"></p> 
+    
+    <div id="costDisplay" style="display:none;">
+        <span>التكلفة</span>
+        <div style="display:flex; align-items: baseline;">
+            <span class="cost-value"><span id="fareValue">---</span></span> 
+            <span class="cost-unit">IQD</span>
         </div>
-        <button id="changeStartPointBtn" class="point-action" style="display:none;">تغيير</button>
     </div>
 
-    <div id="end-point-bar" class="info-bar" style="display:none;">
-        <span class="point-icon">⚑</span>
+    <div id="end-point-bar" class="control-bar" style="display:none;">
         <div class="point-text">
             <span class="point-label">نقطة الوصول</span>
             <span id="endPointValue" class="point-value">حدد نقطة الوصول...</span>
         </div>
-        <button id="changeEndPointBtn" class="point-action" style="display:none;">تغيير</button>
+        <button id="changeEndPointBtn" class="change-action-btn" style="display:none;">تغيير</button>
     </div>
     
-    <div id="costDisplay" style="display:none;">
-        التكلفة: 
-        <strong><span id="fareValue">---</span></strong> 
-        <span>د.ع</span>
+    <div id="start-point-bar" class="control-bar">
+        <div class="point-text">
+            <span class="point-label">نقطة الانطلاق</span>
+            <span id="startPointValue" class="point-value">جاري التحقق من المنطقة...</span>
+        </div>
+        <button id="changeStartPointBtn" class="change-action-btn" style="display:none;">تغيير</button>
     </div>
-
-    <p id="status" style="display:none;"></p> 
 
     <button id="mainActionBtn" class="main-action-button">تثبيت الانطلاق</button>
     
-    <button id="cancelRideBtn" class="main-action-button" style="display:none;">❌ إنهاء/إلغاء الرحلة</button>
+    <button id="cancelRideBtn" class="main-action-button" style="display:none; background:#E53935;">❌ إنهاء/إلغاء الرحلة</button>
 </div>
 
 <script>
@@ -285,24 +277,19 @@ const fareValue = document.getElementById("fareValue");
 const oldStatus = document.getElementById("status");
 const changeStartBtn = document.getElementById("changeStartPointBtn");
 const changeEndBtn = document.getElementById("changeEndPointBtn");
-
-// عناصر الشريط الجديد
 const startPointBar = document.getElementById("start-point-bar");
 const endPointBar = document.getElementById("end-point-bar");
 
 
 // ---------------- وظائف المساعدة والـ Geocoding ----------------
 
-// الدالة: استخلاص الاسم الأقصر للمنطقة (للعرض فقط) - تستخدم الاسم الذي يأتي من reverseGeocode
 function getShortAreaName(fullArea) {
     if (!fullArea) return "منطقة غير معروفة";
     
-    // إذا كان الاسم قصيراً، نفترضه اسم معلم بارز ونرجعه مباشرة
     if (fullArea.length < 50 && !fullArea.includes(',')) {
         return fullArea; 
     }
     
-    // المنطق القديم للعنوان الطويل
     const parts = fullArea.split(',').map(p => p.trim()).filter(p => p.length > 0);
     
     const relevantParts = parts.filter(p => 
@@ -319,7 +306,6 @@ function getShortAreaName(fullArea) {
     return parts[parts.length - 1]; 
 }
 
-// reverse geocode (تم التعديل لجلب أسماء المعالم البارزة)
 async function reverseGeocode(lat, lon) {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`;
     try {
@@ -328,7 +314,6 @@ async function reverseGeocode(lat, lon) {
 
         if (d && d.display_name) {
             const address = d.address;
-            // قائمة بالعناوين التي قد تكون POI 
             const poiKeys = ['amenity', 'shop', 'building', 'restaurant', 'bakery', 'pharmacy', 'supermarket', 'public_building']; 
             
             let poiName = null;
@@ -339,12 +324,10 @@ async function reverseGeocode(lat, lon) {
                 }
             }
 
-            // التأكد من أن اسم المعلم البارز معقول (ليس طويلاً جداً)
             if (poiName && typeof poiName === 'string' && poiName.length > 3 && poiName.length < 50) {
                 return poiName;
             }
 
-            // وإلا، نرجع العنوان المفصل المعتاد
             return d.display_name.split(',').slice(0, 3).reverse().join(', ');
         }
         return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -353,9 +336,9 @@ async function reverseGeocode(lat, lon) {
     }
 }
 
-// حساب المسافة والأجرة
+// حساب المسافة والأجرة (مع تقريب إلى 500 دينار كما في الفيديو)
 function calculateDistanceAndFare(lat1, lng1, lat2, lng2) {
-    const R = 6371; // نصف قطر الأرض بالكيلومتر
+    const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lng2 - lng1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -363,85 +346,75 @@ function calculateDistanceAndFare(lat1, lng1, lat2, lng2) {
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = (R * c).toFixed(2);
-    // افتراض: 1000 دينار لكل كم
-    const fare = Math.round(distance * 1000); 
     
-    // ليتطابق مع الفيديو 1500 دينار
+    // افتراض: 1000 دينار لكل كم
+    let fare = Math.round(distance * 1000); 
+    
+    // التقريب لأقرب 500 دينار، والحد الأدنى 1000 دينار (مطابق للفيديو)
     if (fare <= 1000) return { distance: distance, fare: 1000 };
-    return { distance: distance, fare: Math.round(fare / 500) * 500 }; // التقريب لأقرب 500 دينار
+    return { distance: distance, fare: Math.round(fare / 500) * 500 }; 
 }
 
 // ---------------- وظائف تحديث الواجهة ----------------
 
-// تحديث الواجهة حسب مرحلة تحديد النقاط (settingStart, settingEnd, confirmed)
 async function updateUIForStage() {
     // إخفاء الكل في البداية
     pin.style.display = 'none';
     mainActionBtn.style.display = 'none';
     costDisplay.style.display = 'none';
-    changeStartBtn.style.display = 'none';
-    changeEndBtn.style.display = 'none';
     cancelRideBtn.style.display = 'none';
     oldStatus.style.display = 'none'; 
-    endPointBar.style.display = 'none'; // شريط الوصول مخفي افتراضياً
-
-    if (rideId) {
-        // حالة الرحلة قيد المراقبة
-        return; 
-    }
+    
+    // إخفاء/إظهار الأشرطة
+    startPointBar.style.display = 'flex'; 
+    endPointBar.style.display = 'none';
+    changeStartBtn.style.display = 'none';
+    changeEndBtn.style.display = 'none';
+    
+    // إيقاف التنفيذ إذا كانت هناك رحلة نشطة (المراقبة تتولى العرض)
+    if (rideId) return; 
 
     // عرض الدبوس للتحريك واختيار النقطة
     pin.style.display = 'block';
-    mainActionBtn.style.display = 'inline-block';
-    startPointBar.style.display = 'flex'; // شريط الانطلاق ظاهر دائماً
+    mainActionBtn.style.display = 'block';
+    mainActionBtn.classList.remove('send-request-btn'); // إعادة اللون البرتقالي
 
     if (currentStage === "settingStart") {
         mainActionBtn.innerText = "تثبيت الانطلاق";
         mainActionBtn.disabled = !startCoords;
-        mainActionBtn.style.background = '#f97316';
-        startPointValue.innerText = startAreaName ? getShortAreaName(startAreaName) : 'جاري التحقق من المنطقة...';
+        startPointValue.innerText = startAreaName ? `بغداد - ${getShortAreaName(startAreaName)}` : 'جاري التحقق من المنطقة...';
         
     } else if (currentStage === "settingEnd") {
         endPointBar.style.display = 'flex'; // إظهار شريط الوصول
         changeStartBtn.style.display = 'inline-block'; // إظهار زر تغيير الانطلاق
         
         // تحديث شريط الانطلاق بعد التثبيت
-        startPointValue.innerText = getShortAreaName(startAreaName);
+        startPointValue.innerText = `بغداد - ${getShortAreaName(startAreaName)}`;
         
         // تحديث شريط الوصول
-        endPointValue.innerText = endAreaName ? getShortAreaName(endAreaName) : 'جاري التحقق من المنطقة...';
+        endPointValue.innerText = endAreaName ? `بغداد - ${getShortAreaName(endAreaName)}` : 'جاري التحقق من المنطقة...';
 
         mainActionBtn.innerText = "تثبيت الوصول";
         mainActionBtn.disabled = !endCoords;
-        mainActionBtn.style.background = '#f97316';
         
         if (startCoords && endCoords) {
+            // المرحلة النهائية لتأكيد الطلب 
             const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
             fareValue.innerText = fare.toLocaleString('ar-IQ');
+            
             costDisplay.style.display = 'flex'; // إظهار شريط التكلفة
             mainActionBtn.innerText = "إرسال الطلب"; // يتغير نص الزر إلى "إرسال الطلب" عند وجود النقطتين
+            mainActionBtn.classList.add('send-request-btn'); // تغيير اللون إلى الأزرق
             pin.style.display = 'none'; // إخفاء الدبوس عند تحديد النقطتين
+            
+            changeEndBtn.style.display = 'inline-block';
+            
         } else {
             fareValue.innerText = '---';
             costDisplay.style.display = 'none';
+            changeEndBtn.style.display = 'none';
         }
-        
-    } else if (currentStage === "confirmed") {
-        // هذه المرحلة تحدث قبل إرسال الطلب مباشرةً (عرض نهائي للتفاصيل)
-        endPointBar.style.display = 'flex';
-        pin.style.display = 'none';
-        costDisplay.style.display = 'flex';
-        mainActionBtn.innerText = "إرسال الطلب";
-        mainActionBtn.disabled = !(startCoords && endCoords);
-        mainActionBtn.style.background = '#f97316';
-        changeStartBtn.style.display = 'inline-block';
-        changeEndBtn.style.display = 'inline-block';
-
-        startPointValue.innerText = getShortAreaName(startAreaName);
-        endPointValue.innerText = getShortAreaName(endAreaName);
-        const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
-        fareValue.innerText = fare.toLocaleString('ar-IQ');
-    }
+    } 
 }
 
 // دالة لمعالجة حركة الخريطة (Center Pin Logic)
@@ -465,7 +438,6 @@ map.on('moveend', async function() {
         endPointValue.innerText = 'جاري التحقق من المنطقة...';
     }
     
-    // تأخير Reverse Geocoding
     clearTimeout(geocodeTimer);
     geocodeTimer = setTimeout(async () => {
         const areaName = await reverseGeocode(currentLat, currentLng);
@@ -484,10 +456,8 @@ map.on('movestart', function() {
     isMapMoving = true;
     if (currentStage === "settingStart") {
         startPointValue.innerText = 'جاري تحريك الخريطة...';
-        // لا يوجد تغيير في اللون في التصميم الجديد
     } else if (currentStage === "settingEnd") {
         endPointValue.innerText = 'جاري تحريك الخريطة...';
-        // لا يوجد تغيير في اللون في التصميم الجديد
     }
 });
 
@@ -498,45 +468,36 @@ map.on('move', function() {
 
 // ---------------- وظائف التحكم بالأزرار ----------------
 
-// وظيفة الزر الرئيسي (تثبيت الانطلاق -> تثبيت الوصول -> إرسال الطلب)
 mainActionBtn.onclick = async function() {
     if (currentStage === "settingStart") {
         if (!startCoords || !startAreaName) return;
         currentStage = "settingEnd";
-        // عند الانتقال من تحديد الانطلاق إلى تحديد الوصول، نحرك الخريطة إلى نقطة الانطلاق
         map.setView(startCoords, map.getZoom());
-        endCoords = null; // إعادة تعيين إحداثيات النهاية
+        endCoords = null; 
         endAreaName = "";
         await updateUIForStage();
         
     } else if (currentStage === "settingEnd") {
         if (!endCoords || !endAreaName) return;
-        // هنا كان "تثبيت الوصول"، الآن هو زر "إرسال الطلب" إذا تم تحديد النقطتين
-        if (startCoords && endCoords) {
-             sendRideRequest();
-        } else {
-             // تثبيت الوصول
-            currentStage = "confirmed"; // نغير المرحلة لتثبيت القيم
-            await updateUIForStage();
-        }
         
-    } else if (currentStage === "confirmed") {
-        sendRideRequest();
+        if (startCoords && endCoords) {
+             // عند الضغط للمرة الأخيرة (الزر الأزرق)
+             sendRideRequest();
+        } 
     }
 };
 
 changeStartBtn.onclick = async function() {
     currentStage = "settingStart";
-    // عند تغيير نقطة الانطلاق، نحافظ على نقطة الوصول كمؤقت ثم نخفيها
     endCoords = null;
     endAreaName = "";
-    map.setView(startCoords, map.getZoom()); // نركز على نقطة الانطلاق الحالية
+    map.setView(startCoords, map.getZoom()); 
     await updateUIForStage();
 };
 
 changeEndBtn.onclick = async function() {
     currentStage = "settingEnd";
-    map.setView(endCoords, map.getZoom()); // نركز على نقطة الوصول الحالية
+    map.setView(endCoords, map.getZoom()); 
     await updateUIForStage();
 };
 
@@ -557,7 +518,10 @@ function sendRideRequest(){
   costDisplay.style.display='none';
   changeStartBtn.style.display = 'none';
   changeEndBtn.style.display = 'none';
-  endPointBar.style.display = 'flex'; // نبقي شريط الوصول ظاهر لعرض معلومات الرحلة
+  
+  // إخفاء شريط الوصول وشريط الانطلاق واستبدالهما بشريط الحالة
+  endPointBar.style.display = 'none';
+  startPointBar.style.display = 'none';
   
   db.ref("rides/"+rideId).set({
     riderPhone:phone,
@@ -566,10 +530,6 @@ function sendRideRequest(){
     startArea:startAreaName,endArea:endAreaName, 
     distance:distance,fare:fare,status:"جديدة"
   });
-
-  // تحديث حالة الواجهة لعرض المناطق النهائية
-  startPointValue.innerText = getShortAreaName(startAreaName);
-  endPointValue.innerText = getShortAreaName(endAreaName);
 
   startMonitoringRide(rideId);
 }
@@ -580,10 +540,9 @@ cancelRideBtn.onclick=function(){
 
     db.ref("rides/"+rideId).update({status:"ملغاة", canceledBy:"rider"});
     cleanupRide();
-    alert(`تم إلغاء الطلب.`); // استخدام alert بسيط بدلاً من تحديث حقل الحالة القديم
+    alert(`تم إلغاء الطلب.`); 
     
-    // العودة إلى مرحلة تحديد الانطلاق بعد الإلغاء
-    initGeolocation(); // إعادة تحديد الموقع الحالي وتحديث الواجهة
+    initGeolocation(); 
 };
 
 
@@ -596,19 +555,6 @@ function clearRideMarkers(){
     driverRoute = null;
 }
 
-// دالة رسم مسار حقيقي (مختصرة من الملف الأصلي)
-async function drawStreetRoute(lat1, lng1, lat2, lng2, color, dashArray = '') {
-    // ... (منطق رسم المسار باستخدام OSRM) ...
-    // تم إبقاء المنطق بسيطاً هنا لغرض التركيز على الواجهة
-    if(driverRoute) map.removeLayer(driverRoute); 
-    driverRoute = L.polyline([[lat1, lng1], [lat2, lng2]], { color: color, dashArray: dashArray, weight: 5 }).addTo(map);
-    map.fitBounds(driverRoute.getBounds());
-}
-
-/**
- * دالة تنظيف حالة الرحلة وإعادة الواجهة إلى وضع تحديد الانطلاق.
- * تم التأكد من إعادة تعيين جميع المتغيرات الخاصة بنقاط الانطلاق والوصول.
- */
 function cleanupRide(){
     if(rideRef) rideRef.off();
     if(driverRef) driverRef.off();
@@ -618,7 +564,6 @@ function cleanupRide(){
     localStorage.removeItem('activeRideId');
     clearRideMarkers();
     
-    // إعادة تعيين حالة الواجهة إلى وضع البدء
     currentStage = "settingStart";
     rideId = null;
     startCoords = null;
@@ -626,11 +571,8 @@ function cleanupRide(){
     startAreaName = "";
     endAreaName = "";
     
-    // 🆕 إخفاء رسالة الحالة والأزرار الإضافية
     oldStatus.style.display = 'none';
     cancelRideBtn.style.display='none';
-    endPointBar.style.display = 'none';
-    costDisplay.style.display = 'none';
 }
 
 async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, endLng, rideStatus){
@@ -642,7 +584,6 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
 
         const driverCoords = [d.lat, d.lng];
         
-        // تحديث مؤشر السائق
         if(driverMarker) map.removeLayer(driverMarker);
         driverMarker = L.marker(driverCoords, {
             icon: L.divIcon({
@@ -652,16 +593,6 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
             })
         }).addTo(map).bindPopup("السائق").openPopup();
         
-        // منطق رسم المسار
-        if (rideStatus === "مقبولة" && startLat && startLng) {
-            // المسار من السائق إلى الراكب (نقطة البداية)
-            // await drawStreetRoute(d.lat, d.lng, startLat, startLng, '#4CAF50', '5, 5'); 
-        } else if (rideStatus === "بدأت" && endLat && endLng) {
-             // المسار من السائق إلى الوجهة (نقطة الوصول)
-             // await drawStreetRoute(d.lat, d.lng, endLat, endLng, '#f97316'); 
-        }
-        
-        // التركيز على موقع السائق إذا كانت مقبولة/بدأت
         map.setView(driverCoords, map.getZoom() > 14 ? map.getZoom() : 14);
 
     });
@@ -669,21 +600,15 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
 
 function startMonitoringRide(id){
     rideRef = db.ref("rides/"+id);
-    mainActionBtn.style.display='none';
-    pin.style.display = 'none';
-    costDisplay.style.display = 'flex'; // نبقيه ظاهر لعرض الأجرة
     cancelRideBtn.style.display='inline-block';
-    
-    // 🆕 إظهار لوحة الحالة لتلقي التحديثات
     oldStatus.style.display = 'block';
 
-    // مراقبة حالة الرحلة
     rideRef.on('value', snap => {
         const r = snap.val();
         if(!r) {
             cleanupRide();
             alert(`⚠️ انتهت الرحلة أو ألغيت من النظام.`);
-            initGeolocation(); // تحديث الواجهة بعد التنظيف
+            initGeolocation();
             return;
         }
         
@@ -692,31 +617,18 @@ function startMonitoringRide(id){
         const r_endLat = r.endLat;
         const r_endLng = r.endLng;
 
-        const distance = r.distance || 0;
         const fare = r.fare ? r.fare.toLocaleString('ar-IQ') : '---';
         
-        fareValue.innerText = fare;
-
-        // تحديث معلومات المناطق لضمان ظهورها بشكل صحيح أثناء المراقبة
-        startPointValue.innerText = getShortAreaName(r.startArea);
-        endPointValue.innerText = getShortAreaName(r.endArea);
-        endPointBar.style.display = 'flex'; 
+        // إظهار معلومات التكلفة داخل شريط الحالة
+        let costInfo = `الأجرة: <b>${fare} IQD</b>`;
 
         if (r.status === "جديدة") {
-            // نستخدم رسالة الحالة بدلاً من زر الإجراء
-            mainActionBtn.style.display = 'none'; 
-            clearRideMarkers();
-            
-            oldStatus.innerHTML = `✅ تم إرسال طلبك. الأجرة المقدرة: **${fare} د.ع**. بإنتظار قبول السائق...`;
+            oldStatus.innerHTML = `✅ تم إرسال طلبك إلى السائقين... ${costInfo}.`;
             
         } else if (r.status === "مقبولة" && r.driverPhone) {
-            mainActionBtn.style.display = 'none';
-            cancelRideBtn.style.display='inline-block';
-            
-            // ** 🎯 التعديل الرئيسي: عرض رقم هاتف السائق **
             oldStatus.innerHTML = `
                 🚖 تم قبول الرحلة! السائق قادم إليك.<br>
-                رقم السائق: <b><a href="tel:${r.driverPhone}">${r.driverPhone}</a></b>.
+                رقم السائق: <b><a href="tel:${r.driverPhone}">${r.driverPhone}</a></b>. ${costInfo}.
             `;
             
             if (r.driverPhone !== currentDriverPhone) {
@@ -726,11 +638,9 @@ function startMonitoringRide(id){
             } 
             
         } else if (r.status === "بدأت") {
-             mainActionBtn.style.display = 'none';
-             cancelRideBtn.style.display='inline-block';
              oldStatus.innerHTML = `
                 🚦 الرحلة بدأت! أنت في طريقك إلى ${getShortAreaName(r.endArea)}.<br>
-                رقم السائق: <b><a href="tel:${r.driverPhone}">${r.driverPhone}</a></b>.
+                رقم السائق: <b><a href="tel:${r.driverPhone}">${r.driverPhone}</a></b>. ${costInfo}.
             `;
 
              if (r.driverPhone !== currentDriverPhone) {
@@ -744,7 +654,7 @@ function startMonitoringRide(id){
             oldStatus.innerHTML = message;
             alert(message);
             cleanupRide(); 
-            initGeolocation(); // تحديث الواجهة بعد التنظيف
+            initGeolocation(); 
         }
     });
 }
@@ -759,22 +669,20 @@ function initGeolocation() {
 
       startAreaName=await reverseGeocode(startCoords[0],startCoords[1]);
       
-      // بمجرد تحديد الموقع الأول، نبدأ بالتحقق من الرحلة النشطة
       rideId = localStorage.getItem('activeRideId');
       if(rideId){
         map.whenReady(() => {
             startMonitoringRide(rideId);
         });
       } else {
-        await updateUIForStage(); // تحديث الواجهة لبدء مرحلة "تثبيت الانطلاق"
+        await updateUIForStage();
       }
       
     },async err=>{
-        // في حال فشل تحديد الموقع، نستخدم إحداثيات العبيدي حي الرئاسة كافتراضي
         const defaultLat = 33.3603;
         const defaultLng = 44.5066;
         
-        startAreaName = "بغداد - العبيدي - حي الرئاسة"; // تعيين الاسم الافتراضي
+        startAreaName = "بغداد - العبيدي - حي الرئاسة";
         startCoords = [defaultLat, defaultLng];
         
         alert("⚠️ لم يتم تحديد الموقع بدقة، يرجى تثبيت نقطة الانطلاق بتحريك الخريطة.");
@@ -785,7 +693,6 @@ function initGeolocation() {
                 startMonitoringRide(rideId);
             });
          } else {
-            // يتم تحديث الواجهة لتبدأ عملية تحديد الانطلاق باستخدام الدبوس
             await updateUIForStage();
          }
         
