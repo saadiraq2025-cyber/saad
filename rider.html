@@ -4,18 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>الراكب - تكسي العراق الشامل</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f97316"> 
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
 /* ---------------- الأنماط الأساسية ---------------- */
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
-/* تم تقليل الـ padding-top لـ #map بعد إزالة شريط البحث العلوي */
+
+/* الخريطة يجب أن تشغل الشاشة بالكامل بدون أي padding علوي */
 #map{height:100vh;position:relative; padding-top: 0px;} 
 
-/* ---------------- نمط الشريط السفلي (Panel) - مطابقة الفيديو ---------------- */
+/* ---------------- نمط الشريط السفلي (Panel) - مطابق 100% للفيديو ---------------- */
 #panel{
     position:fixed;
     bottom:0;
@@ -23,41 +31,17 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     right:0;
     background:#fff;
     text-align:center;
-    padding:10px 0; /* تم تقليل الـ padding الرأسي قليلاً */
+    padding:10px 0 15px 0; /* مسافة داخلية */
     box-shadow:0 -2px 10px rgba(0,0,0,0.3);
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
     z-index: 1000;
     display: flex;
-    flex-direction: column; /* لجعل العناصر تتراص عمودياً */
+    flex-direction: column;
     align-items: center;
 }
 
-/* ---------------- نمط الأزرار - مطابقة الفيديو ---------------- */
-button{
-    background:#f97316; /* لون برتقالي مطابق للفيديو */
-    color:white;
-    border:none;
-    padding:15px 10px;
-    border-radius:10px;
-    font-weight:bold;
-    cursor:pointer;
-    margin:5px 10px;
-    width:calc(100% - 20px);
-    font-size: 1.1em;
-}
-/* نمط الزر الثانوي (التغيير) */
-.secondary-btn {
-    background: none !important;
-    color: #f97316 !important;
-    font-weight: bold;
-    font-size: 0.9em;
-    padding: 0 5px;
-    border: none;
-    cursor: pointer;
-}
-
-/* ---------------- نمط نقاط الانطلاق والوصول - مطابقة الفيديو ---------------- */
+/* ---------------- نمط نقاط الانطلاق والوصول - مطابق 100% للفيديو ---------------- */
 #points-container-video {
     width: 100%;
     padding: 0 10px;
@@ -69,10 +53,11 @@ button{
     display: flex;
     justify-content: space-between;
     align-items: center;
+    /* النمط مطابق للفيديو: خلفية بيضاء مع شريطين */
     background: #f5f5f5; /* لون خلفية خفيف لتبدو كحقل */
     border-radius: 8px;
     padding: 10px 15px;
-    margin-bottom: 5px;
+    margin-bottom: 5px; /* مسافة بين الشريطين */
 }
 
 .point-text-container-video {
@@ -86,6 +71,7 @@ button{
     color: #333;
     font-size: 0.85em;
     display: block;
+    margin-bottom: 3px; /* مسافة بين العنوان والقيمة */
 }
 
 .point-value-video {
@@ -97,14 +83,42 @@ button{
     display: block;
 }
 
-/* ---------------- نمط التكلفة - مطابقة الفيديو ---------------- */
-#costDisplay {
-    /* تم تغيير النمط ليكون سطر واحد كالموجود في الفيديو [0:21] */
-    background: #fff; /* خلفية بيضاء */
-    color: #004d40; /* لون غامق للنص */
+/* ---------------- نمط الزر والإجراء - مطابق 100% للفيديو ---------------- */
+button{
+    background:#f97316; /* لون برتقالي مطابق للفيديو */
+    color:white;
+    border:none;
+    padding:15px 10px;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+    margin:5px 10px;
+    width:calc(100% - 20px);
     font-size: 1.1em;
+}
+
+/* نمط زر التغيير الصغير (مطابق) */
+.secondary-btn {
+    background: #f97316 !important; /* خلفية برتقالية للزر الصغير */
+    color: white !important;
     font-weight: bold;
-    padding: 5px 15px; /* تقليل الـ padding */
+    font-size: 0.8em;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    width: auto !important; /* إلغاء خاصية عرض 100% */
+    margin: 0;
+}
+
+/* ---------------- نمط التكلفة - مطابق 100% للفيديو ---------------- */
+#costDisplay {
+    /* النمط مطابق تماماً للذي يظهر في الفيديو [0:21] */
+    background: #fff; 
+    color: #333; 
+    font-size: 1em;
+    font-weight: normal;
+    padding: 5px 15px;
     margin: 5px 10px;
     border-radius: 8px;
     display: none; 
@@ -113,27 +127,17 @@ button{
     text-align: center;
 }
 #costDisplay strong {
-    color: #e53935; 
-    font-size: 1.2em;
+    color: #e53935; /* لون أحمر/غالب للأجرة */
+    font-size: 1.1em;
     margin-right: 5px;
 }
+#costDisplay .cost-label {
+    font-weight: bold;
+    color: #004d40;
+}
+
 
 /* ---------------- أنماط الحالة والمؤشر ---------------- */
-#panel p#status {
-    font-size: 1.0em;
-    font-weight: normal;
-    margin: 10px 10px 5px;
-    line-height: 1.4;
-    color: #333;
-    padding: 5px 10px;
-    border-radius: 8px;
-    background: #f0f0f0;
-}
-#panel p#status b a {
-    color: #004d40; 
-    text-decoration: none;
-    font-size: 1.1em;
-}
 #map-center-pin {
     position: absolute;
     top: 50%;
@@ -146,22 +150,24 @@ button{
     pointer-events: none; 
     display: none; 
 }
+#panel p#status {
+    font-size: 1.0em;
+    font-weight: normal;
+    margin: 10px 10px 5px;
+    line-height: 1.4;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: #f0f0f0;
+}
 
 /* ---------------- إخفاء العناصر غير المرئية في الفيديو ---------------- */
-#driverInfo{display:none;}
-#logoutBtn{display:none;}
+/* تم إخفاء شريط البحث العلوي تماماً كما في الفيديو */
+#searchContainer, #searchResults { display: none !important; }
+/* تم إخفاء الهيكل القديم للنقاط (تم استبداله بهيكل الفيديو) */
+#pointContainer { display: none !important; }
+#driverInfo, #logoutBtn { display: none !important; }
 #cancelRideBtn{background:#E53935;color:white; display:none;}
-
-/* ---------------- إزالة حقول البحث (غير موجودة في الفيديو المرفق) ---------------- */
-#searchContainer, #searchResults, #back-button, #search-input, #search-icon { 
-    display: none !important; 
-}
-
-/* إخفاء الهيكل القديم للنقاط (تم استبداله بهيكل الفيديو) */
-#pointContainer {
-    display: none; 
-}
-
 
 </style>
 </head>
@@ -185,19 +191,16 @@ button{
         <div class="point-row-video">
             <div class="point-text-container-video">
                 <span class="point-label-video">نقطة الوصول</span>
-                <span id="endPointValueVideo" class="point-value-video">جاري التحقق من المنطقة...</span>
+                <span id="endPointValueVideo" class="point-value-video">حدد نقطة الوصول...</span>
             </div>
             <button id="changeEndPointBtn" class="secondary-btn" style="display:none;">تغيير</button>
         </div>
 
         <div id="costDisplay">
-             التكلفة: <strong><span id="fareValue">---</span> د.ع</strong>
+             <span class="cost-label">التكلفة:</span> <strong><span id="fareValue">---</span> IQD</strong>
         </div>
         
     </div>
-    
-    <div id="pointContainer">
-        </div>
     
     <p id="status" style="display:none;"></p> 
     <button id="mainActionBtn">تثبيت الانطلاق</button>
@@ -207,7 +210,23 @@ button{
 
 <script>
 // ---------------- تهيئة Firebase و Leaflet ----------------
-// ... (تبقى كما هي) ...
+const app=firebase.initializeApp({
+  apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
+  authDomain:"taxi-15314.firebaseapp.com",
+  databaseURL:"https://taxi-15314-default-rtdb.firebaseio.com/",
+  projectId:"taxi-15314"
+});
+const db=firebase.database();
+
+// ** تم الإبقاء على طبقة Google Maps كما هي لتطابق الفيديو المرفق **
+let map=L.map('map').setView([33.3603, 44.5066],14); 
+
+L.tileLayer(
+  "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=AIzaSyD7TtwniAdUtB8-pnTny4ZwE6gqX36SGUk",
+  { maxZoom: 20 }
+).addTo(map);
+
+map.whenReady(()=>map.invalidateSize());
 
 // ---------------- متغيرات الحالة ----------------
 let startCoords=null, endCoords=null;
@@ -223,7 +242,7 @@ let rideRef=null;
 let driverRef=null; 
 let currentDriverPhone=null;
 
-// ---------------- مراجع العناصر - تم تحديثها لمطابقة الواجهة الجديدة ----------------
+// ---------------- مراجع العناصر - تم التحديث لتعكس الهيكل الجديد ----------------
 const pin = document.getElementById("map-center-pin");
 // ** 🆕 استخدام العناصر الجديدة **
 const startPointValue = document.getElementById("startPointValueVideo");
@@ -240,8 +259,7 @@ const changeEndBtn = document.getElementById("changeEndPointBtn");
 // ⛔ تم إزالة مراجع البحث ⛔
 
 
-// ---------------- وظائف المساعدة والـ Geocoding (تبقى كما هي) ----------------
-// ... (getShortAreaName, reverseGeocode, calculateDistanceAndFare) ...
+// ---------------- وظائف المساعدة والـ Geocoding (متبقاة كما هي) ----------------
 
 function getShortAreaName(fullArea) {
     if (!fullArea) return "منطقة غير معروفة";
@@ -288,6 +306,7 @@ async function reverseGeocode(lat, lon) {
                 return poiName;
             }
 
+            // العودة إلى المنطق الأصلي (سلسلة العناوين)
             return d.display_name.split(',').slice(0, 3).reverse().join(', ');
         }
         return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -343,9 +362,9 @@ async function updateUIForStage() {
         // ** مطابقة الفيديو - نص الزر يحمل تفاصيل النقطة **
         if (startAreaName) {
              const shortName = getShortAreaName(startAreaName);
+             // يتم استخدام اسم النقطة في الزر الرئيسي، كما في الفيديو [0:00]
              mainActionBtn.innerText = `تثبيت الانطلاق | ${shortName.length > 15 ? shortName.substring(0, 15) + '...' : shortName}`;
         }
-
         
     } else if (currentStage === "settingEnd") {
         mainActionBtn.innerText = "تثبيت الوصول";
@@ -357,17 +376,19 @@ async function updateUIForStage() {
         endPointValue.innerText = endAreaName ? getShortAreaName(endAreaName) : 'جاري التحقق من المنطقة...';
         endPointValue.style.color = '#666';
         
-        // ** مطابقة الفيديو - زر تغيير الانطلاق يظهر بعد تحديد الانطلاق **
+        // ** مطابقة الفيديو - زر تغيير الانطلاق يظهر بعد تحديد الانطلاق [0:08] **
         changeStartBtn.style.display = 'inline-block';
 
         if (startCoords && endCoords) {
             const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
             fareValue.innerText = fare.toLocaleString('ar-IQ');
-            costDisplay.style.display = 'block';
-            mainActionBtn.innerText = "إرسال الطلب"; // يتغير نص الزر إلى "إرسال الطلب" عند وجود النقطتين
+            costDisplay.style.display = 'block'; // عرض التكلفة [0:20]
+            changeEndBtn.style.display = 'inline-block'; // زر تغيير الوصول يظهر أيضاً
+            mainActionBtn.innerText = "إرسال الطلب"; // يتغير نص الزر إلى "إرسال الطلب" [0:21]
         } else {
             fareValue.innerText = '---';
             costDisplay.style.display = 'none';
+            changeEndBtn.style.display = 'none';
             // ** مطابقة الفيديو - نص الزر يحمل تفاصيل النقطة **
              if (endAreaName) {
                  const shortName = getShortAreaName(endAreaName);
@@ -437,21 +458,13 @@ map.on('movestart', function() {
 
 map.on('move', function() {
     isMapMoving = false;
-    if (currentStage === "settingStart") {
-        // لا نحتاج لتعيين اللون هنا، يتم ذلك في moveend أو عند التحديث
-    } else if (currentStage === "settingEnd") {
-        // لا نحتاج لتعيين اللون هنا
-    }
+    // ... (لا نحتاج إلى إجراء هنا) ...
 });
 
-// ---------------- وظائف البحث (تم إزالتها في الهيكل، لكن الوظائف تبقى غير مستدعاة) ----------------
+// ---------------- وظائف البحث (تم إزالتها لتطابق الفيديو) ----------------
 
-let searchTimer = null;
-// ⛔ تم إزالة searchInput.addEventListener ⛔
-// ⛔ تم إزالة performGeocoding ⛔
-// ⛔ تم إزالة displaySearchResults ⛔
 
-// ---------------- وظائف التحكم بالأزرار (تبقى كما هي) ----------------
+// ---------------- وظائف التحكم بالأزرار (متبقاة كما هي) ----------------
 mainActionBtn.onclick = async function() {
     if (currentStage === "settingStart") {
         if (!startCoords || !startAreaName) return;
@@ -506,9 +519,6 @@ function sendRideRequest(){
   costDisplay.style.display='none';
   changeStartBtn.style.display = 'none';
   changeEndBtn.style.display = 'none';
-  
-  // ⛔ إخفاء قائمة البحث ⛔
-  // searchResultsContainer.style.display = 'none';
 
   db.ref("rides/"+rideId).set({
     riderPhone:phone,
@@ -536,7 +546,7 @@ cancelRideBtn.onclick=function(){
 };
 
 
-// ---------------- وظائف المراقبة والتنظيف والمسار (تبقى كما هي) ----------------
+// ---------------- وظائف المراقبة والتنظيف والمسار (متبقاة كما هي) ----------------
 function clearRideMarkers(){
     if(driverMarker) map.removeLayer(driverMarker);
     if(driverRoute) map.removeLayer(driverRoute);
@@ -604,7 +614,7 @@ function startMonitoringRide(id){
     rideRef = db.ref("rides/"+id);
     mainActionBtn.style.display='none';
     pin.style.display = 'none';
-    costDisplay.style.display = 'block'; // يجب أن تظهر التكلفة أثناء المراقبة
+    costDisplay.style.display = 'none';
     cancelRideBtn.style.display='inline-block';
     
     oldStatus.style.display = 'block';
@@ -627,7 +637,7 @@ function startMonitoringRide(id){
         const fare = r.fare ? r.fare.toLocaleString('ar-IQ') : '---';
         
         fareValue.innerText = fare;
-        // costDisplay.style.display = 'block'; // تم تفعيلها في بداية المراقبة
+        costDisplay.style.display = 'block'; // تظهر التكلفة أثناء المراقبة
 
         if (r.status === "جديدة") {
             mainActionBtn.innerText=`✅ تم الإرسال. في انتظار قبول السائق...`;
@@ -678,7 +688,7 @@ function startMonitoringRide(id){
 }
 
 
-// ---------------- تهيئة الموقع (تبقى كما هي) ----------------
+// ---------------- تهيئة الموقع (متبقاة كما هي) ----------------
 
 function initGeolocation() {
     navigator.geolocation.getCurrentPosition(async pos=>{
@@ -717,7 +727,7 @@ function initGeolocation() {
     },{enableHighAccuracy:true,timeout:10000,maximumAge:0});
 }
 
-// ---------------- وظائف تسجيل الخروج (تبقى كما هي) ----------------
+// ---------------- وظائف تسجيل الخروج (متبقاة كما هي) ----------------
 
 window.onload=function(){
     let phone=localStorage.getItem("phone");
