@@ -332,6 +332,68 @@ function calculateDistanceAndFare(lat1, lng1, lat2, lng2) {
     return { distance: distance, fare: fare };
 }
 
+
+// ---------------- وظائف البحث عن أقرب سائق ----------------
+
+/**
+ * دالة لحساب المسافة الدقيقة (كيلومتر) بين نقطتين باستخدام صيغة هافرسين.
+ * @param {number} lat1 - خط عرض النقطة الأولى.
+ * @param {number} lng1 - خط طول النقطة الأولى.
+ * @param {number} lat2 - خط عرض النقطة الثانية.
+ * @param {number} lng2 - خط طول النقطة الثانية.
+ * @returns {number} المسافة بالكيلومتر.
+ */
+function getDistanceKm(lat1, lng1, lat2, lng2) {
+    const R = 6371; // نصف قطر الأرض بالكيلومتر
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+
+/**
+ * البحث عن أقرب سائق متاح في حدود المسافة المحددة (3 كم).
+ * @param {number} riderLat - خط عرض الراكب.
+ * @param {number} riderLng - خط طول الراكب.
+ * @param {number} maxDistanceKm - أقصى مسافة للبحث بالكيلومتر.
+ * @returns {Promise<string|null>} رقم هاتف أقرب سائق أو null إذا لم يوجد.
+ */
+async function findNearbyDriver(riderLat, riderLng, maxDistanceKm = 3) {
+    let closestDriverPhone = null;
+    let minDistance = Infinity;
+    
+    // جلب قائمة السائقين المتاحين (افتراضاً: جميع السائقين في قاعدة البيانات)
+    const snapshot = await db.ref("drivers").once('value');
+    const drivers = snapshot.val();
+
+    if (!drivers) {
+        return null;
+    }
+
+    // المرور على السائقين وتحديد الأقرب ضمن نطاق 3 كم
+    for (const phone in drivers) {
+        const driver = drivers[phone];
+        
+        // يجب أن يكون السائق متاحاً (مثلاً: حالة السائق في قاعدة البيانات هي 'available')
+        // *افتراض بسيط: نعتبر كل سائق لديه إحداثيات 'lat' و 'lng' متاحاً*
+        if (driver.lat && driver.lng) {
+            const distance = getDistanceKm(riderLat, riderLng, driver.lat, driver.lng);
+
+            if (distance <= maxDistanceKm && distance < minDistance) {
+                minDistance = distance;
+                closestDriverPhone = phone;
+            }
+        }
+    }
+
+    return closestDriverPhone;
+}
+
+
 // ---------------- وظائف تحديث الواجهة ----------------
 
 // تحديث الواجهة حسب مرحلة تحديد النقاط (settingStart, settingEnd, confirmed)
@@ -590,36 +652,74 @@ changeEndBtn.onclick = async function() {
 function sendRideRequest(){
   if(!startCoords||!endCoords){alert("حدد المواقع.");return;}
   mainActionBtn.disabled = true;
+  mainActionBtn.innerText = "جاري البحث عن أقرب سائق...";
+  mainActionBtn.style.background = '#607d8b'; // لون مختلف للبحث
 
-  const phone=localStorage.getItem('phone');
-  const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
+  // 1. البحث عن أقرب سائق في حدود 3 كم
+  findNearbyDriver(startCoords[0], startCoords[1], 3).then(closestDriverPhone => {
+        if (closestDriverPhone) {
+            // 2. إذا تم العثور على سائق، يتم إرسال الطلب إليه مباشرة
+            const phone=localStorage.getItem('phone');
+            const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
 
-  rideId=Date.now();
-  localStorage.setItem('activeRideId',rideId);
+            rideId=Date.now();
+            localStorage.setItem('activeRideId',rideId);
 
-  // إخفاء عناصر اختيار النقطة
-  mainActionBtn.style.display='none';
-  pin.style.display='none';
-  costDisplay.style.display='none';
-  changeStartBtn.style.display = 'none';
-  changeEndBtn.style.display = 'none';
-  
-  // إخفاء قائمة البحث
-  searchResultsContainer.style.display = 'none';
+            // إخفاء عناصر اختيار النقطة
+            mainActionBtn.style.display='none';
+            pin.style.display='none';
+            costDisplay.style.display='none';
+            changeStartBtn.style.display = 'none';
+            changeEndBtn.style.display = 'none';
+            
+            // إخفاء قائمة البحث
+            searchResultsContainer.style.display = 'none';
 
-  db.ref("rides/"+rideId).set({
-    riderPhone:phone,
-    startLat:startCoords[0], startLng:startCoords[1], 
-    endLat:endCoords[0], endLng:endCoords[1],         
-    startArea:startAreaName,endArea:endAreaName, 
-    distance:distance,fare:fare,status:"جديدة"
+            // 🎯 إرسال الطلب بحالة "مقبولة" مباشرة للسائق المحدد
+            db.ref("rides/"+rideId).set({
+                riderPhone:phone,
+                startLat:startCoords[0], startLng:startCoords[1], 
+                endLat:endCoords[0], endLng:endCoords[1],         
+                startArea:startAreaName,endArea:endAreaName, 
+                distance:distance,fare:fare,
+                status:"مقبولة", // يتم وضعها كمقبولة مباشرة للسائق القريب
+                driverPhone: closestDriverPhone // تعيين السائق الذي قبل الطلب
+            });
+            
+            // 🎯 إرسال إشعار للـ Driver ليعلم بأن لديه رحلة مقبولة
+            // هذه خطوة افتراضية لتنبيه السائق على تطبيقه، يجب أن يكون هناك منطق في جهة السائق لمراقبة عقد الـ driverPhone
+            db.ref("driverRequests/"+closestDriverPhone).set({
+                rideId: rideId,
+                status: "مقبولة",
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            // تحديث حالة الواجهة
+            startPointValue.innerText = getShortAreaName(startAreaName);
+            endPointValue.innerText = getShortAreaName(endAreaName);
+
+            startMonitoringRide(rideId);
+            
+        } else {
+            // 3. إذا لم يتم العثور على سائق، يتم إرجاع حالة خطأ
+            mainActionBtn.disabled = false;
+            mainActionBtn.innerText = "إرسال الطلب";
+            mainActionBtn.style.background = '#f97316';
+            
+            oldStatus.innerHTML = `❌ لم يتم العثور على أي سائق متاح ضمن 3 كم. حاول لاحقاً.`;
+            oldStatus.style.display = 'block';
+            
+            // إعادة ضبط لوحة التحكم لعرض التكلفة
+            updateUIForStage();
+        }
+  }).catch(error => {
+        console.error("Error finding nearby driver:", error);
+        mainActionBtn.disabled = false;
+        mainActionBtn.innerText = "إرسال الطلب";
+        mainActionBtn.style.background = '#f97316';
+        oldStatus.innerHTML = `❌ حدث خطأ أثناء البحث عن السائقين.`;
+        oldStatus.style.display = 'block';
   });
-
-  // تحديث حالة الواجهة
-  startPointValue.innerText = getShortAreaName(startAreaName);
-  endPointValue.innerText = getShortAreaName(endAreaName);
-
-  startMonitoringRide(rideId);
 }
 
 // إلغاء الطلب (وظيفة الإلغاء تبقى كما هي)
@@ -754,6 +854,7 @@ function startMonitoringRide(id){
 
 
         if (r.status === "جديدة") {
+            // هذه الحالة لن تحدث بالمنطق الجديد، لكن نتركها احتياطاً إذا تم إرسال الطلب بالطريقة القديمة
             mainActionBtn.innerText=`✅ تم الإرسال. في انتظار قبول السائق...`;
             mainActionBtn.style.display = 'block';
             mainActionBtn.disabled = true; // لمنع الضغط عليه وهو قيد الانتظار
