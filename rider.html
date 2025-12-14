@@ -274,6 +274,7 @@ let driverRoute=null;
 let rideRef=null; 
 let driverRef=null; 
 let currentDriverPhone=null;
+let circularSearchTimer = null; // 🎯 متغير المؤقت الجديد
 
 // ---------------- مراجع العناصر ----------------
 const pin = document.getElementById("map-center-pin");
@@ -598,7 +599,8 @@ mainActionBtn.onclick = async function() {
         }
         
     } else if (currentStage === "confirmed") {
-        findNearestDriver(); // 🎯 الوظيفة الجديدة
+        // 🎯 تم تغيير findNearestDriver إلى startCircularSearch
+        startCircularSearch(); 
     }
 };
 
@@ -617,8 +619,8 @@ changeEndBtn.onclick = async function() {
 };
 
 
-// 🎯 الوظيفة الجديدة للبحث عن أقرب سائق وإرسال الطلب إليه فقط
-function findNearestDriver(){
+// 🎯 الوظيفة الجديدة لبدء البحث الدائري (المؤقت 15 ثانية على كل سائق)
+function startCircularSearch(){
   if(!startCoords||!endCoords){alert("حدد المواقع.");return;}
   
   mainActionBtn.disabled = true;
@@ -626,12 +628,17 @@ function findNearestDriver(){
   oldStatus.style.display = 'block';
   oldStatus.innerHTML = "جاري مسح السائقين القريبين (بحد أقصى 3 كم)...";
   
+  // 1. جلب بيانات السائقين وتحديد الأقرب
+  findNearestDriverAndSendRequest();
+}
+
+
+function findNearestDriverAndSendRequest(){
   const riderLat = startCoords[0];
   const riderLng = startCoords[1];
   let nearestDriver = null;
   let minDistance = 3.01; // 3 كم هو الحد الأقصى
   
-  // 1. جلب بيانات السائقين
   db.ref("drivers").once("value", snapshot => {
     snapshot.forEach(childSnapshot => {
       const driverPhone = childSnapshot.key;
@@ -650,8 +657,8 @@ function findNearestDriver(){
 
     if (nearestDriver) {
       // 2. إذا تم العثور على سائق، إرسال الطلب إليه فقط
-      oldStatus.innerHTML = `تم العثور على سائق! المسافة: ${minDistance.toFixed(2)} كم. جاري إرسال الطلب...`;
-      sendRideRequest(nearestDriver);
+      oldStatus.innerHTML = `تم العثور على سائق! المسافة: ${minDistance.toFixed(2)} كم. جاري إرسال الطلب وإنتظار الرد (15 ثانية)...`;
+      sendRideRequest(nearestDriver, minDistance);
     } else {
       // 3. إذا لم يتم العثور على سائق
       mainActionBtn.disabled = false;
@@ -662,13 +669,18 @@ function findNearestDriver(){
 }
 
 
-function sendRideRequest(targetDriverPhone){
+function sendRideRequest(targetDriverPhone, distance){
   if(!startCoords||!endCoords){alert("حدد المواقع.");return;}
+  
+  // إيقاف أي مؤقت سابق لضمان عدم تداخل الطلبات
+  if(circularSearchTimer) clearTimeout(circularSearchTimer);
+
   mainActionBtn.disabled = true;
 
   const phone=localStorage.getItem('phone');
-  const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
+  const { fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
 
+  // إنشاء معرف رحلة جديد
   rideId=Date.now();
   localStorage.setItem('activeRideId',rideId);
 
@@ -679,7 +691,7 @@ function sendRideRequest(targetDriverPhone){
   changeEndBtn.style.display = 'none';
   searchResultsContainer.style.display = 'none';
 
-  // 🎯 يتم تعيين حالة "قيد المراجعة" وإضافة هاتف السائق المستهدف
+  // 🎯 إرسال الطلب إلى السائق المستهدف
   db.ref("rides/"+rideId).set({
     riderPhone:phone,
     targetDriver: targetDriverPhone, // 🎯 هاتف السائق المستهدف
@@ -687,13 +699,13 @@ function sendRideRequest(targetDriverPhone){
     endLat:endCoords[0], endLng:endCoords[1],         
     startArea:startAreaName,endArea:endAreaName, 
     distance:distance,fare:fare,
-    status:"قيد المراجعة" // 🎯 الحالة الجديدة لإرسال الطلب لسائق واحد
+    status:"قيد المراجعة" 
   });
 
   startPointValue.innerText = getShortAreaName(startAreaName);
   endPointValue.innerText = getShortAreaName(endAreaName);
 
-  startMonitoringRide(rideId);
+  startMonitoringRide(rideId, 15); // 🎯 بدء المراقبة مع مؤقت 15 ثانية
 }
 
 // إلغاء الطلب (وظيفة الإلغاء تبقى كما هي)
@@ -701,6 +713,8 @@ cancelRideBtn.onclick=function(){
     if(!rideId) return;
 
     db.ref("rides/"+rideId).update({status:"ملغاة", canceledBy:"rider"});
+    // 🎯 تنظيف المؤقت
+    if(circularSearchTimer) clearTimeout(circularSearchTimer); 
     cleanupRide();
     alert(`تم إلغاء الطلب.`); 
     
@@ -726,6 +740,10 @@ function cleanupRide(){
     localStorage.removeItem('activeRideId');
     clearRideMarkers();
     
+    // 🎯 تنظيف المؤقت أيضاً
+    if(circularSearchTimer) clearTimeout(circularSearchTimer); 
+    circularSearchTimer = null;
+
     currentStage = "settingStart";
     rideId = null;
     startCoords = null;
@@ -761,7 +779,8 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
     });
 }
 
-function startMonitoringRide(id){
+// 🎯 تحديث الوظيفة لإضافة مؤقت الـ 15 ثانية
+function startMonitoringRide(id, reviewTimeSeconds){
     rideRef = db.ref("rides/"+id);
     mainActionBtn.style.display='none';
     pin.style.display = 'none';
@@ -769,6 +788,44 @@ function startMonitoringRide(id){
     cancelRideBtn.style.display='inline-block';
     
     oldStatus.style.display = 'block';
+    let countdownValue = reviewTimeSeconds;
+
+    // 🎯 بدء المؤقت هنا
+    if (reviewTimeSeconds > 0) {
+        
+        const updateCountdown = () => {
+             // التحقق من حالة الطلب قبل تحديث المؤقت
+            db.ref("rides/"+id).once("value", s => {
+                const currentR = s.val();
+                if(currentR && currentR.status === "قيد المراجعة") {
+                    
+                    oldStatus.innerHTML = `
+                        ⏳ تم إرسال طلبك إلى أقرب سائق (${currentR.targetDriver}).
+                        إنتظار القبول... (${countdownValue} ثانية متبقية)
+                    `;
+
+                    countdownValue--;
+                    if (countdownValue < 0) {
+                         // انتهى المؤقت دون رد
+                         db.ref("rides/"+id).update({status: "مرفوضة", rejectionReason: "No response from targeted driver in 15s"});
+                         cleanupRide(); 
+                         alert("انتهى وقت انتظار السائق، يرجى المحاولة مرة أخرى.");
+                         initGeolocation(); 
+                         return; // إنهاء المراقبة هنا
+                    }
+                    
+                    circularSearchTimer = setTimeout(updateCountdown, 1000); // تحديث كل ثانية
+                    
+                } else {
+                    // إذا تغيرت الحالة (مقبولة، مرفوضة، ملغاة)، يتم إنهاء المؤقت
+                    if(circularSearchTimer) clearTimeout(circularSearchTimer);
+                    circularSearchTimer = null;
+                }
+            });
+        };
+        updateCountdown();
+    }
+    // ---------------------------------
 
     rideRef.on('value', snap => {
         const r = snap.val();
@@ -800,23 +857,13 @@ function startMonitoringRide(id){
             mainActionBtn.style.background = '#607d8b'; 
             clearRideMarkers();
             
-            oldStatus.innerHTML = `⏳ تم إرسال طلبك إلى أقرب سائق (${r.targetDriver}). بإنتظار القبول...`;
-            
-            // ** 🎯 مؤقت للمراجعة: إذا لم يقبل السائق خلال 30 ثانية، اعتبر الطلب مرفوضاً ليعيد الراكب البحث **
-            if(!r.reviewTimer){
-                db.ref("rides/"+id+"/reviewTimer").set(Date.now());
-                setTimeout(() => {
-                    db.ref("rides/"+id).once("value", s => {
-                        const currentR = s.val();
-                        if(currentR && currentR.status === "قيد المراجعة") {
-                             // يتم إنهاء الطلب حتى يتمكن الراكب من البحث مرة أخرى
-                            db.ref("rides/"+id).update({status: "مرفوضة", rejectionReason: "No response from targeted driver"});
-                        }
-                    });
-                }, 30000); // 30 ثانية
-            }
+            // 🎯 تم إزالة منطق المؤقت من هنا لأننا نستخدم المؤقت الخارجي (circularSearchTimer) الآن
             
         } else if (r.status === "مقبولة" && r.driverPhone) {
+            // 🎯 يتم إيقاف المؤقت عند القبول
+            if(circularSearchTimer) clearTimeout(circularSearchTimer);
+            circularSearchTimer = null; 
+
             mainActionBtn.style.display = 'none';
             cancelRideBtn.style.display='inline-block';
             
@@ -832,6 +879,10 @@ function startMonitoringRide(id){
             } 
             
         } else if (r.status === "بدأت") {
+            // 🎯 يتم إيقاف المؤقت عند بدء الرحلة (للتأكد)
+            if(circularSearchTimer) clearTimeout(circularSearchTimer);
+            circularSearchTimer = null;
+
              mainActionBtn.style.display = 'none';
              cancelRideBtn.style.display='inline-block';
              oldStatus.innerHTML = `
@@ -846,6 +897,10 @@ function startMonitoringRide(id){
             } 
              
         } else if (r.status === "منتهية" || r.status === "ملغاة" || r.status === "مرفوضة") {
+             // 🎯 يتم إيقاف المؤقت عند انتهاء/إلغاء/رفض الطلب
+            if(circularSearchTimer) clearTimeout(circularSearchTimer);
+            circularSearchTimer = null;
+
             const message = `الرحلة ${r.status}.`;
             oldStatus.innerHTML = message;
             alert(message);
@@ -868,7 +923,9 @@ function initGeolocation() {
       rideId = localStorage.getItem('activeRideId');
       if(rideId){
         map.whenReady(() => {
-            startMonitoringRide(rideId);
+            // 🎯 عند العودة، لا نمرر وقتاً (صفر)، لأن المؤقت إن كان موجوداً، يجب أن يكون قد ألغي تلقائياً
+            // أو سيتم التحقق من حالته داخل startMonitoringRide.
+            startMonitoringRide(rideId, 0); 
         });
       } else {
         await updateUIForStage(); 
@@ -886,7 +943,7 @@ function initGeolocation() {
         rideId = localStorage.getItem('activeRideId');
          if(rideId){
             map.whenReady(() => {
-                startMonitoringRide(rideId);
+                startMonitoringRide(rideId, 0);
             });
          } else {
             await updateUIForStage();
@@ -910,6 +967,9 @@ window.onload=function(){
 window.logout=function(){
     if(rideRef) rideRef.off();
     if(driverRef) driverRef.off();
+    // 🎯 تنظيف المؤقت
+    if(circularSearchTimer) clearTimeout(circularSearchTimer); 
+
     localStorage.removeItem('phone');
     localStorage.removeItem('userType');
     localStorage.removeItem('activeRideId');
