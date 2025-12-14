@@ -17,7 +17,75 @@
 
 <style>
 body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
-#map{height:100vh;position:relative; padding-top: 80px;} /* إضافة مسافة لأسفل شريط البحث */
+#map{height:100vh;position:relative; padding-top: 80px;} /* تم زيادة البادينغ لاستيعاب شريط البحث */
+
+/* --- أنماط شريط البحث الجديدة (لإظهار الميزة الجديدة) --- */
+#searchContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+    display: flex; /* Make it visible */
+    align-items: center;
+    padding: 10px;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#search-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    margin: 0 10px;
+    text-align: right;
+}
+
+#search-icon {
+    font-size: 1.2em;
+    color: #f97316;
+}
+
+#back-button {
+    background: none;
+    color: #333;
+    font-size: 1.8em;
+    padding: 0 10px;
+    border: none;
+    width: auto;
+    margin: 0;
+}
+
+#searchResults {
+    position: fixed;
+    top: 60px; /* تحت شريط البحث */
+    left: 0;
+    right: 0;
+    z-index: 1002;
+    background: white;
+    max-height: 50vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    display: none; /* مخفي مبدئياً */
+}
+
+.search-result-item {
+    padding: 15px 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    text-align: right;
+    font-size: 0.9em;
+}
+
+.search-result-item:hover {
+    background: #f5f5f5;
+}
+/* --- نهاية أنماط شريط البحث الجديدة --- */
+
 #panel{
     position:fixed;
     bottom:0;
@@ -25,14 +93,14 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;}
     right:0;
     background:#fff;
     text-align:center;
-    padding:10px 0; /* تم تقليل البادينغ الرأسي */
+    padding:10px 0; 
     box-shadow:0 -2px 10px rgba(0,0,0,0.3);
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
     z-index: 1000;
 }
 button{
-    background:#f97316; /* لون برتقالي مطابق للفيديو */
+    background:#f97316;
     color:white;
     border:none;
     padding:15px 10px;
@@ -44,7 +112,6 @@ button{
     font-size: 1.1em;
 }
 
-/* نمط جديد لرسالة الحالة لتكبير وتثخين الخط */
 #panel p#status {
     font-size: 1.0em;
     font-weight: normal;
@@ -56,19 +123,18 @@ button{
     background: #f0f0f0;
 }
 #panel p#status b a {
-    color: #004d40; /* لون مميز لرابط الهاتف */
+    color: #004d40;
     text-decoration: none;
     font-size: 1.1em;
 }
 
-/* نمط عرض التكلفة - مطابق للفيديو في حالته النهائية */
 #costDisplay {
-    background: #e0f2f1; /* لون فاتح للخلفية - مطابق للـ HTML الأصلي */
-    color: #004d40; /* لون غامق للنص - مطابق للـ HTML الأصلي */
+    background: #e0f2f1;
+    color: #004d40;
     font-size: 1.2em;
     font-weight: bold;
     padding: 10px;
-    margin: 10px 10px 5px; /* تم تعديل الهامش السفلي للاقتراب من زر الإرسال */
+    margin: 10px 10px 5px; 
     border-radius: 8px;
     display: none; 
 }
@@ -90,29 +156,24 @@ button{
     display: none; 
 }
 
-/* 🎯 حاوية نقاط الانطلاق والوصول (مُعاد تصميمها لتطابق مظهر الفيديو) */
 #pointContainer {
     display: flex;
     flex-direction: column;
     padding: 0 10px;
-    margin-bottom: 5px; /* تم تقليل الهامش السفلي */
+    margin-bottom: 5px;
     text-align: right;
-    gap: 10px; /* مسافة بين العناصر */
+    gap: 10px; 
 }
 
 .point-field {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #f5f5f5; /* خلفية فاتحة تشبه حقول الإدخال في الفيديو */
+    background: #f5f5f5; 
     padding: 10px 15px; 
     border-radius: 10px;
     font-size: 1.0em;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.point-field:last-child {
-    border-bottom: none;
 }
 
 .point-label {
@@ -121,7 +182,7 @@ button{
     white-space: nowrap;
     margin-left: 10px;
     flex-shrink: 0;
-    font-size: 0.9em; /* تقليل حجم الخط للعنوان */
+    font-size: 0.9em;
 }
 
 .point-value {
@@ -131,8 +192,8 @@ button{
     white-space: nowrap;
     flex-grow: 1;
     text-align: right;
-    font-weight: normal; /* جعل القيمة بخط عادي */
-    font-size: 1.1em; /* تكبير حجم الخط للقيمة */
+    font-weight: normal; 
+    font-size: 1.1em;
 }
 
 .point-action {
@@ -147,12 +208,6 @@ button{
     font-size: 0.9em;
 }
 
-/* إخفاء شريط البحث وزر العودة لتطابق الفيديو (الذي يظهر فقط لوحة التحكم) */
-#searchContainer {
-    display: none !important; 
-}
-
-
 /* إخفاء العناصر القديمة أو إعادة تصميمها */
 #driverInfo{display:none;}
 #logoutBtn{display:none; width:auto; background:#607d8b; padding:10px 20px;}
@@ -166,14 +221,13 @@ button{
 <div id="map"></div>
 <div id="map-center-pin">📍</div>
 
-<div id="searchContainer" style="display:none;">
-    <button id="back-button" onclick="history.back()">&#x2039;</button> 
+<div id="searchContainer"> <button id="back-button" onclick="history.back()">&#x2039;</button> 
     <input type="text" id="search-input" placeholder="أبحث عن مكان" />
     <span id="search-icon">🔍</span>
 </div>
 
-<div id="searchResults" style="display:none;">
-    </div>
+<div id="searchResults">
+</div>
 
 <div id="panel">
 
@@ -210,7 +264,6 @@ const app=firebase.initializeApp({
 });
 const db=firebase.database();
 
-// ** تم الإبقاء على طبقة Google Maps كما هي لتطابق الفيديو المرفق **
 let map=L.map('map').setView([33.3603, 44.5066],14); 
 
 L.tileLayer(
@@ -245,12 +298,10 @@ const fareValue = document.getElementById("fareValue");
 const oldStatus = document.getElementById("status");
 const changeStartBtn = document.getElementById("changeStartPointBtn");
 const changeEndBtn = document.getElementById("changeEndPointBtn");
-// 🎯 العناصر الجديدة للحقول الكبيرة في لوحة التحكم
 const startPointField = document.getElementById("startPointField");
 const endPointField = document.getElementById("endPointField");
 
-
-// عناصر البحث الجديدة (تم الإبقاء عليها في JS رغم إخفاءها في HTML/CSS)
+// عناصر البحث
 const searchInput = document.getElementById("search-input");
 const searchResultsContainer = document.getElementById("searchResults");
 
@@ -261,12 +312,10 @@ const searchResultsContainer = document.getElementById("searchResults");
 function getShortAreaName(fullArea) {
     if (!fullArea) return "منطقة غير معروفة";
     
-    // إذا كان الاسم قصيراً، نفترضه اسم معلم بارز ونرجعه مباشرة
     if (fullArea.length < 50 && !fullArea.includes(',')) {
         return fullArea; 
     }
     
-    // المنطق القديم للعنوان الطويل
     const parts = fullArea.split(',').map(p => p.trim()).filter(p => p.length > 0);
     
     const relevantParts = parts.filter(p => 
@@ -283,7 +332,7 @@ function getShortAreaName(fullArea) {
     return parts[parts.length - 1]; 
 }
 
-// reverse geocode (تم التعديل لجلب أسماء المعالم البارزة)
+// reverse geocode
 async function reverseGeocode(lat, lon) {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`;
     try {
@@ -292,7 +341,6 @@ async function reverseGeocode(lat, lon) {
 
         if (d && d.display_name) {
             const address = d.address;
-            // قائمة بالعناوين التي قد تكون POI 
             const poiKeys = ['amenity', 'shop', 'building', 'restaurant', 'bakery', 'pharmacy', 'supermarket', 'public_building']; 
             
             let poiName = null;
@@ -303,12 +351,10 @@ async function reverseGeocode(lat, lon) {
                 }
             }
 
-            // التأكد من أن اسم المعلم البارز معقول (ليس طويلاً جداً)
             if (poiName && typeof poiName === 'string' && poiName.length > 3 && poiName.length < 50) {
                 return poiName;
             }
 
-            // وإلا، نرجع العنوان المفصل المعتاد
             return d.display_name.split(',').slice(0, 3).reverse().join(', ');
         }
         return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -319,7 +365,7 @@ async function reverseGeocode(lat, lon) {
 
 // حساب المسافة والأجرة
 function calculateDistanceAndFare(lat1, lng1, lat2, lng2) {
-    const R = 6371; // نصف قطر الأرض بالكيلومتر
+    const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lng2 - lng1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -327,20 +373,15 @@ function calculateDistanceAndFare(lat1, lng1, lat2, lng2) {
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = (R * c).toFixed(2);
-    // افتراض: 1000 دينار لكل كم
     const fare = Math.round(distance * 1000); 
     return { distance: distance, fare: fare };
 }
 
 
-// ---------------- وظائف البحث عن أقرب سائق ----------------
+// ---------------- وظائف البحث عن أقرب سائق (المُضافة والمُعدلة) ----------------
 
 /**
  * دالة لحساب المسافة الدقيقة (كيلومتر) بين نقطتين باستخدام صيغة هافرسين.
- * @param {number} lat1 - خط عرض النقطة الأولى.
- * @param {number} lng1 - خط طول النقطة الأولى.
- * @param {number} lat2 - خط عرض النقطة الثانية.
- * @param {number} lng2 - خط طول النقطة الثانية.
  * @returns {number} المسافة بالكيلومتر.
  */
 function getDistanceKm(lat1, lng1, lat2, lng2) {
@@ -357,16 +398,13 @@ function getDistanceKm(lat1, lng1, lat2, lng2) {
 
 /**
  * البحث عن أقرب سائق متاح في حدود المسافة المحددة (3 كم).
- * @param {number} riderLat - خط عرض الراكب.
- * @param {number} riderLng - خط طول الراكب.
- * @param {number} maxDistanceKm - أقصى مسافة للبحث بالكيلومتر.
  * @returns {Promise<string|null>} رقم هاتف أقرب سائق أو null إذا لم يوجد.
  */
 async function findNearbyDriver(riderLat, riderLng, maxDistanceKm = 3) {
     let closestDriverPhone = null;
     let minDistance = Infinity;
     
-    // جلب قائمة السائقين المتاحين (افتراضاً: جميع السائقين في قاعدة البيانات)
+    // جلب قائمة السائقين
     const snapshot = await db.ref("drivers").once('value');
     const drivers = snapshot.val();
 
@@ -378,9 +416,8 @@ async function findNearbyDriver(riderLat, riderLng, maxDistanceKm = 3) {
     for (const phone in drivers) {
         const driver = drivers[phone];
         
-        // يجب أن يكون السائق متاحاً (مثلاً: حالة السائق في قاعدة البيانات هي 'available')
-        // *افتراض بسيط: نعتبر كل سائق لديه إحداثيات 'lat' و 'lng' متاحاً*
-        if (driver.lat && driver.lng) {
+        // شرط التوفر: يجب أن يكون لديه إحداثيات (متصل) وليس لديه رحلة نشطة حالياً
+        if (driver.lat && driver.lng && !driver.activeRideId) { 
             const distance = getDistanceKm(riderLat, riderLng, driver.lat, driver.lng);
 
             if (distance <= maxDistanceKm && distance < minDistance) {
@@ -396,7 +433,6 @@ async function findNearbyDriver(riderLat, riderLng, maxDistanceKm = 3) {
 
 // ---------------- وظائف تحديث الواجهة ----------------
 
-// تحديث الواجهة حسب مرحلة تحديد النقاط (settingStart, settingEnd, confirmed)
 async function updateUIForStage() {
     // إخفاء الكل في البداية
     pin.style.display = 'none';
@@ -407,8 +443,8 @@ async function updateUIForStage() {
     cancelRideBtn.style.display = 'none';
     oldStatus.style.display = 'none'; 
     
-    // 🎯 التحكم في إظهار حقول الانطلاق/الوصول
-    startPointField.style.display = 'flex'; // حقل الانطلاق مرئي دائماً
+    // التحكم في إظهار حقول الانطلاق/الوصول
+    startPointField.style.display = 'flex'; 
 
     if (rideId) {
         // حالة الرحلة قيد المراقبة
@@ -427,7 +463,7 @@ async function updateUIForStage() {
         
         startPointValue.innerText = startAreaName ? getShortAreaName(startAreaName) : 'جاري التحقق من المنطقة...';
         
-        endPointField.style.display = 'none'; // إخفاء حقل الوصول
+        endPointField.style.display = 'none'; 
         
     } else if (currentStage === "settingEnd") {
         mainActionBtn.innerText = "تثبيت الوصول";
@@ -436,17 +472,16 @@ async function updateUIForStage() {
         
         startPointValue.innerText = getShortAreaName(startAreaName);
         
-        endPointField.style.display = 'flex'; // إظهار حقل الوصول
+        endPointField.style.display = 'flex';
         endPointValue.innerText = endAreaName ? getShortAreaName(endAreaName) : 'جاري التحقق من المنطقة...';
         
         changeStartBtn.style.display = 'inline-block';
 
         if (startCoords && endCoords) {
             const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
-            // 🎯 تم تعديل تنسيق الأجرة لتطابق الفيديو (1,500 IQD)
             fareValue.innerText = fare.toLocaleString('ar-IQ') + ' IQD'; 
             costDisplay.style.display = 'block';
-            mainActionBtn.innerText = "إرسال الطلب"; // يتغير نص الزر إلى "إرسال الطلب" عند وجود النقطتين
+            mainActionBtn.innerText = "إرسال الطلب"; 
         } else {
             fareValue.innerText = '---';
             costDisplay.style.display = 'none';
@@ -454,7 +489,6 @@ async function updateUIForStage() {
         }
         
     } else if (currentStage === "confirmed") {
-        // هذه المرحلة تحدث قبل إرسال الطلب مباشرةً
         mainActionBtn.innerText = "إرسال الطلب";
         mainActionBtn.disabled = !(startCoords && endCoords);
         mainActionBtn.style.background = '#f97316';
@@ -463,7 +497,6 @@ async function updateUIForStage() {
         pin.style.display = 'none';
         endPointField.style.display = 'flex';
         
-        // عرض التكلفة للمراجعة النهائية
         if (startCoords && endCoords) {
             const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
             fareValue.innerText = fare.toLocaleString('ar-IQ') + ' IQD';
@@ -479,28 +512,19 @@ map.on('moveend', async function() {
     const lat = center.lat;
     const lng = center.lng;
 
-    // توقف إذا كنا في مرحلة مراقبة الرحلة
     if (rideId) return;
 
-    // منع التحديث أثناء التحرك النشط (لتحسين الأداء)
-    // 🎯 تم إزالة isMapMoving في حدث moveend لتجنب تعارض move/moveend
-    // if (isMapMoving) return; 
-
-    // تحديث النقطة المعنية حالياً
     const currentLat = lat;
     const currentLng = lng;
 
     if (currentStage === "settingStart") {
-        // تحديث إحداثيات الانطلاق
         startCoords = [currentLat, currentLng];
         startPointValue.innerText = 'جاري التحقق من المنطقة...';
     } else if (currentStage === "settingEnd") {
-        // تحديث إحداثيات الوصول
         endCoords = [currentLat, currentLng];
         endPointValue.innerText = 'جاري التحقق من المنطقة...';
     }
     
-    // تأخير Reverse Geocoding
     clearTimeout(geocodeTimer);
     geocodeTimer = setTimeout(async () => {
         const areaName = await reverseGeocode(currentLat, currentLng);
@@ -517,19 +541,16 @@ map.on('moveend', async function() {
 
 map.on('movestart', function() {
     isMapMoving = true;
-    // 🎯 تم تعديل الألوان لتناسب تصميم الفيديو أكثر
     if (currentStage === "settingStart") {
         startPointValue.innerText = 'جاري تحريك الخريطة...';
-        startPointValue.style.color = '#e53935'; // لون الحركة
+        startPointValue.style.color = '#e53935'; 
     } else if (currentStage === "settingEnd") {
         endPointValue.innerText = 'جاري تحريك الخريطة...';
-        endPointValue.style.color = '#e53935'; // لون الحركة
+        endPointValue.style.color = '#e53935'; 
     }
 });
 
 map.on('move', function() {
-    // 🎯 تم الإبقاء على isMapMoving = false هنا (بشكل خاطئ) لتطابق ملفك الأصلي، 
-    // لكن تم نقل isMapMoving = false إلى moveend في المنطق الأصلي (أعيد إدخاله هنا بشكل صحيح).
     isMapMoving = false;
     if (currentStage === "settingStart") {
         startPointValue.style.color = '#666';
@@ -538,12 +559,12 @@ map.on('move', function() {
     }
 });
 
-// ---------------- وظائف البحث الجديدة ----------------
+// ---------------- وظائف البحث (المُفعلة) ----------------
 
 let searchTimer = null;
 
-// 🎯 تم إزالة معالجات الأحداث للبحث لأن شريط البحث مخفي لتطابق الفيديو
-/* searchInput.addEventListener('input', function() {
+// ** تم تفعيل معالج حدث البحث **
+searchInput.addEventListener('input', function() {
     clearTimeout(searchTimer);
     const query = searchInput.value.trim();
 
@@ -556,9 +577,7 @@ let searchTimer = null;
     searchTimer = setTimeout(() => {
         performGeocoding(query);
     }, 700);
-}); */
-
-// 🎯 تم إبقاء الدوال، لكنها لن تُستخدم ما لم يتم إظهار عناصر البحث
+}); 
 
 async function performGeocoding(query) {
     const bbox = '43.3,30.0,48.5,37.3'; 
@@ -607,25 +626,21 @@ function displaySearchResults(results) {
 
 // ---------------- وظائف التحكم بالأزرار ----------------
 
-// وظيفة الزر الرئيسي (تثبيت الانطلاق -> تثبيت الوصول -> إرسال الطلب)
 mainActionBtn.onclick = async function() {
     if (currentStage === "settingStart") {
         if (!startCoords || !startAreaName) return;
         currentStage = "settingEnd";
-        // عند الانتقال من تحديد الانطلاق إلى تحديد الوصول، نحرك الخريطة إلى نقطة الانطلاق
         map.setView(startCoords, map.getZoom());
-        endCoords = null; // إعادة تعيين إحداثيات النهاية
+        endCoords = null; 
         endAreaName = "";
         await updateUIForStage();
         
     } else if (currentStage === "settingEnd") {
         if (!endCoords || !endAreaName) return;
-        // هنا كان "تثبيت الوصول"، الآن هو زر "إرسال الطلب" إذا تم تحديد النقطتين
         if (startCoords && endCoords) {
              sendRideRequest();
         } else {
-             // تثبيت الوصول
-            currentStage = "confirmed"; // نغير المرحلة لتثبيت القيم
+            currentStage = "confirmed"; 
             await updateUIForStage();
         }
         
@@ -638,89 +653,80 @@ changeStartBtn.onclick = async function() {
     currentStage = "settingStart";
     endCoords = null;
     endAreaName = "";
-    map.setView(startCoords, map.getZoom()); // نركز على نقطة الانطلاق الحالية
+    map.setView(startCoords, map.getZoom()); 
     await updateUIForStage();
 };
 
 changeEndBtn.onclick = async function() {
     currentStage = "settingEnd";
-    map.setView(endCoords, map.getZoom()); // نركز على نقطة الوصول الحالية
+    map.setView(endCoords, map.getZoom());
     await updateUIForStage();
 };
 
 
-function sendRideRequest(){
+// ---------------- وظيفة إرسال الطلب (المُعدّلة للبحث عن أقرب سائق) ----------------
+async function sendRideRequest(){
   if(!startCoords||!endCoords){alert("حدد المواقع.");return;}
   mainActionBtn.disabled = true;
   mainActionBtn.innerText = "جاري البحث عن أقرب سائق...";
   mainActionBtn.style.background = '#607d8b'; // لون مختلف للبحث
 
   // 1. البحث عن أقرب سائق في حدود 3 كم
-  findNearbyDriver(startCoords[0], startCoords[1], 3).then(closestDriverPhone => {
-        if (closestDriverPhone) {
-            // 2. إذا تم العثور على سائق، يتم إرسال الطلب إليه مباشرة
-            const phone=localStorage.getItem('phone');
-            const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
+  const closestDriverPhone = await findNearbyDriver(startCoords[0], startCoords[1], 3);
 
-            rideId=Date.now();
-            localStorage.setItem('activeRideId',rideId);
+  if (closestDriverPhone) {
+      // 2. إذا تم العثور على سائق، يتم إنشاء الطلب مع حالته 'جديدة'
+      const phone=localStorage.getItem('phone');
+      const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
 
-            // إخفاء عناصر اختيار النقطة
-            mainActionBtn.style.display='none';
-            pin.style.display='none';
-            costDisplay.style.display='none';
-            changeStartBtn.style.display = 'none';
-            changeEndBtn.style.display = 'none';
-            
-            // إخفاء قائمة البحث
-            searchResultsContainer.style.display = 'none';
+      rideId=Date.now();
+      localStorage.setItem('activeRideId',rideId);
 
-            // 🎯 إرسال الطلب بحالة "مقبولة" مباشرة للسائق المحدد
-            db.ref("rides/"+rideId).set({
-                riderPhone:phone,
-                startLat:startCoords[0], startLng:startCoords[1], 
-                endLat:endCoords[0], endLng:endCoords[1],         
-                startArea:startAreaName,endArea:endAreaName, 
-                distance:distance,fare:fare,
-                status:"مقبولة", // يتم وضعها كمقبولة مباشرة للسائق القريب
-                driverPhone: closestDriverPhone // تعيين السائق الذي قبل الطلب
-            });
-            
-            // 🎯 إرسال إشعار للـ Driver ليعلم بأن لديه رحلة مقبولة
-            // هذه خطوة افتراضية لتنبيه السائق على تطبيقه، يجب أن يكون هناك منطق في جهة السائق لمراقبة عقد الـ driverPhone
-            db.ref("driverRequests/"+closestDriverPhone).set({
-                rideId: rideId,
-                status: "مقبولة",
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
+      // إخفاء عناصر اختيار النقطة
+      mainActionBtn.style.display='none';
+      pin.style.display='none';
+      costDisplay.style.display='none';
+      changeStartBtn.style.display = 'none';
+      changeEndBtn.style.display = 'none';
+      searchResultsContainer.style.display = 'none';
 
-            // تحديث حالة الواجهة
-            startPointValue.innerText = getShortAreaName(startAreaName);
-            endPointValue.innerText = getShortAreaName(endAreaName);
+      // **إنشاء الطلب بحالة "جديدة" وإسناده للسائق القريب**
+      db.ref("rides/"+rideId).set({
+          riderPhone:phone,
+          startLat:startCoords[0], startLng:startCoords[1], 
+          endLat:endCoords[0], endLng:endCoords[1],         
+          startArea:startAreaName,endArea:endAreaName, 
+          distance:distance,fare:fare,
+          status:"جديدة", // ⬅️ FIX: الحالة "جديدة" تتطلب موافقة السائق
+          driverPhone: closestDriverPhone // تعيين السائق المقترح
+      });
+      
+      // 3. إرسال إشعار للسائق في عقد driverRequests
+      db.ref("driverRequests/"+closestDriverPhone).set({
+          rideId: rideId,
+          status: "جديدة", 
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
 
-            startMonitoringRide(rideId);
-            
-        } else {
-            // 3. إذا لم يتم العثور على سائق، يتم إرجاع حالة خطأ
-            mainActionBtn.disabled = false;
-            mainActionBtn.innerText = "إرسال الطلب";
-            mainActionBtn.style.background = '#f97316';
-            
-            oldStatus.innerHTML = `❌ لم يتم العثور على أي سائق متاح ضمن 3 كم. حاول لاحقاً.`;
-            oldStatus.style.display = 'block';
-            
-            // إعادة ضبط لوحة التحكم لعرض التكلفة
-            updateUIForStage();
-        }
-  }).catch(error => {
-        console.error("Error finding nearby driver:", error);
-        mainActionBtn.disabled = false;
-        mainActionBtn.innerText = "إرسال الطلب";
-        mainActionBtn.style.background = '#f97316';
-        oldStatus.innerHTML = `❌ حدث خطأ أثناء البحث عن السائقين.`;
-        oldStatus.style.display = 'block';
-  });
+      // تحديث حالة الواجهة
+      startPointValue.innerText = getShortAreaName(startAreaName);
+      endPointValue.innerText = getShortAreaName(endAreaName);
+
+      startMonitoringRide(rideId);
+      
+  } else {
+      // 4. إذا لم يتم العثور على سائق، يتم إرجاع حالة خطأ
+      mainActionBtn.disabled = false;
+      mainActionBtn.innerText = "إرسال الطلب";
+      mainActionBtn.style.background = '#f97316';
+      
+      oldStatus.innerHTML = `❌ لم يتم العثور على أي سائق متاح ضمن 3 كم. حاول لاحقاً.`;
+      oldStatus.style.display = 'block';
+      
+      updateUIForStage();
+  }
 }
+
 
 // إلغاء الطلب (وظيفة الإلغاء تبقى كما هي)
 cancelRideBtn.onclick=function(){
@@ -728,10 +734,9 @@ cancelRideBtn.onclick=function(){
 
     db.ref("rides/"+rideId).update({status:"ملغاة", canceledBy:"rider"});
     cleanupRide();
-    alert(`تم إلغاء الطلب.`); // استخدام alert بسيط بدلاً من تحديث حقل الحالة القديم
+    alert(`تم إلغاء الطلب.`); 
     
-    // العودة إلى مرحلة تحديد الانطلاق بعد الإلغاء
-    initGeolocation(); // إعادة تحديد الموقع الحالي وتحديث الواجهة
+    initGeolocation(); 
 };
 
 
@@ -746,8 +751,6 @@ function clearRideMarkers(){
 
 // دالة رسم مسار حقيقي (مختصرة من الملف الأصلي)
 async function drawStreetRoute(lat1, lng1, lat2, lng2, color, dashArray = '') {
-    // ... (منطق رسم المسار باستخدام OSRM) ...
-    // تم إبقاء المنطق بسيطاً هنا لغرض التركيز على الواجهة
     if(driverRoute) map.removeLayer(driverRoute); 
     driverRoute = L.polyline([[lat1, lng1], [lat2, lng2]], { color: color, dashArray: dashArray, weight: 5 }).addTo(map);
     map.fitBounds(driverRoute.getBounds());
@@ -755,7 +758,6 @@ async function drawStreetRoute(lat1, lng1, lat2, lng2, color, dashArray = '') {
 
 /**
  * دالة تنظيف حالة الرحلة وإعادة الواجهة إلى وضع تحديد الانطلاق.
- * تم التأكد من إعادة تعيين جميع المتغيرات الخاصة بنقاط الانطلاق والوصول.
  */
 function cleanupRide(){
     if(rideRef) rideRef.off();
@@ -774,7 +776,7 @@ function cleanupRide(){
     startAreaName = "";
     endAreaName = "";
     
-    // 🆕 إخفاء رسالة الحالة
+    // إخفاء رسالة الحالة
     oldStatus.style.display = 'none';
     
     // إخفاء زر الإلغاء
@@ -801,16 +803,13 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
             })
         }).addTo(map).bindPopup("السائق").openPopup();
         
-        // منطق رسم المسار
-        if (rideStatus === "مقبولة" && startLat && startLng) {
-            // المسار من السائق إلى الراكب (نقطة البداية)
-            //await drawStreetRoute(d.lat, d.lng, startLat, startLng, '#4CAF50', '5, 5'); 
+        // منطق رسم المسار (تم تعطيله لغرض التبسيط)
+        /* if (rideStatus === "مقبولة" && startLat && startLng) {
+             await drawStreetRoute(d.lat, d.lng, startLat, startLng, '#4CAF50', '5, 5'); 
         } else if (rideStatus === "بدأت" && endLat && endLng) {
-             // المسار من السائق إلى الوجهة (نقطة الوصول)
-             //await drawStreetRoute(d.lat, d.lng, endLat, endLng, '#f97316'); 
-        }
+             await drawStreetRoute(d.lat, d.lng, endLat, endLng, '#f97316'); 
+        } */
         
-        // التركيز على موقع السائق إذا كانت مقبولة/بدأت
         map.setView(driverCoords, map.getZoom() > 14 ? map.getZoom() : 14);
 
     });
@@ -823,7 +822,7 @@ function startMonitoringRide(id){
     costDisplay.style.display = 'none';
     cancelRideBtn.style.display='inline-block';
     
-    // 🆕 إظهار لوحة الحالة لتلقي التحديثات
+    // إظهار لوحة الحالة لتلقي التحديثات
     oldStatus.style.display = 'block';
 
     // مراقبة حالة الرحلة
@@ -832,7 +831,7 @@ function startMonitoringRide(id){
         if(!r) {
             cleanupRide();
             alert(`⚠️ انتهت الرحلة أو ألغيت من النظام.`);
-            initGeolocation(); // تحديث الواجهة بعد التنظيف
+            initGeolocation(); 
             return;
         }
         
@@ -841,33 +840,30 @@ function startMonitoringRide(id){
         const r_endLat = r.endLat;
         const r_endLng = r.endLng;
 
-        const distance = r.distance || 0;
         const fare = r.fare ? r.fare.toLocaleString('ar-IQ') : '---';
         
-        // 🎯 تعديل تنسيق الأجرة لتطابق الفيديو (1,500 IQD)
         fareValue.innerText = fare + ' IQD';
         costDisplay.style.display = 'block';
 
-        // 🎯 التأكد من إظهار حقل الوصول وحقل الانطلاق في وضع المراقبة
         startPointField.style.display = 'flex';
         endPointField.style.display = 'flex';
 
 
         if (r.status === "جديدة") {
-            // هذه الحالة لن تحدث بالمنطق الجديد، لكن نتركها احتياطاً إذا تم إرسال الطلب بالطريقة القديمة
+            const driverInfo = r.driverPhone ? ` إلى السائق: <b>${r.driverPhone}</b>` : '';
             mainActionBtn.innerText=`✅ تم الإرسال. في انتظار قبول السائق...`;
             mainActionBtn.style.display = 'block';
-            mainActionBtn.disabled = true; // لمنع الضغط عليه وهو قيد الانتظار
-            mainActionBtn.style.background = '#607d8b'; // لون مختلف للانتظار
+            mainActionBtn.disabled = true; 
+            mainActionBtn.style.background = '#607d8b';
             clearRideMarkers();
             
-            oldStatus.innerHTML = `✅ تم إرسال طلبك إلى السائقين... بإنتظار القبول.`;
+            // ⬅️ FIX: عرض حالة الانتظار مع رقم السائق المقترح
+            oldStatus.innerHTML = `✅ تم إرسال طلبك${driverInfo}... بإنتظار القبول.`;
             
         } else if (r.status === "مقبولة" && r.driverPhone) {
             mainActionBtn.style.display = 'none';
             cancelRideBtn.style.display='inline-block';
             
-            // ** 🎯 التعديل الرئيسي: عرض رقم هاتف السائق **
             oldStatus.innerHTML = `
                 🚖 تم قبول الرحلة! السائق قادم إليك.<br>
                 رقم السائق: <b><a href="tel:${r.driverPhone}">${r.driverPhone}</a></b>.
@@ -898,7 +894,7 @@ function startMonitoringRide(id){
             oldStatus.innerHTML = message;
             alert(message);
             cleanupRide(); 
-            initGeolocation(); // تحديث الواجهة بعد التنظيف
+            initGeolocation(); 
         }
     });
 }
@@ -913,22 +909,20 @@ function initGeolocation() {
 
       startAreaName=await reverseGeocode(startCoords[0],startCoords[1]);
       
-      // بمجرد تحديد الموقع الأول، نبدأ بالتحقق من الرحلة النشطة
       rideId = localStorage.getItem('activeRideId');
       if(rideId){
         map.whenReady(() => {
             startMonitoringRide(rideId);
         });
       } else {
-        await updateUIForStage(); // تحديث الواجهة لبدء مرحلة "تثبيت الانطلاق"
+        await updateUIForStage(); 
       }
       
     },async err=>{
-        // في حال فشل تحديد الموقع، نستخدم إحداثيات العبيدي حي الرئاسة كافتراضي
         const defaultLat = 33.3603;
         const defaultLng = 44.5066;
         
-        startAreaName = "بغداد - العبيدي - حي الرئاسة"; // تعيين الاسم الافتراضي
+        startAreaName = "بغداد - العبيدي - حي الرئاسة"; 
         startCoords = [defaultLat, defaultLng];
         
         alert("⚠️ لم يتم تحديد الموقع بدقة، يرجى تثبيت نقطة الانطلاق بتحريك الخريطة.");
@@ -939,7 +933,6 @@ function initGeolocation() {
                 startMonitoringRide(rideId);
             });
          } else {
-            // يتم تحديث الواجهة لتبدأ عملية تحديد الانطلاق باستخدام الدبوس
             await updateUIForStage();
          }
         
