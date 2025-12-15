@@ -275,10 +275,6 @@ let rideRef=null;
 let driverRef=null; 
 let currentDriverPhone=null;
 
-// 🎯 متغيرات البحث الدائري الجديدة
-let circularSearchTimer = null; // مؤقت العد التنازلي لكل محاولة
-let rejectedDrivers = []; // قائمة بالسائقين الذين لم يردوا في هذه الجولة
-
 // ---------------- مراجع العناصر ----------------
 const pin = document.getElementById("map-center-pin");
 const startPointValue = document.getElementById("startPointValue");
@@ -602,7 +598,7 @@ mainActionBtn.onclick = async function() {
         }
         
     } else if (currentStage === "confirmed") {
-        startCircularSearch(); // 🎯 بدء البحث الدائري
+        findNearestDriver(); // 🎯 الوظيفة الجديدة
     }
 };
 
@@ -621,34 +617,28 @@ changeEndBtn.onclick = async function() {
 };
 
 
-// 🎯 الوظيفة الجديدة لبدء البحث الدائري
-function startCircularSearch(){
+// 🎯 الوظيفة الجديدة للبحث عن أقرب سائق وإرسال الطلب إليه فقط
+function findNearestDriver(){
   if(!startCoords||!endCoords){alert("حدد المواقع.");return;}
   
-  // تهيئة البحث
-  rejectedDrivers = []; // إعادة تعيين قائمة الرفض مع كل ضغطة بحث جديدة
   mainActionBtn.disabled = true;
+  mainActionBtn.innerText = "جاري البحث عن أقرب سائق...";
   oldStatus.style.display = 'block';
+  oldStatus.innerHTML = "جاري مسح السائقين القريبين (بحد أقصى 3 كم)...";
   
-  attemptToFindAndSend();
-}
-
-// 🎯 الوظيفة التي تبحث عن أقرب سائق لم يتم رفضه بعد
-function attemptToFindAndSend(){
   const riderLat = startCoords[0];
   const riderLng = startCoords[1];
   let nearestDriver = null;
   let minDistance = 3.01; // 3 كم هو الحد الأقصى
   
-  mainActionBtn.innerText = "جاري مسح السائقين القريبين (بحد أقصى 3 كم)...";
-
+  // 1. جلب بيانات السائقين
   db.ref("drivers").once("value", snapshot => {
     snapshot.forEach(childSnapshot => {
       const driverPhone = childSnapshot.key;
       const driverData = childSnapshot.val();
 
-      // التحقق من أن السائق متصل ومتاح ولم يتم رفضه في هذه الجولة
-      if (driverData.status === "متصل" && driverData.lat && driverData.lng && !rejectedDrivers.includes(driverPhone)) {
+      // التحقق من أن السائق متصل ومتاح
+      if (driverData.status === "متصل" && driverData.lat && driverData.lng) {
         const distance = calculateDistance(riderLat, riderLng, driverData.lat, driverData.lng);
 
         if (distance < minDistance) {
@@ -660,8 +650,8 @@ function attemptToFindAndSend(){
 
     if (nearestDriver) {
       // 2. إذا تم العثور على سائق، إرسال الطلب إليه فقط
-      oldStatus.innerHTML = `تم العثور على سائق! المسافة: ${minDistance.toFixed(2)} كم. جاري إرسال الطلب وإنتظار الرد (15 ثانية)...`;
-      sendRideRequest(nearestDriver, minDistance);
+      oldStatus.innerHTML = `تم العثور على سائق! المسافة: ${minDistance.toFixed(2)} كم. جاري إرسال الطلب...`;
+      sendRideRequest(nearestDriver);
     } else {
       // 3. إذا لم يتم العثور على سائق
       mainActionBtn.disabled = false;
@@ -672,20 +662,13 @@ function attemptToFindAndSend(){
 }
 
 
-function sendRideRequest(targetDriverPhone, distance){
+function sendRideRequest(targetDriverPhone){
   if(!startCoords||!endCoords){alert("حدد المواقع.");return;}
-  
-  // 🎯 إيقاف أي مؤقت سابق لضمان عدم تداخل الطلبات
-  if(circularSearchTimer) clearTimeout(circularSearchTimer);
-
   mainActionBtn.disabled = true;
 
   const phone=localStorage.getItem('phone');
-  // 🎯 حساب المسافة والأجرة
-  const { distance: calculatedDistance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
+  const { distance, fare } = calculateDistanceAndFare(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
 
-
-  // إنشاء معرف رحلة جديد
   rideId=Date.now();
   localStorage.setItem('activeRideId',rideId);
 
@@ -696,31 +679,29 @@ function sendRideRequest(targetDriverPhone, distance){
   changeEndBtn.style.display = 'none';
   searchResultsContainer.style.display = 'none';
 
-  // 🎯 إرسال الطلب إلى السائق المستهدف
+  // 🎯 يتم تعيين حالة "قيد المراجعة" وإضافة هاتف السائق المستهدف
   db.ref("rides/"+rideId).set({
     riderPhone:phone,
     targetDriver: targetDriverPhone, // 🎯 هاتف السائق المستهدف
     startLat:startCoords[0], startLng:startCoords[1], 
     endLat:endCoords[0], endLng:endCoords[1],         
     startArea:startAreaName,endArea:endAreaName, 
-    distance: calculatedDistance, 
-    fare:fare,
-    status:"قيد المراجعة" 
+    distance:distance,fare:fare,
+    status:"قيد المراجعة" // 🎯 الحالة الجديدة لإرسال الطلب لسائق واحد
   });
 
   startPointValue.innerText = getShortAreaName(startAreaName);
   endPointValue.innerText = getShortAreaName(endAreaName);
 
-  startMonitoringRide(rideId, 15); // 🎯 بدء المراقبة مع مؤقت 15 ثانية
+  startMonitoringRide(rideId);
 }
 
-// إلغاء الطلب
+// إلغاء الطلب (وظيفة الإلغاء تبقى كما هي)
 cancelRideBtn.onclick=function(){
     if(!rideId) return;
 
     db.ref("rides/"+rideId).update({status:"ملغاة", canceledBy:"rider"});
-    // 🎯 تنظيف كامل
-    cleanupRide(true); 
+    cleanupRide();
     alert(`تم إلغاء الطلب.`); 
     
     initGeolocation(); 
@@ -736,36 +717,25 @@ function clearRideMarkers(){
     driverRoute = null;
 }
 
-// 🎯 تحديث دالة التنظيف لدعم التنظيف الجزئي (للبحث الدائري)
-function cleanupRide(isCompleteCleanup = true){ 
+function cleanupRide(){
     if(rideRef) rideRef.off();
     if(driverRef) driverRef.off();
     rideRef = null;
     driverRef = null;
     currentDriverPhone = null;
+    localStorage.removeItem('activeRideId');
     clearRideMarkers();
     
-    // 🎯 تنظيف المؤقت
-    if(circularSearchTimer) clearTimeout(circularSearchTimer); 
-    circularSearchTimer = null;
+    currentStage = "settingStart";
+    rideId = null;
+    startCoords = null;
+    endCoords = null;
+    startAreaName = "";
+    endAreaName = "";
     
-    // إذا كان تنظيفاً كاملاً (إلغاء من قبل الراكب أو انتهاء الرحلة أو قبولها/رفضها نهائياً)
-    if (isCompleteCleanup) {
-        localStorage.removeItem('activeRideId');
-        currentStage = "settingStart";
-        rideId = null;
-        startCoords = null;
-        endCoords = null;
-        startAreaName = "";
-        endAreaName = "";
-        rejectedDrivers = []; // 🎯 تنظيف قائمة الرفض
-        
-        oldStatus.style.display = 'none';
-        cancelRideBtn.style.display='none';
-    } else {
-        // تنظيف جزئي (للانتقال للسائق التالي)
-        rideId = null;
-    }
+    oldStatus.style.display = 'none';
+    cancelRideBtn.style.display='none';
+    
 }
 
 async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, endLng, rideStatus){
@@ -791,40 +761,7 @@ async function startMonitoringDriver(driverPhone, startLat, startLng, endLat, en
     });
 }
 
-// 🎯 وظيفة جديدة للتعامل مع انتهاء مؤقت انتظار السائق
-function handleSearchTimeout(rideId) {
-    db.ref("rides/"+rideId).once("value", s => {
-        const currentR = s.val();
-        
-        // يجب أن نتحقق مرة أخيرة من الحالة قبل اتخاذ الإجراء
-        if(currentR && currentR.status === "قيد المراجعة") {
-            const timedOutDriver = currentR.targetDriver;
-            
-            // 1. إضافة السائق لقائمة الرفض
-            if (timedOutDriver) {
-                rejectedDrivers.push(timedOutDriver);
-            }
-            
-            // 2. تحديث حالة الرحلة في قاعدة البيانات
-            db.ref("rides/"+rideId).update({
-                status: "مرفوضة", 
-                rejectionReason: "No response in 15s. Searching next driver."
-            }).then(() => {
-                // 3. تنظيف حالة الرحلة المحلية والبدء في محاولة البحث التالية
-                cleanupRide(false); // تنظيف جزئي
-                oldStatus.innerHTML = `⚠️ لم يرد السائق (${timedOutDriver}) خلال 15 ثانية. جاري البحث عن سائق آخر...`;
-                attemptToFindAndSend(); // البدء في محاولة البحث التالية
-            });
-            
-        } else {
-             // إذا لم تكن قيد المراجعة، يتم تنظيف حالة الرحلة جزئياً (لإلغاء التتبع المحلي)
-             cleanupRide(false);
-        }
-    });
-}
-
-
-function startMonitoringRide(id, reviewTimeSeconds){
+function startMonitoringRide(id){
     rideRef = db.ref("rides/"+id);
     mainActionBtn.style.display='none';
     pin.style.display = 'none';
@@ -832,46 +769,6 @@ function startMonitoringRide(id, reviewTimeSeconds){
     cancelRideBtn.style.display='inline-block';
     
     oldStatus.style.display = 'block';
-    let countdownValue = reviewTimeSeconds;
-
-    // 🎯 بدء المؤقت هنا
-    if (reviewTimeSeconds > 0) {
-        
-        const updateCountdown = () => {
-             // التحقق من حالة الطلب قبل تحديث المؤقت
-            db.ref("rides/"+id).once("value", s => {
-                const currentR = s.val();
-                if(currentR && currentR.status === "قيد المراجعة") {
-                    
-                    oldStatus.innerHTML = `
-                        ⏳ تم إرسال طلبك إلى السائق (${currentR.targetDriver || '---'}).
-                        إنتظار القبول... (${countdownValue} ثانية متبقية)
-                    `;
-
-                    countdownValue--;
-                    if (countdownValue < 0) {
-                         // انتهى المؤقت دون رد
-                         if(circularSearchTimer) clearTimeout(circularSearchTimer);
-                         handleSearchTimeout(id); // 🎯 استدعاء الدالة الجديدة للتعامل مع انتهاء الوقت
-                         return; 
-                    }
-                    
-                    circularSearchTimer = setTimeout(updateCountdown, 1000); // تحديث كل ثانية
-                    
-                } else {
-                    // إذا تغيرت الحالة (مقبولة، مرفوضة، ملغاة)، يتم إنهاء المؤقت
-                    if(circularSearchTimer) clearTimeout(circularSearchTimer);
-                    circularSearchTimer = null;
-                }
-            });
-        };
-        // 🎯 ابدأ العد التنازلي على الفور
-        updateCountdown(); 
-    } else {
-        // إذا كان التتبع بدون مؤقت (مثل عند العودة للصفحة)
-         oldStatus.innerHTML = `⏳ جاري متابعة حالة طلبك الحالي...`;
-    }
-    // ---------------------------------
 
     rideRef.on('value', snap => {
         const r = snap.val();
@@ -897,18 +794,29 @@ function startMonitoringRide(id, reviewTimeSeconds){
 
 
         if (r.status === "قيد المراجعة") {
-            // يتم التعامل مع المؤقت والعرض في دالة updateCountdown
-            mainActionBtn.style.display = 'none';
+            mainActionBtn.innerText=`جاري انتظار رد السائق...`;
+            mainActionBtn.style.display = 'block';
             mainActionBtn.disabled = true; 
             mainActionBtn.style.background = '#607d8b'; 
             clearRideMarkers();
             
+            oldStatus.innerHTML = `⏳ تم إرسال طلبك إلى أقرب سائق (${r.targetDriver}). بإنتظار القبول...`;
+            
+            // ** 🎯 مؤقت للمراجعة: إذا لم يقبل السائق خلال 30 ثانية، اعتبر الطلب مرفوضاً ليعيد الراكب البحث **
+            if(!r.reviewTimer){
+                db.ref("rides/"+id+"/reviewTimer").set(Date.now());
+                setTimeout(() => {
+                    db.ref("rides/"+id).once("value", s => {
+                        const currentR = s.val();
+                        if(currentR && currentR.status === "قيد المراجعة") {
+                             // يتم إنهاء الطلب حتى يتمكن الراكب من البحث مرة أخرى
+                            db.ref("rides/"+id).update({status: "مرفوضة", rejectionReason: "No response from targeted driver"});
+                        }
+                    });
+                }, 30000); // 30 ثانية
+            }
+            
         } else if (r.status === "مقبولة" && r.driverPhone) {
-            // 🎯 يتم إيقاف المؤقت عند القبول
-            if(circularSearchTimer) clearTimeout(circularSearchTimer);
-            circularSearchTimer = null; 
-            rejectedDrivers = []; // 🎯 تنظيف قائمة الرفض عند القبول
-
             mainActionBtn.style.display = 'none';
             cancelRideBtn.style.display='inline-block';
             
@@ -924,11 +832,6 @@ function startMonitoringRide(id, reviewTimeSeconds){
             } 
             
         } else if (r.status === "بدأت") {
-            // 🎯 يتم إيقاف المؤقت عند بدء الرحلة (للتأكد)
-            if(circularSearchTimer) clearTimeout(circularSearchTimer);
-            circularSearchTimer = null;
-            rejectedDrivers = []; // 🎯 تنظيف قائمة الرفض
-
              mainActionBtn.style.display = 'none';
              cancelRideBtn.style.display='inline-block';
              oldStatus.innerHTML = `
@@ -942,18 +845,12 @@ function startMonitoringRide(id, reviewTimeSeconds){
                 startMonitoringDriver(r.driverPhone, r_startLat, r_startLng, r_endLat, r_endLng, r.status);
             } 
              
-        } else if (r.status === "منتهية" || r.status === "ملغاة" || (r.status === "مرفوضة" && r.rejectionReason !== "No response in 15s. Searching next driver.")) {
-             // 🎯 يتم إيقاف المؤقت عند انتهاء/إلغاء/رفض الطلب (الرفض من قبل السائق وليس الرفض الآلي)
-            if(circularSearchTimer) clearTimeout(circularSearchTimer);
-            circularSearchTimer = null;
-            
+        } else if (r.status === "منتهية" || r.status === "ملغاة" || r.status === "مرفوضة") {
             const message = `الرحلة ${r.status}.`;
             oldStatus.innerHTML = message;
             alert(message);
-            cleanupRide(true); // تنظيف كامل
+            cleanupRide(); 
             initGeolocation(); 
-        } else if (r.status === "مرفوضة" && r.rejectionReason === "No response in 15s. Searching next driver.") {
-            // يتم تجاهل هذا التحديث لأن دالة handleSearchTimeout هي من تتولى الانتقال للسائق التالي
         }
     });
 }
@@ -971,8 +868,7 @@ function initGeolocation() {
       rideId = localStorage.getItem('activeRideId');
       if(rideId){
         map.whenReady(() => {
-             // إذا كان هناك طلب نشط، ابدأ المراقبة بدون مؤقت عد تنازلي
-            startMonitoringRide(rideId, 0); 
+            startMonitoringRide(rideId);
         });
       } else {
         await updateUIForStage(); 
@@ -990,7 +886,7 @@ function initGeolocation() {
         rideId = localStorage.getItem('activeRideId');
          if(rideId){
             map.whenReady(() => {
-                startMonitoringRide(rideId, 0);
+                startMonitoringRide(rideId);
             });
          } else {
             await updateUIForStage();
@@ -1014,8 +910,6 @@ window.onload=function(){
 window.logout=function(){
     if(rideRef) rideRef.off();
     if(driverRef) driverRef.off();
-    // 🎯 تنظيف المؤقت
-    if(circularSearchTimer) clearTimeout(circularSearchTimer); 
     localStorage.removeItem('phone');
     localStorage.removeItem('userType');
     localStorage.removeItem('activeRideId');
