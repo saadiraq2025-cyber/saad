@@ -232,7 +232,7 @@ function startRinging() {
         
         // إنشاء كسب (Gain) للتحكم في الصوت وتجنب النقرات عند التوقف
         const gainNode = audioContext.createGain();
-        // *** التعديل لرفع الصوت من 0.5 إلى 0.8 ***
+        // تم زيادة مستوى الصوت إلى 0.8
         gainNode.gain.setValueAtTime(0.8, audioContext.currentTime); // مستوى صوت 80%
         
         // توصيل المذبذب بـ Gain ثم بمخرج الصوت الرئيسي
