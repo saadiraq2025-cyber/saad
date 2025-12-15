@@ -182,9 +182,7 @@ function preRideMainAction() {
 // دالة الإجراء الرئيسي أثناء الرحلة (إلغاء/إنهاء)
 function activeRideMainAction(){
     if(rideId){ 
-        // الراكب يضغط على الزر لإنهاء أو إلغاء
         if (confirm("هل أنت متأكد من إلغاء/إنهاء هذه الرحلة؟")) {
-            // نستخدم "ملغاة" قبل القبول و"منتهية" بعد القبول، ولكن لإبقاء الأمر بسيطاً، سنعتبره إلغاء ينهي الرحلة من طرف الراكب
             db.ref("rides/"+rideId).update({status:"ملغاة", canceledBy:"rider"}); 
             alert("تم إلغاء/إنهاء الرحلة."); 
             cleanup(); 
@@ -292,39 +290,59 @@ searchIn.addEventListener('input',()=>{
 });
 
 
+// ----------------------------------------------------
+// التحديث: إرسال الطلب لجميع السائقين ضمن 3 كم
+// ----------------------------------------------------
 function findDriver(){
     if(!startCoords||!endCoords)return;
     mainBtn.disabled=true; mainBtn.innerText="جاري البحث...";
     statusP.style.display='block'; statusP.innerText="جاري البحث عن سائق قريب (3 كم)..."; 
     
-    let nearest=null, minDst=3.01;
+    let targetDriversList = []; // مصفوفة لحفظ أرقام السائقين المؤهلين
+
     db.ref("drivers").once("value",s=>{
         s.forEach(ds=>{
             const d=ds.val();
             if(d.status==="متصل"&&d.lat){
                 const dst=calcDist(startCoords[0],startCoords[1],d.lat,d.lng);
-                if(dst<=3.0 && dst<minDst){ minDst=dst; nearest=ds.key; }
+                if(dst<=3.0){ // التحقق من المسافة ضمن 3 كم
+                    targetDriversList.push(ds.key);
+                }
             }
         });
-        if(nearest){ statusP.innerText=`تم العثور على سائق (${minDst.toFixed(2)} كم). إرسال الطلب...`; sendReq(nearest); }
-        else{ mainBtn.disabled=false; mainBtn.innerText="البحث عن أقرب سائق 🚕"; statusP.innerText="⚠️ لا يوجد سائقون متاحون ضمن 3 كم حالياً."; updateUI(); }
+        
+        if(targetDriversList.length > 0){ 
+            statusP.innerText=`تم العثور على ${targetDriversList.length} سائقين محتملين. إرسال الطلب...`; 
+            sendReq(targetDriversList); // إرسال الطلب لقائمة السائقين
+        }
+        else{ 
+            mainBtn.disabled=false; 
+            mainBtn.innerText="البحث عن أقرب سائق 🚕"; 
+            statusP.innerText="⚠️ لا يوجد سائقون متاحون ضمن 3 كم حالياً."; 
+            updateUI(); 
+        }
     });
 }
 
-function sendReq(drvPhone){
+function sendReq(targetDriversList){ // تم تحديث الدالة لقبول قائمة السائقين
     const ph=localStorage.getItem('phone');
     const dist=calcDist(startCoords[0],startCoords[1],endCoords[0],endCoords[1]);
     rideId=Date.now(); localStorage.setItem('activeRideId',rideId);
     
+    // يتم إخفاء عناصر التحكم وتظهر حالة الرحلة عبر updateUI
+    
     db.ref("rides/"+rideId).set({
-        riderPhone:ph, targetDriver:drvPhone,
+        riderPhone:ph, 
+        targetDrivers: targetDriversList, // قائمة السائقين المستهدفين الجدد
         startLat:startCoords[0], startLng:startCoords[1], endLat:endCoords[0], endLng:endCoords[1],
         startArea:startAreaName, endArea:endAreaName, distance:dist.toFixed(2), fare:Math.max(2000,Math.round(dist*1000)),
         status:"قيد المراجعة"
     });
     monitorRide(rideId);
-    updateUI(); // تحديث الأزرار إلى حالة الرحلة النشطة
+    updateUI();
 }
+// ----------------------------------------------------
+
 
 function clearCountdown() {
     if (countdownInterval) {
@@ -343,7 +361,6 @@ function monitorRide(id){
         
         if(!r){ 
             cleanup(); 
-            // الإشعار تم دمجه داخل cleanup
             initGeo(); 
             return; 
         }
