@@ -182,11 +182,11 @@ function preRideMainAction() {
 // دالة الإجراء الرئيسي أثناء الرحلة (إلغاء/إنهاء)
 function activeRideMainAction(){
     if(rideId){ 
-        if (confirm("هل أنت متأكد من إلغاء/إنهاء هذه الرحلة؟")) {
+        if (confirm("هل أنت متأكد من إلغاء هذه الرحلة؟ يرجى ملاحظة أن إنهاء الرحلة يتم عادةً بواسطة السائق.")) {
+            // تحديث الحالة إلى "ملغاة" (canceled)
             db.ref("rides/"+rideId).update({status:"ملغاة", canceledBy:"rider"}); 
-            alert("تم إلغاء/إنهاء الرحلة."); 
-            cleanup(); 
-            initGeo(); 
+            alert("تم إلغاء الرحلة. سيتم تحديث شاشتك."); 
+            // The monitorRide function will handle cleanup and UI reset when it detects the status change.
         }
     }
 }
@@ -209,7 +209,7 @@ async function updateUI(){
         startF.style.display='none';
         endF.style.display='none';
         mainBtn.style.display='block';
-        mainBtn.innerText="إنهاء/إلغاء الرحلة ❌"; 
+        mainBtn.innerText="إلغاء الرحلة ❌"; 
         mainBtn.onclick = activeRideMainAction; 
         mainBtn.style.backgroundColor = '#E53935'; // لون أحمر
         logoutBtn.style.display='none'; 
