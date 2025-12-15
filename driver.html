@@ -154,24 +154,22 @@ db.ref("rides").on("value",snap=>{
         let r = data[currentRideId];
         if(r.status === "ملغاة" && r.canceledBy === "rider"){
             alert("⚠️ تنبيه: قام الراكب بإلغاء الرحلة!");
-            // سيقوم الكود بإعادة تعيين الحالة في الأسفل
         }
     }
 
     let rideFound=false;
     Object.keys(data).forEach(id=>{
         let r=data[id];
-        // 1. استقبال الطلب: يجب أن تكون الحالة "قيد المراجعة" والسائق المستهدف هو أنا
-        if(r.status==="قيد المراجعة" && r.targetDriver === driverPhone && !rideFound){
+        
+        // التحديث: التحقق ما إذا كان السائق ضمن قائمة targetDrivers لطلبات 'قيد المراجعة'
+        if(r.status==="قيد المراجعة" && r.targetDrivers && r.targetDrivers.includes(driverPhone) && !rideFound){
             rideFound=true;
             showRideRequest(id,r);
         }
-        // 2. الرحلات المقبولة
         else if(r.status==="مقبولة" && r.driverPhone===driverPhone){
              rideFound=true;
              handleAcceptedRide(id,r);
         }
-        // 3. الرحلات الجارية
         else if(r.status==="بدأت" && r.driverPhone===driverPhone){
              rideFound=true;
              handleStartedRide(id,r);
@@ -218,7 +216,15 @@ function showRideRequest(id,r){
     acceptBtn.style.display="inline-block";
     rejectBtn.style.display="inline-block";
 
-    acceptBtn.onclick=function(){ stopRinging(); db.ref("rides/"+id).update({status:"مقبولة",driverPhone:driverPhone}); };
+    acceptBtn.onclick=function(){ 
+        stopRinging(); 
+        // التحديث: عند القبول، يتم تعيين driverPhone وحذف targetDrivers لإشعار السائقين الآخرين
+        db.ref("rides/"+id).update({
+            status:"مقبولة",
+            driverPhone:driverPhone,
+            targetDrivers: null // حذف القائمة لإلغاء طلبات السائقين الآخرين
+        }); 
+    };
     rejectBtn.onclick=function(){ stopRinging(); db.ref("rides/"+id).update({status:"مرفوضة"}); statusText.innerText="تم رفض الرحلة."; acceptBtn.style.display="none"; rejectBtn.style.display="none"; };
 }
 
