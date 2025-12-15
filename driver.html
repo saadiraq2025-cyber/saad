@@ -12,94 +12,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    font-family: Tahoma;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-#panel {
-    background: #fff;
-    padding: 10px;
-    text-align: center;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
-    flex-shrink: 0; 
-}
-
-#panel p#status {
-    font-size: 1.2em;
-    font-weight: bold;
-    margin: 10px 0;
-    line-height: 1.6;
-    color: #333;
-}
-
-#map {
-    height: calc(100vh - 120px);
-    transition: height 0.3s ease-in-out;
-    flex-grow: 1;
-}
-
-button {
-    background: #ffb300;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    margin: 5px;
-    font-weight: bold;
-    cursor: pointer;
-}
-#logoutBtn {
-    background: #455a64;
-    color: white;
-    margin-top: 10px;
-    width: 95%;
-}
-
-#floatingControls {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    z-index: 1000;
-    direction: ltr;
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: flex-start;
-    gap: 10px;
-}
-#floatingControls button,
-#floatingControls .ride-action-info {
-    display: block;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    width: 150px;
-    font-size: 14px;
-    padding: 10px;
-    margin: 0;
-}
-.ride-action-info {
-    background: #fff;
-    padding: 5px;
-    color: #333;
-    font-size: 0.9em;
-    direction: rtl;
-    text-align: center;
-}
-.phone-link {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: bold;
-    display: block;
-    margin: 0;
-    font-size: 1em;
-}
-.phone-link:hover {
-    text-decoration: underline;
-}
+body, html { margin: 0; padding: 0; height: 100%; font-family: Tahoma; overflow: hidden; display: flex; flex-direction: column; }
+#panel { background: #fff; padding: 10px; text-align: center; box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2); flex-shrink: 0; }
+#panel p#status { font-size: 1.2em; font-weight: bold; margin: 10px 0; line-height: 1.6; color: #333; }
+#map { height: calc(100vh - 120px); transition: height 0.3s ease-in-out; flex-grow: 1; }
+button { background: #ffb300; border: none; padding: 10px 20px; border-radius: 8px; margin: 5px; font-weight: bold; cursor: pointer; }
+#logoutBtn { background: #455a64; color: white; margin-top: 10px; width: 95%; }
+#floatingControls { position: absolute; bottom: 10px; left: 10px; z-index: 1000; direction: ltr; display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 10px; }
+#floatingControls button, #floatingControls .ride-action-info { display: block; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); border-radius: 8px; width: 150px; font-size: 14px; padding: 10px; margin: 0; }
+.ride-action-info { background: #fff; padding: 5px; color: #333; font-size: 0.9em; direction: rtl; text-align: center; }
+.phone-link { color: #007bff; text-decoration: none; font-weight: bold; display: block; margin: 0; font-size: 1em; }
+.phone-link:hover { text-decoration: underline; }
 #startRideBtn { background: #ff9800; color: white; }
 #finishBtn { background: #1e88e5; color: white; }
 #wazeBtn { background: #32CCFE; color: white; }
@@ -117,10 +40,8 @@ button {
 <div id="panel">
     <h3>🚖 وضع السائق</h3>
     <p id="status">في انتظار الطلبات...</p>
-    
     <button id="acceptBtn" style="display:none;background:#4caf50;color:white;">قبول الرحلة</button>
     <button id="rejectBtn" style="display:none;background:#e53935;color:white;">رفض الرحلة</button>
-    
     <button id="logoutBtn" onclick="logout()">تسجيل الخروج</button>
 </div>
 
@@ -128,17 +49,12 @@ button {
 window.onload=function(){
     let phone=localStorage.getItem("phone");
     let type=localStorage.getItem("userType");
-    if(!phone||type!=="driver"){
-        window.location.href="index.html";
-    }
+    if(!phone||type!=="driver"){ window.location.href="index.html"; }
     updateMapHeight();
     window.addEventListener('resize', updateMapHeight);
 };
 
-function logout(){
-    localStorage.clear();
-    window.location.href="index.html";
-}
+function logout(){ localStorage.clear(); window.location.href="index.html"; }
 
 const app=firebase.initializeApp({
   apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
@@ -149,161 +65,74 @@ const app=firebase.initializeApp({
 const db=firebase.database();
 
 let map=L.map('map').setView([33.3152,44.3661],13);
-
-L.tileLayer(
- "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=AIzaSyD7TtwniAdUtB8-pnTny4ZwE6gqX36SGUk",
- {maxZoom:20}
-).addTo(map);
-
+L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=AIzaSyD7TtwniAdUtB8-pnTny4ZwE6gqX36SGUk",{maxZoom:20}).addTo(map);
 map.whenReady(()=>map.invalidateSize());
 
 let driverMarker=null;
 let driverPhone=localStorage.getItem("phone");
-
 let currentRideId=null;
 let passengerMarker=null;
 let pickupRoute=null;
 let destinationRoute=null;
 let currentRideData=null;
 
-// === نظام الصوت ===
-let audioContext = null;
-let oscillator = null;
-let ringingInterval = null;
-let isAudioContextInitialized = false;
+// === الصوت ===
+let audioContext=null, oscillator=null, ringingInterval=null, isAudioContextInitialized=false;
+function initializeAudioContext(){ if(isAudioContextInitialized)return; try{audioContext=new(window.AudioContext||window.webkitAudioContext)();isAudioContextInitialized=true;}catch(e){console.error(e);}document.body.onclick=null;}
+function startRinging(){if(!isAudioContextInitialized)return;stopRinging();const playTone=()=>{oscillator=audioContext.createOscillator();oscillator.frequency.setValueAtTime(440,audioContext.currentTime);const gainNode=audioContext.createGain();gainNode.gain.setValueAtTime(0.5,audioContext.currentTime);oscillator.connect(gainNode);gainNode.connect(audioContext.destination);oscillator.start(0);gainNode.gain.exponentialRampToValueAtTime(0.001,audioContext.currentTime+0.5);oscillator.stop(audioContext.currentTime+0.5);};playTone();ringingInterval=setInterval(playTone,1000);}
+function stopRinging(){if(ringingInterval){clearInterval(ringingInterval);ringingInterval=null;}if(oscillator){try{oscillator.stop();}catch(e){}finally{oscillator=null;}}}
 
-function initializeAudioContext() {
-    if (isAudioContextInitialized) return;
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        isAudioContextInitialized = true;
-    } catch (e) {
-        console.error("AudioContext failed:", e);
-    }
-    document.body.onclick = null;
-}
-
-function startRinging() {
-    if (!isAudioContextInitialized) return;
-    stopRinging(); 
-    const playTone = () => {
-        oscillator = audioContext.createOscillator();
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); 
-        const gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.start(0);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
-        oscillator.stop(audioContext.currentTime + 0.5); 
-    };
-    playTone();
-    ringingInterval = setInterval(playTone, 1000); 
-}
-
-function stopRinging() {
-    if (ringingInterval) {
-        clearInterval(ringingInterval);
-        ringingInterval = null;
-    }
-    if (oscillator) {
-        try { oscillator.stop(); } catch(e) {} finally { oscillator = null; }
-    }
-}
-
-function updateMapHeight() {
-    const panelHeight = panelElement.offsetHeight;
-    if (panelElement.style.display !== "none") {
-        mapElement.style.height = `calc(100vh - ${panelHeight}px)`;
-    } else {
-        mapElement.style.height = '100vh';
-    }
+function updateMapHeight(){
+    const panelHeight = document.getElementById("panel").offsetHeight;
+    document.getElementById("map").style.height = document.getElementById("panel").style.display!=="none" ? `calc(100vh - ${panelHeight}px)` : '100vh';
     map.invalidateSize();
 }
 
 setInterval(()=>{
     navigator.geolocation.getCurrentPosition(pos=>{
-        let lat=pos.coords.latitude;
-        let lng=pos.coords.longitude;
-
+        let lat=pos.coords.latitude, lng=pos.coords.longitude;
         if(driverMarker) map.removeLayer(driverMarker);
         driverMarker=L.marker([lat,lng]).addTo(map).bindPopup("📍 موقعك");
-
-        db.ref("drivers/"+driverPhone).set({
-            lat:lat,lng:lng,status:"متصل"
-        });
-        
-        if (!currentRideId) {
-            map.setView([lat, lng], map.getZoom() > 13 ? map.getZoom() : 13);
-        }
-
-    },err=>{},{
-        enableHighAccuracy:true,timeout:5000
-    });
+        db.ref("drivers/"+driverPhone).set({lat:lat,lng:lng,status:"متصل"});
+        if (!currentRideId) map.setView([lat, lng], map.getZoom()>13?map.getZoom():13);
+    },err=>{},{enableHighAccuracy:true,timeout:5000});
 },5000);
 
 function removeAllRideMarkers(){
     if(passengerMarker) map.removeLayer(passengerMarker);
     if(pickupRoute) map.removeLayer(pickupRoute);
     if(destinationRoute) map.removeLayer(destinationRoute);
-    passengerMarker=null;
-    pickupRoute=null;
-    destinationRoute=null;
-    
-    map.eachLayer(layer => {
-        if (layer instanceof L.Marker && layer !== driverMarker) {
-            const popupContent = layer.getPopup().getContent();
-            if (popupContent && (popupContent.includes("نقطة النهاية") || popupContent.includes("نقطة البداية"))) {
-                map.removeLayer(layer);
-            }
-        }
-    });
+    passengerMarker=null; pickupRoute=null; destinationRoute=null;
+    map.eachLayer(layer => { if (layer instanceof L.Marker && layer !== driverMarker) {
+            const c = layer.getPopup() ? layer.getPopup().getContent() : "";
+            if (c && (c.includes("نقطة النهاية") || c.includes("نقطة البداية") || c.includes("موقع الراكب"))) map.removeLayer(layer);
+    }});
 }
 
-async function drawStreetRoute(lat1, lng1, lat2, lng2, color, dashArray = '') {
-    const OSRM_URL = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?geometries=geojson&overview=full`;
+async function drawStreetRoute(lat1, lng1, lat2, lng2, color) {
     try {
-        const response = await fetch(OSRM_URL);
+        const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?geometries=geojson&overview=full`);
         const data = await response.json();
-        if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-            return L.polyline([[lat1, lng1], [lat2, lng2]], { color: color, dashArray: dashArray, weight: 5 }).addTo(map);
+        if (data.code === 'Ok' && data.routes.length > 0) {
+            const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            return L.polyline(coords, { color: color, weight: 5 }).addTo(map);
         }
-        const geojsonCoords = data.routes[0].geometry.coordinates;
-        const leafletCoords = geojsonCoords.map(coord => [coord[1], coord[0]]);
-        let route = L.polyline(leafletCoords, { color: color, dashArray: dashArray, weight: 5 }).addTo(map);
-        return route;
-    } catch (error) {
-        return L.polyline([[lat1, lng1], [lat2, lng2]], { color: color, dashArray: dashArray, weight: 5 }).addTo(map);
-    }
+    } catch (e) {}
+    return L.polyline([[lat1, lng1], [lat2, lng2]], { color: color, weight: 5 }).addTo(map);
 }
 
 function openWaze(){
     if(!currentRideData) return;
     let lat, lng;
-    let status = currentRideData.status;
-    
-    if (status === "مقبولة" && currentRideData.startLat && currentRideData.startLng) {
-        lat = currentRideData.startLat;
-        lng = currentRideData.startLng;
-    } 
-    else if (status === "بدأت" && currentRideData.endLat && currentRideData.endLng) {
-        lat = currentRideData.endLat;
-        lng = currentRideData.endLng;
-    } else {
-        return;
-    }
-
-    if(lat && lng){
-        window.open(`https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
-    }
+    if (currentRideData.status === "مقبولة") { lat = currentRideData.startLat; lng = currentRideData.startLng; } 
+    else if (currentRideData.status === "بدأت") { lat = currentRideData.endLat; lng = currentRideData.endLng; }
+    if(lat && lng) window.open(`https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
 }
 
 function getShortAreaName(fullArea) {
     if (!fullArea) return "منطقة غير معروفة";
-    const parts = fullArea.split(',').map(p => p.trim()).filter(p => p.length > 0);
-    const relevantParts = parts.filter(p => !p.includes("قضاء") && !p.includes("ناحية") && !p.includes("مركز") && !p.includes("بغداد"));
-    if (relevantParts.length > 0) return relevantParts[0]; 
-    return parts[parts.length - 1]; 
+    const parts = fullArea.split(',').map(p=>p.trim()).filter(p=>!p.includes("قضاء")&&!p.includes("ناحية")&&!p.includes("مركز")&&!p.includes("بغداد"));
+    return parts.length>0 ? parts[0] : fullArea.split(',').pop();
 }
 
 const statusText=document.getElementById("status");
@@ -315,35 +144,34 @@ const wazeBtn=document.getElementById("wazeBtn");
 const logoutBtn=document.getElementById("logoutBtn"); 
 const floatingControls=document.getElementById("floatingControls");
 const riderContactInfo=document.getElementById("riderContactInfo");
-const mapElement = document.getElementById("map"); 
-const panelElement = document.getElementById("panel");
 
+// === مراقبة الطلبات ===
 db.ref("rides").on("value",snap=>{
     let data=snap.val();
     if(!data) return;
 
-    // ** التحقق من الإلغاء أو الإنهاء للرحلة الحالية **
     if(currentRideId && data[currentRideId]){
         let r = data[currentRideId];
-        // إذا قام الراكب بالإلغاء والرحلة كانت نشطة
         if(r.status === "ملغاة" && r.canceledBy === "rider"){
             alert("⚠️ تنبيه: قام الراكب بإلغاء الرحلة!");
-            // سيتم التعامل مع إعادة التعيين في الأسفل لأن الحالة تغيرت
+            // سيقوم الكود بإعادة تعيين الحالة في الأسفل
         }
     }
 
     let rideFound=false;
-
     Object.keys(data).forEach(id=>{
         let r=data[id];
-        if(r.status==="جديدة" && !rideFound){
+        // 1. استقبال الطلب: يجب أن تكون الحالة "قيد المراجعة" والسائق المستهدف هو أنا
+        if(r.status==="قيد المراجعة" && r.targetDriver === driverPhone && !rideFound){
             rideFound=true;
             showRideRequest(id,r);
         }
+        // 2. الرحلات المقبولة
         else if(r.status==="مقبولة" && r.driverPhone===driverPhone){
              rideFound=true;
              handleAcceptedRide(id,r);
         }
+        // 3. الرحلات الجارية
         else if(r.status==="بدأت" && r.driverPhone===driverPhone){
              rideFound=true;
              handleStartedRide(id,r);
@@ -355,163 +183,89 @@ db.ref("rides").on("value",snap=>{
         removeAllRideMarkers();
         currentRideId=null;
         currentRideData=null;
-        acceptBtn.style.display="none";
-        rejectBtn.style.display="none";
-        
-        startRideBtn.style.display="none";
-        finishBtn.style.display="none";
-        wazeBtn.style.display="none";
-        riderContactInfo.style.display="none";
-        floatingControls.style.display="none";
-        
+        acceptBtn.style.display="none"; rejectBtn.style.display="none";
+        startRideBtn.style.display="none"; finishBtn.style.display="none"; wazeBtn.style.display="none";
+        riderContactInfo.style.display="none"; floatingControls.style.display="none";
         logoutBtn.style.display="inline-block";
         statusText.innerText="في انتظار الطلبات...";
-        
-        panelElement.style.display="block"; 
+        document.getElementById("panel").style.display="block"; 
         updateMapHeight();
     }
 });
 
 function showRideRequest(id,r){
-    currentRideId=id;
-    currentRideData=r;
-    
+    currentRideId=id; currentRideData=r;
     startRinging();
 
-    startRideBtn.style.display="none";
-    finishBtn.style.display="none";
-    wazeBtn.style.display="none";
-    riderContactInfo.style.display="none";
-    floatingControls.style.display="none";
+    startRideBtn.style.display="none"; finishBtn.style.display="none"; wazeBtn.style.display="none";
+    riderContactInfo.style.display="none"; floatingControls.style.display="none";
     logoutBtn.style.display="inline-block";
     removeAllRideMarkers();
 
-    panelElement.style.display="block"; 
+    document.getElementById("panel").style.display="block"; 
     updateMapHeight();
 
-    const distance = parseFloat(r.distance) || 0;
-    const fare = r.fare || Math.round(distance * 1000);
-    const formattedFare = fare.toLocaleString('ar-IQ') || '...';
-    
-    const shortStartArea = getShortAreaName(r.startArea);
-    const shortEndArea = getShortAreaName(r.endArea);
-    
-    const fareStyle = "font-size: 1.1em; font-weight: bold; color: #e53935;";
-    const distanceStyle = "font-size: 1.1em; font-weight: bold; color: #455a64;";
+    const shortStart = getShortAreaName(r.startArea);
+    const shortEnd = getShortAreaName(r.endArea);
+    const fare = r.fare ? r.fare.toLocaleString('ar-IQ') : '...';
 
     statusText.innerHTML=
       `🚖 طلب جديد<br>
-       من: ${shortStartArea} إلى: ${shortEndArea}<br>
-       مسافة الرحلة: <span style="${distanceStyle}">${r.distance} كم</span><br>
-       الأجرة المتوقعة: <span style="${fareStyle}">${formattedFare} د.ع</span>`;
+       من: ${shortStart} إلى: ${shortEnd}<br>
+       المسافة: <span style="color:#455a64;font-weight:bold;">${r.distance} كم</span><br>
+       الأجرة: <span style="color:#e53935;font-weight:bold;">${fare} د.ع</span>`;
 
     acceptBtn.style.display="inline-block";
     rejectBtn.style.display="inline-block";
 
-    acceptBtn.onclick=function(){
-        stopRinging(); 
-        db.ref("rides/"+id).update({status:"مقبولة",driverPhone:driverPhone});
-    };
-
-    rejectBtn.onclick=function(){
-        stopRinging();
-        db.ref("rides/"+id).update({status:"مرفوضة"});
-        statusText.innerText="تم رفض الرحلة.";
-        acceptBtn.style.display="none";
-        rejectBtn.style.display="none";
-    };
+    acceptBtn.onclick=function(){ stopRinging(); db.ref("rides/"+id).update({status:"مقبولة",driverPhone:driverPhone}); };
+    rejectBtn.onclick=function(){ stopRinging(); db.ref("rides/"+id).update({status:"مرفوضة"}); statusText.innerText="تم رفض الرحلة."; acceptBtn.style.display="none"; rejectBtn.style.display="none"; };
 }
 
 async function handleAcceptedRide(id,r){
-    currentRideId=id;
-    currentRideData=r;
+    currentRideId=id; currentRideData=r;
+    acceptBtn.style.display="none"; rejectBtn.style.display="none"; logoutBtn.style.display="none"; 
+    document.getElementById("panel").style.display="none"; updateMapHeight(); 
     
-    acceptBtn.style.display="none";
-    rejectBtn.style.display="none";
-    logoutBtn.style.display="none"; 
-    
-    panelElement.style.display="none"; 
-    updateMapHeight(); 
-    
-    floatingControls.style.display="flex";
-    riderContactInfo.style.display = "block";
-    startRideBtn.style.display="inline-block";
-    finishBtn.style.display="none";
-    wazeBtn.style.display="inline-block";
+    floatingControls.style.display="flex"; riderContactInfo.style.display = "block";
+    startRideBtn.style.display="inline-block"; finishBtn.style.display="none"; wazeBtn.style.display="inline-block";
     wazeBtn.innerText = "ويز: اذهب للراكب 🚗";
 
-    riderContactInfo.innerHTML = `
-        <a href="tel:${r.riderPhone}" class="phone-link">
-            📞 اتصل بالراكب: ${r.riderPhone}
-        </a>
-    `;
+    riderContactInfo.innerHTML = `<a href="tel:${r.riderPhone}" class="phone-link">📞 اتصل بالراكب: ${r.riderPhone}</a>`;
 
     removeAllRideMarkers();
-    
     if(r.startLat && r.startLng && driverMarker){
-        let driverLat=driverMarker.getLatLng().lat;
-        let driverLng=driverMarker.getLatLng().lng;
-        pickupRoute = await drawStreetRoute(driverLat, driverLng, r.startLat, r.startLng, '#4caf50', '10, 10'); 
+        let dLat=driverMarker.getLatLng().lat, dLng=driverMarker.getLatLng().lng;
+        pickupRoute = await drawStreetRoute(dLat, dLng, r.startLat, r.startLng, '#4caf50'); 
         passengerMarker=L.marker([r.startLat, r.startLng]).addTo(map).bindPopup("👤 موقع الراكب");
         map.setView([r.startLat, r.startLng], 14);
     }
+    statusText.innerHTML=`في طريقك للراكب (${getShortAreaName(r.startArea)})...`;
 
-    const shortStartArea = getShortAreaName(r.startArea);
-    statusText.innerHTML=`تم قبول الرحلة. في طريقك للراكب (${shortStartArea})...`;
-
-    startRideBtn.onclick=function(){
-        db.ref("rides/"+id).update({status:"بدأت"});
-    };
-    
-    finishBtn.onclick=function(){
-        db.ref("rides/"+id).update({status:"منتهية"});
-    };
+    startRideBtn.onclick=()=>db.ref("rides/"+id).update({status:"بدأت"});
+    finishBtn.onclick=()=>db.ref("rides/"+id).update({status:"منتهية"});
 }
 
 async function handleStartedRide(id,r){
-    currentRideId=id;
-    currentRideData=r;
+    currentRideId=id; currentRideData=r;
+    acceptBtn.style.display="none"; rejectBtn.style.display="none"; logoutBtn.style.display="none";
+    document.getElementById("panel").style.display="none"; updateMapHeight();
     
-    acceptBtn.style.display="none";
-    rejectBtn.style.display="none";
-    logoutBtn.style.display="none";
-    
-    panelElement.style.display="none"; 
-    updateMapHeight();
-    
-    floatingControls.style.display="flex";
-    riderContactInfo.style.display = "block";
-    startRideBtn.style.display="none";
-    finishBtn.style.display="inline-block";
-    wazeBtn.style.display="inline-block";
+    floatingControls.style.display="flex"; riderContactInfo.style.display = "block";
+    startRideBtn.style.display="none"; finishBtn.style.display="inline-block"; wazeBtn.style.display="inline-block";
     wazeBtn.innerText = "ويز: اذهب للوصول 🏁";
 
     removeAllRideMarkers(); 
-
-    riderContactInfo.innerHTML = `
-        <a href="tel:${r.riderPhone}" class="phone-link">
-            📞 اتصل بالراكب: ${r.riderPhone}
-        </a>
-    `;
-    
-    const shortEndArea = getShortAreaName(r.endArea);
-    statusText.innerHTML=`الرحلة بدأت! الوجهة: ${shortEndArea}`;
+    riderContactInfo.innerHTML = `<a href="tel:${r.riderPhone}" class="phone-link">📞 اتصل بالراكب: ${r.riderPhone}</a>`;
+    statusText.innerHTML=`الرحلة بدأت! الوجهة: ${getShortAreaName(r.endArea)}`;
     
     if(r.startLat && r.startLng && r.endLat && r.endLng){
-        let startLat=r.startLat;
-        let startLng=r.startLng;
-        let endLat=r.endLat;
-        let endLng=r.endLng;
-        
-        destinationRoute = await drawStreetRoute(startLat, startLng, endLat, endLng, '#1e88e5');
-        passengerMarker=L.marker([startLat, startLng]).addTo(map).bindPopup("🟢 نقطة البداية").openPopup();
-        L.marker([endLat, endLng]).addTo(map).bindPopup("🏁 نقطة النهاية");
-        map.fitBounds([[startLat, startLng], [endLat, endLng]]); 
+        destinationRoute = await drawStreetRoute(r.startLat, r.startLng, r.endLat, r.endLng, '#1e88e5');
+        passengerMarker=L.marker([r.startLat, r.startLng]).addTo(map).bindPopup("🟢 نقطة البداية").openPopup();
+        L.marker([r.endLat, r.endLng]).addTo(map).bindPopup("🏁 نقطة النهاية");
+        map.fitBounds([[r.startLat, r.startLng], [r.endLat, r.endLng]]); 
     }
-
-    finishBtn.onclick=function(){
-        db.ref("rides/"+id).update({status:"منتهية"});
-    };
+    finishBtn.onclick=()=>db.ref("rides/"+id).update({status:"منتهية"});
 }
 </script>
 </body>
