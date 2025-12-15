@@ -195,7 +195,7 @@ let currentRideData=null;
 // ⭐⭐ متغيرات دالة الجرس/الرنين ⭐⭐
 let audioContext = null;
 let oscillator = null;
-let ringingInterval = null; // استخدام Interval للتكرار
+let ringingTimeout = null;
 let isAudioContextInitialized = false;
 
 // ⭐⭐ الدالة الجديدة لتهيئة سياق الصوت عند أول تفاعل ⭐⭐
@@ -223,53 +223,60 @@ function startRinging() {
     // إيقاف أي رنين سابق قبل البدء
     stopRinging(); 
 
-    // دالة لتوليد نغمة واحدة
-    const playTone = () => {
-        // إنشاء مذبذب (Oscillator) لتوليد نغمة
-        oscillator = audioContext.createOscillator();
-        // استخدام نغمة مسموعة ومميزة (A4)
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); 
-        
-        // إنشاء كسب (Gain) للتحكم في الصوت وتجنب النقرات عند التوقف
-        const gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime); // مستوى صوت 50%
-        
-        // توصيل المذبذب بـ Gain ثم بمخرج الصوت الرئيسي
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        // البدء بالرنين فوراً
-        oscillator.start(0);
-
-        // إيقاف النغمة بعد فترة قصيرة (مثلاً 500 مللي ثانية)
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
-        oscillator.stop(audioContext.currentTime + 0.5); 
-    };
-
-    // تشغيل النغمة الأولى
-    playTone();
+    // إنشاء مذبذب (Oscillator) لتوليد نغمة
+    oscillator = audioContext.createOscillator();
+    // استخدام نغمة مسموعة ومميزة (A4)
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); 
     
-    // تشغيل النغمة بشكل متكرر (كل ثانية مثلاً) حتى يتم إيقافها
-    ringingInterval = setInterval(playTone, 1000); 
+    // إنشاء كسب (Gain) للتحكم في الصوت وتجنب النقرات عند التوقف
+    const gainNode = audioContext.createGain();
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime); // مستوى صوت 50%
     
-    console.log("🔔 بدأ الرنين. سيستمر بالتكرار حتى يتم القبول أو الرفض.");
+    // توصيل المذبذب بـ Gain ثم بمخرج الصوت الرئيسي
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // البدء بالرنين فوراً
+    oscillator.start(0);
+
+    // إيقاف الرنين تلقائياً بعد 15 ثانية
+    ringingTimeout = setTimeout(() => {
+        // استخدام Fade out سلس بدلاً من التوقف المفاجئ
+        if (oscillator && gainNode) {
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1); // يخف الصوت خلال ثانية
+            oscillator.stop(audioContext.currentTime + 1); // يتوقف بعد أن يختفي الصوت
+            oscillator = null;
+            console.log("🔔 الرنين توقف تلقائياً بعد 15 ثانية.");
+        }
+    }, 15000); 
+    
+    console.log("🔔 بدأ الرنين لمدة 15 ثانية.");
 }
 
 function stopRinging() {
-    if (ringingInterval) {
-        clearInterval(ringingInterval);
-        ringingInterval = null;
-        console.log("🔔 تم إيقاف الرنين يدوياً.");
-    }
-    // إيقاف أي نغمة تعمل حالياً بشكل فردي
     if (oscillator) {
         try {
-            oscillator.stop();
+            // إيقاف الرنين الحالي بسلاسة لتجنب النقر الصوتي
+            const gainNode = oscillator.context.destination.context.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(oscillator.context.destination);
+
+            gainNode.gain.cancelScheduledValues(oscillator.context.currentTime);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, oscillator.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, oscillator.context.currentTime + 0.1);
+
+            oscillator.stop(oscillator.context.currentTime + 0.1);
         } catch(e) {
-            console.error("Error stopping oscillator:", e);
+            // في حال فشل الإيقاف السلس، نوقف فوراً
+            oscillator.stop();
         } finally {
             oscillator = null;
+            console.log("🔔 تم إيقاف الرنين يدوياً.");
         }
+    }
+    if (ringingTimeout) {
+        clearTimeout(ringingTimeout);
+        ringingTimeout = null;
     }
 }
 // ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐
