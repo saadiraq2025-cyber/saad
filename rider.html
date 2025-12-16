@@ -155,7 +155,56 @@ const fixedActions = document.getElementById("fixedActions");
 const panel = document.getElementById("panel");
 
 
-function getShortName(a){if(!a)return"غير معروف";if(a.length<50&&!a.includes(','))return a; const p=a.split(',').map(x=>x.trim()).filter(x=>!['قضاء','ناحية','مركز','بغداد'].some(k=>x.includes(k))); return p.length?p[0]:a.split(',').pop();}
+// ----------------------------------------------------
+// التعديل الجديد: تبسيط اسم المنطقة وإزالة الأرقام والمحلات
+// ----------------------------------------------------
+function getShortName(a){
+    if(!a)return"غير معروف";
+
+    // 1. Split the full address and filter out administrative and general terms
+    const parts = a.split(',')
+        .map(x=>x.trim())
+        .filter(x=>x.length>0);
+
+    // Terms to be ignored or filtered out
+    const generalFilters = ['قضاء', 'ناحية', 'مركز', 'محلية', 'حي', 'منطقة', 'District', 'محافظة', 'Governorate'];
+    
+    // Check if a part contains only digits or starts with 'محلة' followed by digits
+    const isLocalNumbered = (str) => {
+        // Check for numbers only (like '318') or 'محلة ' followed by numbers
+        const regex = /^(\d+|محلة\s*\d+)$/g; 
+        return regex.test(str);
+    };
+
+    // 2. Filter out numbered neighborhoods/localities and general administrative terms
+    const filteredParts = parts.filter(x => {
+        // Check if the part is mainly descriptive (not just numbers or administrative)
+        if (isLocalNumbered(x)) return false; 
+        if (generalFilters.some(k => x.includes(k))) return false; 
+        return true;
+    });
+
+    // 3. Determine the final short name format (Gov - Area - Landmark)
+    
+    // We assume the first 2 or 3 most relevant filtered parts are the Governorate/City/Area.
+    let relevantParts = filteredParts.slice(0, 3);
+    
+    // Fallback logic for extremely long addresses or if filtering removed everything
+    if (relevantParts.length === 0) {
+        // If filtering removed almost everything, take the most general part (usually the last)
+        const lastPart = parts[parts.length - 1];
+        return lastPart.length > 0 ? lastPart : "موقع محدد";
+    }
+
+    // Example output: بغداد - الشعب - قرب المركز (or just بغداد - الشعب)
+    return relevantParts.join(' - ');
+}
+
+// ----------------------------------------------------
+// نهاية التعديل الجديد
+// ----------------------------------------------------
+
+
 async function revGeo(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`);const d=await r.json();return d.display_name||`${lat},${lon}`;}catch{return`${lat},${lon}`;}}
 function calcDist(l1,n1,l2,n2){const R=6371, dLat=(l2-l1)*Math.PI/180, dLon=(n2-n1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(l1*Math.PI/180)*Math.cos(l2*Math.PI/180)*Math.sin(dLon/2)**2; return parseFloat((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(2));}
 
