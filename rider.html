@@ -13,7 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
-body,html{margin:0;padding:0;height:100%;font-family:Tahoma;overflow:hidden;}
+body,html{margin:0;padding:0;height:100%;font-family:Tahoma;overflow:hidden;background:#f7f7f7;}
 #map{height:100vh;position:relative; padding-top: 55px; padding-bottom: 220px; transition: padding-bottom 0.3s ease;} 
 #panel{ 
     position:fixed; 
@@ -22,67 +22,63 @@ body,html{margin:0;padding:0;height:100%;font-family:Tahoma;overflow:hidden;}
     right:0; 
     background:#fff; 
     text-align:center; 
-    padding:10px 0 0; 
-    box-shadow:0 -2px 10px rgba(0,0,0,0.3); 
-    border-radius: 15px 15px 0 0; 
+    padding:15px 0 0; 
+    box-shadow:0 -5px 15px rgba(0,0,0,0.2); 
+    border-radius: 20px 20px 0 0; 
     z-index: 1000; 
-    transition: bottom 0.3s ease;
 }
 #fixedActions {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 5px 0 10px;
+    padding: 10px 0;
     background: #fff;
     z-index: 1005; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
-button{ background:#f97316; color:white; border:none; padding:15px 10px; border-radius:10px; font-weight:bold; cursor:pointer; margin:5px 10px; width:calc(100% - 20px); font-size: 1.1em; }
-#panel p#status { font-size: 1.0em; margin: 10px; line-height: 1.4; color: #333; padding: 5px; background: #f0f0f0; border-radius: 8px; }
-#costDisplay { background: #e0f2f1; color: #004d40; font-size: 1.2em; font-weight: bold; padding: 10px; margin: 10px; border-radius: 8px; display: none; }
-#map-center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 999; font-size: 40px; pointer-events: none; display: block; }
-#pointContainer { display: flex; flex-direction: column; padding: 0 10px; gap: 10px; text-align: right; }
-.point-field { display: flex; justify-content: space-between; align-items: center; background: #f5f5f5; padding: 10px; border-radius: 10px; }
-.point-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; text-align: right; margin-right: 5px; }
-.point-action { background: none; color: #f97316; width: auto; padding: 0 5px; margin: 0; font-size: 1em; }
-#searchContainer { position: fixed; top: 0; left: 0; right: 0; background: #fff; padding: 8px 10px; z-index: 1001; display: flex; align-items: center; border-bottom: 1px solid #ddd; }
-#search-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin: 0 10px; text-align: right; }
-#searchResults { position: fixed; top: 55px; left: 10px; right: 10px; background: #fff; z-index: 1002; max-height: 50vh; overflow-y: auto; display: none; border: 1px solid #ddd; }
-.search-result-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; text-align: right; }
-#logoutBtn{ display:block; background:#607d8b; padding:10px 20px; width:calc(100% - 20px); margin: 5px 10px; font-size: 1em; }
+button{ background:#f97316; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer; margin:5px 10px; width:calc(100% - 20px); font-size: 1.1em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+#panel p#status { font-size: 0.95em; margin: 10px; line-height: 1.5; color: #333; padding: 10px; background: #fff8e1; border-radius: 10px; border-right: 5px solid #ffc107; }
+#costDisplay { background: #e8f5e9; color: #2e7d32; font-size: 1.2em; font-weight: bold; padding: 10px; margin: 10px; border-radius: 10px; display: none; }
+#map-center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 999; font-size: 45px; pointer-events: none; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
-.searching-status { display: flex; align-items: center; justify-content: flex-end; padding: 10px; }
-.timer-container { width: 36px; height: 36px; position: relative; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
-#countdownProgress { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; }
-#countdownText { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.9em; font-weight: bold; color: #f97316; z-index: 10; }
+#pointContainer { display: flex; flex-direction: column; padding: 0 15px; gap: 10px; text-align: right; }
+.point-field { display: flex; flex-direction: column; background: #fdfdfd; padding: 12px; border-radius: 12px; border: 1px solid #eee; position: relative; }
+.point-label { font-size: 0.8em; color: #888; margin-bottom: 4px; }
+.point-value { font-size: 0.95em; color: #222; font-weight: bold; line-height: 1.4; padding-left: 50px; }
+.point-action { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: #f0f0f0; color: #f97316; width: auto; padding: 5px 10px; margin: 0; font-size: 0.85em; border-radius: 8px; box-shadow: none; }
+
+#searchContainer { position: fixed; top: 10px; left: 10px; right: 10px; background: #fff; padding: 5px 15px; z-index: 1001; display: flex; align-items: center; border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+#search-input { flex-grow: 1; padding: 10px; border: none; outline: none; text-align: right; font-size: 1em; }
+#searchResults { position: fixed; top: 65px; left: 15px; right: 15px; background: #fff; z-index: 1002; max-height: 45vh; overflow-y: auto; display: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+.search-result-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; text-align: right; font-size: 0.9em; }
+#logoutBtn{ display:block; background:#eceff1; color:#546e7a; padding:10px; width:calc(100% - 20px); margin: 5px 10px; font-size: 0.9em; box-shadow: none; }
 </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div id="map-center-pin" id="pin">📍</div>
+<div id="map-center-pin">📍</div>
 
 <div id="searchContainer">
     <span>🔍</span>
-    <input type="text" id="search-input" placeholder="أبحث عن مكان" />
+    <input type="text" id="search-input" placeholder="أبحث عن منطقة أو معلم..." />
 </div>
 <div id="searchResults"></div>
 
 <div id="panel">
     <div id="pointContainer">
         <div class="point-field" id="startPointField">
-            <span>من:</span>
+            <span class="point-label">موقع الانطلاق:</span>
             <span id="startPointValue" class="point-value">جاري التحقق...</span>
             <button id="changeStartPointBtn" class="point-action" style="display:none;">تغيير</button>
         </div>
         <div class="point-field" id="endPointField" style="display:none;">
-            <span>إلى:</span>
+            <span class="point-label">وجهة الوصول:</span>
             <span id="endPointValue" class="point-value">جاري التحقق...</span>
             <button id="changeEndPointBtn" class="point-action" style="display:none;">تغيير</button>
         </div>
     </div>
-    <div id="costDisplay">التكلفة: <strong><span id="fareValue">---</span> د.ع</strong></div>
+    <div id="costDisplay">التكلفة المتوقعة: <strong><span id="fareValue">---</span> د.ع</strong></div>
     <p id="status" style="display:none;"></p> 
 </div>
 
@@ -95,30 +91,53 @@ button{ background:#f97316; color:white; border:none; padding:15px 10px; border-
 const app=firebase.initializeApp({apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",authDomain:"taxi-15314.firebaseapp.com",databaseURL:"https://taxi-15314-default-rtdb.firebaseio.com/",projectId:"taxi-15314"});
 const db=firebase.database();
 
-let map=L.map('map').setView([33.3603, 44.5066],14); 
-L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=AIzaSyD7TtwniAdUtB8-pnTny4ZwE6gqX36SGUk",{maxZoom:20}).addTo(map);
+let map=L.map('map', {zoomControl: false}).setView([33.3603, 44.5066],14); 
+L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",{maxZoom:20}).addTo(map);
 
 let startCoords=null, endCoords=null, startAreaName="", endAreaName="";
 let currentStage="settingStart", rideId=null, driverMarker=null, rideRef=null, driverRef=null;
-let countdownInterval = null; 
 
 const pin=document.getElementById("map-center-pin");
 const startVal=document.getElementById("startPointValue"), endVal=document.getElementById("endPointValue");
-const mainBtn=document.getElementById("mainActionBtn"), logoutBtn=document.getElementById("logoutBtn");
+const mainBtn=document.getElementById("mainActionBtn");
 const statusP=document.getElementById("status"), costDiv=document.getElementById("costDisplay"), fareVal=document.getElementById("fareValue");
 const startF=document.getElementById("startPointField"), endF=document.getElementById("endPointField"), chStart=document.getElementById("changeStartPointBtn"), chEnd=document.getElementById("changeEndPointBtn");
 const searchIn=document.getElementById("search-input"), searchRes=document.getElementById("searchResults");
-const fixedActions = document.getElementById("fixedActions");
-const panel = document.getElementById("panel");
 
-function getShortName(a){if(!a)return"غير معروف";if(a.length<50&&!a.includes(','))return a; const p=a.split(',').map(x=>x.trim()).filter(x=>!['قضاء','ناحية','مركز','بغداد'].some(k=>x.includes(k))); return p.length?p[0]:a.split(',').pop();}
-async function revGeo(lat,lon){try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`);const d=await r.json();return d.display_name||`${lat},${lon}`;}catch{return`${lat},${lon}`;}}
-function calcDist(l1,n1,l2,n2){const R=6371, dLat=(l2-l1)*Math.PI/180, dLon=(n2-n1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(l1*Math.PI/180)*Math.cos(l2*Math.PI/180)*Math.sin(dLon/2)**2; return parseFloat((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(2));}
+// دالة العنونة الجغرافية المتقدمة لجلب المعالم
+async function revGeo(lat, lon) {
+    try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&accept-language=ar`);
+        const d = await r.json();
+        const addr = d.address;
+        
+        // استخراج اسم المنطقة/الحي
+        let region = addr.neighbourhood || addr.suburb || addr.quarter || addr.city_district || addr.town || "بغداد";
+        
+        // استخراج المعلم القريب (جامع، مدرسة، مستشفى، مركز شرطة، سوق)
+        let landmark = addr.amenity || addr.landmark || addr.building || addr.office || addr.shop || addr.historic || "";
+        
+        // استخراج رقم الشارع أو القطاع إن وجد
+        let road = addr.road || "";
+        
+        let fullDescription = region;
+        if(road) fullDescription += " - " + road;
+        if(landmark) fullDescription += " (قرب " + landmark + ")";
+        
+        return fullDescription || d.display_name;
+    } catch(e) {
+        return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    }
+}
+
+function calcDist(l1,n1,l2,n2){
+    const R=6371, dLat=(l2-l1)*Math.PI/180, dLon=(n2-n1)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(l1*Math.PI/180)*Math.cos(l2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return parseFloat((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(2));
+}
 
 function updatePanelHeight() {
-    const totalFixedBottomHeight = fixedActions.offsetHeight;
-    panel.style.bottom = totalFixedBottomHeight + 'px';
-    const totalPanelHeight = panel.offsetHeight + totalFixedBottomHeight + 10;
+    const totalPanelHeight = document.getElementById("panel").offsetHeight + document.getElementById("fixedActions").offsetHeight;
     document.getElementById("map").style.paddingBottom = `${totalPanelHeight}px`;
     map.invalidateSize();
 }
@@ -129,9 +148,7 @@ async function activeRideMainAction(){
         const tempId = rideId;
         if(rideRef) rideRef.off();
         if(driverRef) driverRef.off();
-        try {
-            await db.ref("rides/" + tempId).update({status: "ملغاة", canceledBy: "rider"});
-        } catch(e) {}
+        try { await db.ref("rides/" + tempId).update({status: "ملغاة", canceledBy: "rider"}); } catch(e) {}
         cleanup(); 
         initGeo(); 
     }
@@ -144,7 +161,6 @@ function preRideMainAction() {
 }
 
 async function updateUI(){
-    // الحالة الافتراضية
     pin.style.display='block'; 
     mainBtn.style.display='block'; 
     mainBtn.disabled = false;
@@ -155,7 +171,6 @@ async function updateUI(){
     statusP.style.display='none';
     startF.style.display='flex';
     endF.style.display='flex';
-    logoutBtn.style.display='block';
 
     if(rideId){ 
         pin.style.display='none';
@@ -164,7 +179,6 @@ async function updateUI(){
         mainBtn.innerText="إلغاء الطلب ❌"; 
         mainBtn.style.backgroundColor = '#E53935'; 
         mainBtn.onclick = activeRideMainAction; 
-        logoutBtn.style.display='none'; 
         statusP.style.display='block';
         setTimeout(updatePanelHeight, 50); 
         return; 
@@ -174,31 +188,35 @@ async function updateUI(){
 
     if(currentStage==="settingStart"){
         mainBtn.innerText="تثبيت الانطلاق"; 
-        startVal.innerText=startAreaName?getShortName(startAreaName):'تحديد الموقع...'; 
+        startVal.innerText=startAreaName || 'جاري تحديد العنوان...'; 
         endF.style.display='none';
     } else if(currentStage==="settingEnd"){
         mainBtn.innerText="تثبيت الوصول"; 
-        startVal.innerText=getShortName(startAreaName); 
-        endVal.innerText=endAreaName?getShortName(endAreaName):'تحديد الوجهة...'; 
+        startVal.innerText=startAreaName; 
+        endVal.innerText=endAreaName || 'اسحب الخريطة لتحديد الوجهة...'; 
         chStart.style.display='inline-block';
     } else if(currentStage==="confirmed"){
-        mainBtn.innerText="البحث عن سائق 🚕"; 
+        mainBtn.innerText="اطلب التاكسي الآن 🚕"; 
         pin.style.display='none';
         chStart.style.display='inline-block'; 
         chEnd.style.display='inline-block';
-        if(startCoords && endCoords){
-            const dist=calcDist(startCoords[0],startCoords[1],endCoords[0],endCoords[1]);
-            fareVal.innerText=Math.max(2000,Math.round(dist*1000)).toLocaleString();
-            costDiv.style.display='block';
-        }
+        const dist=calcDist(startCoords[0],startCoords[1],endCoords[0],endCoords[1]);
+        fareVal.innerText=Math.max(3000, Math.round(dist*1000/250)*250).toLocaleString();
+        costDiv.style.display='block';
     }
     setTimeout(updatePanelHeight, 50); 
 }
 
-chStart.onclick=()=>{currentStage="settingStart"; map.setView(startCoords,15); updateUI();};
-chEnd.onclick=()=>{currentStage="settingEnd"; map.setView(endCoords,15); updateUI();};
+chStart.onclick=()=>{currentStage="settingStart"; map.setView(startCoords,16); updateUI();};
+chEnd.onclick=()=>{currentStage="settingEnd"; map.setView(endCoords || startCoords,16); updateUI();};
 
 let geoTimer;
+map.on('move', () => {
+   if(rideId || currentStage === "confirmed") return;
+   if(currentStage==="settingStart") startVal.innerText = "...";
+   else endVal.innerText = "...";
+});
+
 map.on('moveend',async()=>{
     if(rideId || currentStage === "confirmed") return;
     const c=map.getCenter();
@@ -210,7 +228,7 @@ map.on('moveend',async()=>{
         const n=await revGeo(c.lat,c.lng);
         if(currentStage==="settingStart") startAreaName=n; else endAreaName=n;
         updateUI();
-    },500);
+    },600);
 });
 
 function findDriver(){
@@ -243,7 +261,8 @@ function sendReq(driversList){
         riderPhone: localStorage.getItem('phone'),
         targetDrivers: driversList,
         startLat:startCoords[0], startLng:startCoords[1], endLat:endCoords[0], endLng:endCoords[1],
-        startArea:startAreaName, endArea:endAreaName, fare:Math.max(2000,Math.round(dist*1000)),
+        startArea:startAreaName, endArea:endAreaName, 
+        fare:Math.max(3000, Math.round(dist*1000/250)*250),
         status:"قيد المراجعة", time: rideId
     });
     monitorRide(rideId);
@@ -283,7 +302,6 @@ function trackDriver(ph){
 function cleanup(){ 
     if(rideRef) rideRef.off(); if(driverRef) driverRef.off();
     if(driverMarker) map.removeLayer(driverMarker);
-    clearInterval(countdownInterval);
     rideId=null; localStorage.removeItem('activeRideId');
     currentStage = "settingStart";
     updateUI(); 
@@ -292,7 +310,7 @@ function cleanup(){
 function initGeo(){
     navigator.geolocation.getCurrentPosition(p=>{
         startCoords=[p.coords.latitude,p.coords.longitude];
-        map.setView(startCoords,15);
+        map.setView(startCoords,16);
         revGeo(startCoords[0],startCoords[1]).then(n=>{startAreaName=n; updateUI();});
     },()=>{ updateUI(); });
     
@@ -329,4 +347,3 @@ function logout(){ localStorage.clear(); window.location.href="index.html"; }
 </script>
 </body>
 </html>
-عند تثبيت نقطة الانطلاق ونقطة الوصول يجب جلب اسم المنطقة وقرب الجامع او الاسواق او المركز الطبي وهكذا مثلا بغداد مدينة الصدر قطاع 40 قرب مركز شرطة حدث ثم ارسل الملف كامل للراكب 
