@@ -2,348 +2,275 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>الراكب - تكسي العراق الشامل</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#f97316"> 
-<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
-body,html{margin:0;padding:0;height:100%;font-family:Tahoma;overflow:hidden;background:#f7f7f7;}
-#map{height:100vh;position:relative; padding-top: 55px; padding-bottom: 220px; transition: padding-bottom 0.3s ease;} 
+body,html{margin:0;padding:0;height:100%;font-family:Tahoma, sans-serif;overflow:hidden;background:#f4f4f4;}
+#map{height:100vh;width:100%;position:relative; transition: padding-bottom 0.3s ease;} 
+
+/* دبوس الخريطة الثابت */
+#map-center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 999; font-size: 40px; pointer-events: none; transition: 0.2s; }
+
+/* لوحة التحكم السفلية */
 #panel{ 
-    position:fixed; 
-    bottom:0; 
-    left:0; 
-    right:0; 
-    background:#fff; 
-    text-align:center; 
-    padding:15px 0 0; 
-    box-shadow:0 -5px 15px rgba(0,0,0,0.2); 
-    border-radius: 20px 20px 0 0; 
-    z-index: 1000; 
+    position:fixed; bottom:0; left:0; right:0; background:#fff; 
+    padding:15px; box-shadow:0 -5px 15px rgba(0,0,0,0.1); 
+    border-radius: 20px 20px 0 0; z-index: 1000;
 }
-#fixedActions {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 10px 0;
-    background: #fff;
-    z-index: 1005; 
-}
-button{ background:#f97316; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer; margin:5px 10px; width:calc(100% - 20px); font-size: 1.1em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-#panel p#status { font-size: 0.95em; margin: 10px; line-height: 1.5; color: #333; padding: 10px; background: #fff8e1; border-radius: 10px; border-right: 5px solid #ffc107; }
-#costDisplay { background: #e8f5e9; color: #2e7d32; font-size: 1.2em; font-weight: bold; padding: 10px; margin: 10px; border-radius: 10px; display: none; }
-#map-center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 999; font-size: 45px; pointer-events: none; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
 
-#pointContainer { display: flex; flex-direction: column; padding: 0 15px; gap: 10px; text-align: right; }
-.point-field { display: flex; flex-direction: column; background: #fdfdfd; padding: 12px; border-radius: 12px; border: 1px solid #eee; position: relative; }
-.point-label { font-size: 0.8em; color: #888; margin-bottom: 4px; }
-.point-value { font-size: 0.95em; color: #222; font-weight: bold; line-height: 1.4; padding-left: 50px; }
-.point-action { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: #f0f0f0; color: #f97316; width: auto; padding: 5px 10px; margin: 0; font-size: 0.85em; border-radius: 8px; box-shadow: none; }
+.point-card { background: #f9f9f9; border: 1px solid #eee; border-radius: 12px; padding: 10px; margin-bottom: 10px; position: relative; }
+.label { font-size: 11px; color: #f97316; font-weight: bold; margin-bottom: 3px; display: block; }
+.value { font-size: 13px; color: #333; font-weight: bold; width: 80%; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.edit-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #007bff; font-size: 12px; font-weight: bold; cursor: pointer; display: none; }
 
-#searchContainer { position: fixed; top: 10px; left: 10px; right: 10px; background: #fff; padding: 5px 15px; z-index: 1001; display: flex; align-items: center; border-radius: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-#search-input { flex-grow: 1; padding: 10px; border: none; outline: none; text-align: right; font-size: 1em; }
-#searchResults { position: fixed; top: 65px; left: 15px; right: 15px; background: #fff; z-index: 1002; max-height: 45vh; overflow-y: auto; display: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-.search-result-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; text-align: right; font-size: 0.9em; }
-#logoutBtn{ display:block; background:#eceff1; color:#546e7a; padding:10px; width:calc(100% - 20px); margin: 5px 10px; font-size: 0.9em; box-shadow: none; }
+#costDisplay { background: #e8f5e9; color: #2e7d32; font-size: 1.1em; font-weight: bold; padding: 10px; text-align: center; border-radius: 10px; margin-bottom: 10px; display: none; }
+#status { font-size: 0.9em; color: #555; background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: none; border-right: 4px solid #f97316; }
+
+button#mainActionBtn { background:#f97316; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; font-size: 1.1em; transition: 0.2s; }
+button#mainActionBtn:active { transform: scale(0.98); }
+
+/* شريط البحث */
+#searchContainer { position: fixed; top: 15px; left: 15px; right: 15px; background: #fff; padding: 10px; z-index: 1001; display: flex; align-items: center; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+#search-input { flex-grow: 1; border: none; outline: none; text-align: right; padding: 5px; font-size: 15px; }
+#searchResults { position: fixed; top: 70px; left: 15px; right: 15px; background: #fff; z-index: 1002; max-height: 40vh; overflow-y: auto; display: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.search-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; text-align: right; font-size: 13px; }
+
+#logoutBtn { background:#607d8b; color:white; border:none; padding:8px; border-radius:8px; margin-top:10px; width:100%; font-size: 0.9em; opacity: 0.8; }
 </style>
 </head>
 <body>
 
-<div id="map"></div>
-<div id="map-center-pin">📍</div>
-
 <div id="searchContainer">
     <span>🔍</span>
-    <input type="text" id="search-input" placeholder="أبحث عن منطقة أو معلم..." />
+    <input type="text" id="search-input" placeholder="ابحث عن مكان أو معلم قريباً منك..." />
 </div>
 <div id="searchResults"></div>
 
-<div id="panel">
-    <div id="pointContainer">
-        <div class="point-field" id="startPointField">
-            <span class="point-label">موقع الانطلاق:</span>
-            <span id="startPointValue" class="point-value">جاري التحقق...</span>
-            <button id="changeStartPointBtn" class="point-action" style="display:none;">تغيير</button>
-        </div>
-        <div class="point-field" id="endPointField" style="display:none;">
-            <span class="point-label">وجهة الوصول:</span>
-            <span id="endPointValue" class="point-value">جاري التحقق...</span>
-            <button id="changeEndPointBtn" class="point-action" style="display:none;">تغيير</button>
-        </div>
-    </div>
-    <div id="costDisplay">التكلفة المتوقعة: <strong><span id="fareValue">---</span> د.ع</strong></div>
-    <p id="status" style="display:none;"></p> 
-</div>
+<div id="map"></div>
+<div id="map-center-pin">📍</div>
 
-<div id="fixedActions">
-    <button id="mainActionBtn">تثبيت الانطلاق</button> 
+<div id="panel">
+    <div id="status"></div>
+
+    <div class="point-card" id="startCard">
+        <span class="label">نقطة الانطلاق (من)</span>
+        <span id="startPointValue" class="value">جاري تحديد موقعك...</span>
+        <button id="editStart" class="edit-btn" onclick="returnToStart()">تعديل</button>
+    </div>
+
+    <div class="point-card" id="endCard" style="display:none;">
+        <span class="label">وجهة الوصول (إلى)</span>
+        <span id="endPointValue" class="value">اسحب الخريطة لتحديد الوجهة</span>
+        <button id="editEnd" class="edit-btn" onclick="returnToEnd()">تعديل</button>
+    </div>
+
+    <div id="costDisplay">التكلفة المتوقعة: <span id="fareValue">0</span> د.ع</div>
+
+    <button id="mainActionBtn">تثبيت الانطلاق</button>
     <button id="logoutBtn" onclick="logout()">تسجيل الخروج</button>
 </div>
 
 <script>
-const app=firebase.initializeApp({apiKey:"AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",authDomain:"taxi-15314.firebaseapp.com",databaseURL:"https://taxi-15314-default-rtdb.firebaseio.com/",projectId:"taxi-15314"});
-const db=firebase.database();
+// إعداد Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
+    authDomain: "taxi-15314.firebaseapp.com",
+    databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/",
+    projectId: "taxi-15314"
+};
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-let map=L.map('map', {zoomControl: false}).setView([33.3603, 44.5066],14); 
-L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",{maxZoom:20}).addTo(map);
+// متغيرات التحكم
+let map = L.map('map', {zoomControl: false}).setView([33.3128, 44.3615], 14);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-let startCoords=null, endCoords=null, startAreaName="", endAreaName="";
-let currentStage="settingStart", rideId=null, driverMarker=null, rideRef=null, driverRef=null;
+let startCoords = null, endCoords = null;
+let startName = "", endName = "";
+let currentStage = "settingStart"; // settingStart, settingEnd, confirmed, searching
+let rideId = null;
 
-const pin=document.getElementById("map-center-pin");
-const startVal=document.getElementById("startPointValue"), endVal=document.getElementById("endPointValue");
-const mainBtn=document.getElementById("mainActionBtn");
-const statusP=document.getElementById("status"), costDiv=document.getElementById("costDisplay"), fareVal=document.getElementById("fareValue");
-const startF=document.getElementById("startPointField"), endF=document.getElementById("endPointField"), chStart=document.getElementById("changeStartPointBtn"), chEnd=document.getElementById("changeEndPointBtn");
-const searchIn=document.getElementById("search-input"), searchRes=document.getElementById("searchResults");
+const mainBtn = document.getElementById("mainActionBtn");
+const statusDiv = document.getElementById("status");
 
-// دالة العنونة الجغرافية المتقدمة لجلب المعالم
-async function revGeo(lat, lon) {
+// دالة جلب العناوين والمعالم (المساجد، الأسواق، المراكز)
+async function fetchDetailedAddress(lat, lon) {
     try {
         const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&accept-language=ar`);
         const d = await r.json();
-        const addr = d.address;
+        const a = d.address;
         
-        // استخراج اسم المنطقة/الحي
-        let region = addr.neighbourhood || addr.suburb || addr.quarter || addr.city_district || addr.town || "بغداد";
+        let area = a.neighbourhood || a.suburb || a.city_district || a.quarter || "منطقة غير معروفة";
+        let road = a.road || "";
+        let landmark = a.amenity || a.mosque || a.hospital || a.school || a.commercial || a.building || "";
+
+        let description = area;
+        if(road) description += " - " + road;
+        if(landmark) description += " (قرب " + landmark + ")";
         
-        // استخراج المعلم القريب (جامع، مدرسة، مستشفى، مركز شرطة، سوق)
-        let landmark = addr.amenity || addr.landmark || addr.building || addr.office || addr.shop || addr.historic || "";
-        
-        // استخراج رقم الشارع أو القطاع إن وجد
-        let road = addr.road || "";
-        
-        let fullDescription = region;
-        if(road) fullDescription += " - " + road;
-        if(landmark) fullDescription += " (قرب " + landmark + ")";
-        
-        return fullDescription || d.display_name;
-    } catch(e) {
-        return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        return description;
+    } catch(e) { return "موقع على الخريطة"; }
+}
+
+// تحديث الواجهة
+async function updateUI() {
+    if (currentStage === "settingStart") {
+        document.getElementById("startCard").style.display = "block";
+        document.getElementById("endCard").style.display = "none";
+        document.getElementById("editStart").style.display = "none";
+        document.getElementById("costDisplay").style.display = "none";
+        document.getElementById("map-center-pin").style.display = "block";
+        mainBtn.innerText = "تثبيت الانطلاق";
+    } 
+    else if (currentStage === "settingEnd") {
+        document.getElementById("endCard").style.display = "block";
+        document.getElementById("editStart").style.display = "block";
+        document.getElementById("editEnd").style.display = "none";
+        document.getElementById("map-center-pin").style.display = "block";
+        mainBtn.innerText = "تثبيت الوصول";
+    }
+    else if (currentStage === "confirmed") {
+        document.getElementById("editEnd").style.display = "block";
+        document.getElementById("map-center-pin").style.display = "none";
+        document.getElementById("costDisplay").style.display = "block";
+        mainBtn.innerText = "اطلب التاكسي الآن 🚕";
+        calculateFare();
     }
 }
 
-function calcDist(l1,n1,l2,n2){
-    const R=6371, dLat=(l2-l1)*Math.PI/180, dLon=(n2-n1)*Math.PI/180;
-    const a=Math.sin(dLat/2)**2+Math.cos(l1*Math.PI/180)*Math.cos(l2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return parseFloat((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(2));
+function calculateFare() {
+    if(!startCoords || !endCoords) return;
+    const dist = map.distance(startCoords, endCoords) / 1000;
+    const price = Math.max(3000, Math.round((dist * 700 + 2000) / 250) * 250);
+    document.getElementById("fareValue").innerText = price.toLocaleString();
+    return price;
 }
 
-function updatePanelHeight() {
-    const totalPanelHeight = document.getElementById("panel").offsetHeight + document.getElementById("fixedActions").offsetHeight;
-    document.getElementById("map").style.paddingBottom = `${totalPanelHeight}px`;
-    map.invalidateSize();
-}
-
-async function activeRideMainAction(){
-    if(!rideId) return;
-    if (confirm("هل تريد إلغاء الرحلة؟")) {
-        const tempId = rideId;
-        if(rideRef) rideRef.off();
-        if(driverRef) driverRef.off();
-        try { await db.ref("rides/" + tempId).update({status: "ملغاة", canceledBy: "rider"}); } catch(e) {}
-        cleanup(); 
-        initGeo(); 
+// متابعة حركة الخريطة
+map.on('moveend', async () => {
+    if (currentStage === "confirmed" || currentStage === "searching") return;
+    
+    const center = map.getCenter();
+    const addr = await fetchDetailedAddress(center.lat, center.lng);
+    
+    if (currentStage === "settingStart") {
+        startCoords = [center.lat, center.lng];
+        startName = addr;
+        document.getElementById("startPointValue").innerText = addr;
+    } else {
+        endCoords = [center.lat, center.lng];
+        endName = addr;
+        document.getElementById("endPointValue").innerText = addr;
     }
-}
-
-function preRideMainAction() {
-    if(currentStage==="settingStart"){ if(startCoords) { currentStage="settingEnd"; updateUI(); } }
-    else if(currentStage==="settingEnd"){ if(endCoords) { currentStage="confirmed"; updateUI(); } }
-    else if(currentStage==="confirmed"){ findDriver(); }
-}
-
-async function updateUI(){
-    pin.style.display='block'; 
-    mainBtn.style.display='block'; 
-    mainBtn.disabled = false;
-    mainBtn.style.backgroundColor = '#f97316';
-    costDiv.style.display='none';
-    chStart.style.display='none'; 
-    chEnd.style.display='none'; 
-    statusP.style.display='none';
-    startF.style.display='flex';
-    endF.style.display='flex';
-
-    if(rideId){ 
-        pin.style.display='none';
-        startF.style.display='none';
-        endF.style.display='none';
-        mainBtn.innerText="إلغاء الطلب ❌"; 
-        mainBtn.style.backgroundColor = '#E53935'; 
-        mainBtn.onclick = activeRideMainAction; 
-        statusP.style.display='block';
-        setTimeout(updatePanelHeight, 50); 
-        return; 
-    }
-
-    mainBtn.onclick = preRideMainAction;
-
-    if(currentStage==="settingStart"){
-        mainBtn.innerText="تثبيت الانطلاق"; 
-        startVal.innerText=startAreaName || 'جاري تحديد العنوان...'; 
-        endF.style.display='none';
-    } else if(currentStage==="settingEnd"){
-        mainBtn.innerText="تثبيت الوصول"; 
-        startVal.innerText=startAreaName; 
-        endVal.innerText=endAreaName || 'اسحب الخريطة لتحديد الوجهة...'; 
-        chStart.style.display='inline-block';
-    } else if(currentStage==="confirmed"){
-        mainBtn.innerText="اطلب التاكسي الآن 🚕"; 
-        pin.style.display='none';
-        chStart.style.display='inline-block'; 
-        chEnd.style.display='inline-block';
-        const dist=calcDist(startCoords[0],startCoords[1],endCoords[0],endCoords[1]);
-        fareVal.innerText=Math.max(3000, Math.round(dist*1000/250)*250).toLocaleString();
-        costDiv.style.display='block';
-    }
-    setTimeout(updatePanelHeight, 50); 
-}
-
-chStart.onclick=()=>{currentStage="settingStart"; map.setView(startCoords,16); updateUI();};
-chEnd.onclick=()=>{currentStage="settingEnd"; map.setView(endCoords || startCoords,16); updateUI();};
-
-let geoTimer;
-map.on('move', () => {
-   if(rideId || currentStage === "confirmed") return;
-   if(currentStage==="settingStart") startVal.innerText = "...";
-   else endVal.innerText = "...";
 });
 
-map.on('moveend',async()=>{
-    if(rideId || currentStage === "confirmed") return;
-    const c=map.getCenter();
-    if(currentStage==="settingStart") startCoords=[c.lat,c.lng];
-    else if(currentStage==="settingEnd") endCoords=[c.lat,c.lng];
-    
-    clearTimeout(geoTimer);
-    geoTimer=setTimeout(async()=>{
-        const n=await revGeo(c.lat,c.lng);
-        if(currentStage==="settingStart") startAreaName=n; else endAreaName=n;
+// ضغط الزر الرئيسي
+mainBtn.onclick = () => {
+    if (currentStage === "settingStart") {
+        currentStage = "settingEnd";
         updateUI();
-    },600);
-});
-
-function findDriver(){
-    if(!startCoords||!endCoords)return;
-    mainBtn.disabled=true; mainBtn.innerText="جاري البحث...";
-    statusP.style.display='block'; statusP.innerText="جاري البحث عن سائق قريب..."; 
-    
-    let driversFound = []; 
-    db.ref("drivers").once("value",s=>{
-        s.forEach(ds=>{
-            const d=ds.val();
-            if(d.status==="متصل"&&d.lat){
-                if(calcDist(startCoords[0],startCoords[1],d.lat,d.lng) <= 5.0) driversFound.push(ds.key);
-            }
-        });
-        if(driversFound.length > 0) sendReq(driversFound);
-        else{ 
-            alert("لا يوجد سائقون متاحون حالياً.");
-            updateUI();
-        }
-    });
-}
-
-function sendReq(driversList){
-    rideId=Date.now(); 
-    localStorage.setItem('activeRideId',rideId);
-    const dist=calcDist(startCoords[0],startCoords[1],endCoords[0],endCoords[1]);
-    
-    db.ref("rides/"+rideId).set({
-        riderPhone: localStorage.getItem('phone'),
-        targetDrivers: driversList,
-        startLat:startCoords[0], startLng:startCoords[1], endLat:endCoords[0], endLng:endCoords[1],
-        startArea:startAreaName, endArea:endAreaName, 
-        fare:Math.max(3000, Math.round(dist*1000/250)*250),
-        status:"قيد المراجعة", time: rideId
-    });
-    monitorRide(rideId);
-}
-
-function monitorRide(id){
-    rideRef=db.ref("rides/"+id);
-    rideRef.on('value',s=>{
-        const r=s.val();
-        if(!r || ["ملغاة","منتهية","مرفوضة"].includes(r.status)){
-            if(r && r.status !== "قيد المراجعة") alert("الرحلة: " + r.status);
-            cleanup(); return;
-        }
-        rideId = id;
+    } else if (currentStage === "settingEnd") {
+        currentStage = "confirmed";
         updateUI();
-        if(r.status==="مقبولة"){
-            statusP.innerHTML=`🚕 السائق قادم: <a href="tel:${r.driverPhone}">${r.driverPhone}</a>`;
-            trackDriver(r.driverPhone);
-        } else if(r.status==="بدأت"){
-            statusP.innerText="🚦 الرحلة بدأت الآن";
-        }
-    });
-}
-
-function trackDriver(ph){
-    if(driverRef) driverRef.off();
-    driverRef=db.ref("drivers/"+ph);
-    driverRef.on('value',s=>{
-        const d=s.val();
-        if(d && d.lat){
-            if(driverMarker) map.removeLayer(driverMarker);
-            driverMarker=L.marker([d.lat,d.lng],{icon:L.divIcon({html:'🚕',className:'custom-icon',iconSize:[30,30]})}).addTo(map);
-        }
-    });
-}
-
-function cleanup(){ 
-    if(rideRef) rideRef.off(); if(driverRef) driverRef.off();
-    if(driverMarker) map.removeLayer(driverMarker);
-    rideId=null; localStorage.removeItem('activeRideId');
-    currentStage = "settingStart";
-    updateUI(); 
-}
-
-function initGeo(){
-    navigator.geolocation.getCurrentPosition(p=>{
-        startCoords=[p.coords.latitude,p.coords.longitude];
-        map.setView(startCoords,16);
-        revGeo(startCoords[0],startCoords[1]).then(n=>{startAreaName=n; updateUI();});
-    },()=>{ updateUI(); });
-    
-    const saved = localStorage.getItem('activeRideId');
-    if(saved) monitorRide(saved);
-}
-
-searchIn.addEventListener('input',()=>{
-    const q=searchIn.value;
-    if(q.length<3) return;
-    clearTimeout(geoTimer);
-    geoTimer=setTimeout(async()=>{
-        const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&countrycodes=iq&accept-language=ar`);
-        const d=await r.json();
-        searchRes.innerHTML=''; searchRes.style.display='block';
-        d.forEach(i=>{
-            const div=document.createElement('div'); div.className='search-result-item'; div.innerText=i.display_name;
-            div.onclick=()=>{
-                map.setView([i.lat,i.lon],16); searchRes.style.display='none';
-                if(currentStage==="settingStart") startCoords=[i.lat,i.lon]; else endCoords=[i.lat,i.lon];
-                updateUI();
-            };
-            searchRes.appendChild(div);
-        });
-    },700);
-});
-
-window.onload=()=>{
-    if(!localStorage.getItem('phone')) window.location.href="index.html";
-    initGeo();
-    window.addEventListener('resize', updatePanelHeight);
+    } else if (currentStage === "confirmed") {
+        sendOrder();
+    }
 };
-function logout(){ localStorage.clear(); window.location.href="index.html"; }
+
+function sendOrder() {
+    const phone = localStorage.getItem('phone');
+    if (!phone) { alert("خطأ: لم يتم العثور على رقم الهاتف"); return; }
+
+    mainBtn.disabled = true;
+    mainBtn.innerText = "جاري إرسال الطلب...";
+    statusDiv.style.display = "block";
+    statusDiv.innerText = "🔍 جاري البحث عن أقرب سائق متاح...";
+
+    rideId = "R" + Date.now();
+    const orderData = {
+        riderPhone: phone,
+        startLat: startCoords[0],
+        startLng: startCoords[1],
+        endLat: endCoords[0],
+        endLng: endCoords[1],
+        startArea: startName,
+        endArea: endName,
+        fare: calculateFare(),
+        status: "waiting",
+        time: Date.now()
+    };
+
+    db.ref('rides/' + rideId).set(orderData)
+        .then(() => {
+            localStorage.setItem('activeRideId', rideId);
+            listenForDriver();
+        })
+        .catch(() => {
+            alert("فشل في إرسال الطلب، تأكد من الإنترنت");
+            mainBtn.disabled = false;
+        });
+}
+
+function listenForDriver() {
+    db.ref('rides/' + rideId).on('value', snap => {
+        const data = snap.val();
+        if(!data) return;
+
+        if (data.status === "accepted") {
+            statusDiv.innerHTML = `✅ تم قبول طلبك!<br>السائق قادم إليك: <a href="tel:${data.driverPhone}" style="color:red; font-weight:bold;">اتصال بالسائق</a>`;
+            mainBtn.innerText = "إلغاء الرحلة";
+            mainBtn.disabled = false;
+            mainBtn.style.background = "#d32f2f";
+            mainBtn.onclick = () => {
+                if(confirm("هل تريد إلغاء الرحلة؟")) {
+                    db.ref('rides/' + rideId).update({status: "cancelled_by_rider"});
+                    location.reload();
+                }
+            };
+        }
+    });
+}
+
+// الرجوع للتعديل
+function returnToStart() { currentStage = "settingStart"; updateUI(); map.setView(startCoords, 16); }
+function returnToEnd() { currentStage = "settingEnd"; updateUI(); map.setView(endCoords || startCoords, 16); }
+
+// البحث
+const sInput = document.getElementById("search-input");
+const sRes = document.getElementById("searchResults");
+sInput.oninput = async () => {
+    const q = sInput.value;
+    if(q.length < 3) { sRes.style.display="none"; return; }
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&countrycodes=iq&limit=5&accept-language=ar`);
+    const d = await r.json();
+    sRes.innerHTML = ""; sRes.style.display="block";
+    d.forEach(i => {
+        const div = document.createElement("div");
+        div.className = "search-item";
+        div.innerText = i.display_name;
+        div.onclick = () => {
+            map.setView([i.lat, i.lon], 16);
+            sRes.style.display = "none";
+            sInput.value = "";
+        };
+        sRes.appendChild(div);
+    });
+};
+
+function logout() { localStorage.clear(); window.location.href="index.html"; }
+
+window.onload = () => {
+    if(!localStorage.getItem('phone')) window.location.href="index.html";
+    navigator.geolocation.getCurrentPosition(p => {
+        map.setView([p.coords.latitude, p.coords.longitude], 16);
+    });
+    updateUI();
+};
 </script>
 </body>
 </html>
