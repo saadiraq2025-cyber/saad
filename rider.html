@@ -10,13 +10,11 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
-    body,html{margin:0;padding:0;height:100%;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow:hidden;background:#f4f4f4;}
+    body,html{margin:0;padding:0;height:100%;font-family: Tahoma, sans-serif; overflow:hidden;background:#f4f4f4;}
     #map{height:100vh;width:100%;position:relative; z-index: 1;} 
 
-    /* دبوس الخريطة الثابت في المركز */
     #map-center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 999; font-size: 40px; pointer-events: none; }
 
-    /* لوحة التحكم السفلية */
     #panel{ 
         position:fixed; bottom:0; left:0; right:0; background:#fff; 
         padding:15px; box-shadow:0 -5px 15px rgba(0,0,0,0.1); 
@@ -25,28 +23,27 @@
 
     .point-card { background: #f9f9f9; border: 1px solid #eee; border-radius: 12px; padding: 10px; margin-bottom: 10px; position: relative; }
     .label { font-size: 11px; color: #f97316; font-weight: bold; margin-bottom: 3px; display: block; }
-    .value { font-size: 13px; color: #333; font-weight: bold; width: 85%; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .edit-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: #e0e0e0; border: none; color: #333; padding: 5px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; }
+    .value { font-size: 13px; color: #333; font-weight: bold; width: 80%; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .edit-btn { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: #eee; border: none; color: #007bff; padding: 5px 8px; border-radius: 5px; font-size: 11px; cursor: pointer; }
 
     #costDisplay { background: #e8f5e9; color: #2e7d32; font-size: 1.1em; font-weight: bold; padding: 10px; text-align: center; border-radius: 10px; margin-bottom: 10px; display: none; }
     #status { font-size: 0.9em; color: #555; background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: none; border-right: 4px solid #f97316; }
 
-    button#mainActionBtn { background:#f97316; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; font-size: 1.1em; transition: 0.2s; }
-    button#mainActionBtn:disabled { background: #ccc; }
+    button#mainActionBtn { background:#f97316; color:white; border:none; padding:15px; border-radius:12px; font-weight:bold; cursor:pointer; width:100%; font-size: 1.1em; }
+    button#mainActionBtn:disabled { background: #ccc; cursor: not-allowed; }
 
-    /* شريط البحث */
     #searchContainer { position: fixed; top: 15px; left: 15px; right: 15px; background: #fff; padding: 10px; z-index: 1001; display: flex; align-items: center; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     #search-input { flex-grow: 1; border: none; outline: none; text-align: right; padding: 5px; font-size: 15px; width: 100%; }
-    #searchResults { position: fixed; top: 70px; left: 15px; right: 15px; background: #fff; z-index: 1002; max-height: 40vh; overflow-y: auto; display: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .search-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; text-align: right; font-size: 13px; }
+    #searchResults { position: fixed; top: 70px; left: 15px; right: 15px; background: #fff; z-index: 1002; max-height: 40vh; overflow-y: auto; display: none; border-radius: 12px; }
+    .search-item { padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-size: 13px; cursor: pointer; }
 
-    #logoutBtn { background:none; color:#777; border:none; padding:8px; margin-top:5px; width:100%; font-size: 0.8em; text-decoration: underline; cursor: pointer; }
+    #logoutBtn { background:none; color:#999; border:none; width:100%; margin-top:10px; font-size: 0.8em; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <div id="searchContainer">
-    <input type="text" id="search-input" placeholder="🔍 ابحث عن موقع..." />
+    <input type="text" id="search-input" placeholder="🔍 ابحث عن موقع أو معلم..." />
 </div>
 <div id="searchResults"></div>
 
@@ -57,25 +54,25 @@
     <div id="status"></div>
 
     <div class="point-card" id="startCard">
-        <span class="label">نقطة الانطلاق (من)</span>
-        <span id="startPointValue" class="value">تحديد الموقع...</span>
-        <button id="editStart" class="edit-btn" onclick="returnToStart()" style="display:none;">تغيير</button>
+        <span class="label">من (نقطة الانطلاق)</span>
+        <span id="startPointValue" class="value">جاري تحديد موقعك...</span>
+        <button id="editStart" class="edit-btn" style="display:none;" onclick="returnToStart()">تعديل</button>
     </div>
 
     <div class="point-card" id="endCard" style="display:none;">
-        <span class="label">وجهة الوصول (إلى)</span>
-        <span id="endPointValue" class="value">اسحب الخريطة لتحديد الوجهة</span>
-        <button id="editEnd" class="edit-btn" onclick="returnToEnd()" style="display:none;">تغيير</button>
+        <span class="label">إلى (الوجهة)</span>
+        <span id="endPointValue" class="value">حرك الخريطة لتحديد الوجهة</span>
+        <button id="editEnd" class="edit-btn" style="display:none;" onclick="returnToEnd()">تعديل</button>
     </div>
 
     <div id="costDisplay">التكلفة التقريبية: <span id="fareValue">0</span> د.ع</div>
 
-    <button id="mainActionBtn">تثبيت نقطة الانطلاق</button>
+    <button id="mainActionBtn">تثبيت الانطلاق</button>
     <button id="logoutBtn" onclick="logout()">تسجيل الخروج</button>
 </div>
 
 <script>
-// إعداد Firebase (نفس إعداداتك)
+// إعداد Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M",
     authDomain: "taxi-15314.firebaseapp.com",
@@ -88,48 +85,47 @@ const db = firebase.database();
 let map = L.map('map', {zoomControl: false}).setView([33.3128, 44.3615], 14);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-// متغيرات الخريطة والعناصر
-let startMarker = L.marker([0,0], {draggable: false});
-let endMarker = L.marker([0,0], {draggable: false});
-let routeLine = L.polyline([], {color: '#f97316', weight: 4}).addTo(map);
+// ماركرات بصرية
+let startMarker = L.marker([0,0], {icon: L.divIcon({className: 'start-m', html: '🔵', iconSize: [20, 20]})});
+let endMarker = L.marker([0,0], {icon: L.divIcon({className: 'end-m', html: '🔴', iconSize: [20, 20]})});
 
 let startCoords = null, endCoords = null;
 let startName = "", endName = "";
-let currentStage = "settingStart"; // stages: settingStart, settingEnd, confirmed
+let currentStage = "settingStart"; 
 let rideId = null;
 
 const mainBtn = document.getElementById("mainActionBtn");
 const statusDiv = document.getElementById("status");
 
-// دالة جلب الاسم
-async function fetchDetailedAddress(lat, lon) {
+async function fetchAddr(lat, lon) {
     try {
         const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`);
         const d = await r.json();
-        return d.display_name.split(',').slice(0, 3).join(',');
-    } catch(e) { return "موقع محدد على الخريطة"; }
+        return d.display_name.split(',').slice(0,2).join(', ');
+    } catch(e) { return "موقع على الخريطة"; }
 }
 
-async function updateUI() {
+function updateUI() {
+    // تصفير الواجهة حسب المرحلة
     if (currentStage === "settingStart") {
         document.getElementById("endCard").style.display = "none";
         document.getElementById("editStart").style.display = "none";
         document.getElementById("costDisplay").style.display = "none";
         document.getElementById("map-center-pin").style.display = "block";
-        mainBtn.innerText = "تثبيت نقطة الانطلاق";
+        mainBtn.disabled = false;
+        mainBtn.innerText = "تثبيت الانطلاق";
         startMarker.remove();
         endMarker.remove();
-        routeLine.setLatLngs([]);
     } 
     else if (currentStage === "settingEnd") {
         document.getElementById("endCard").style.display = "block";
         document.getElementById("editStart").style.display = "block";
         document.getElementById("editEnd").style.display = "none";
         document.getElementById("map-center-pin").style.display = "block";
-        mainBtn.innerText = "تثبيت وجهة الوصول";
+        mainBtn.disabled = false;
+        mainBtn.innerText = "تثبيت الوصول";
         startMarker.setLatLng(startCoords).addTo(map);
         endMarker.remove();
-        routeLine.setLatLngs([]);
     }
     else if (currentStage === "confirmed") {
         document.getElementById("editEnd").style.display = "block";
@@ -137,13 +133,12 @@ async function updateUI() {
         document.getElementById("costDisplay").style.display = "block";
         mainBtn.innerText = "اطلب التاكسي الآن 🚕";
         endMarker.setLatLng(endCoords).addTo(map);
-        routeLine.setLatLngs([startCoords, endCoords]);
-        map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
         calculateFare();
     }
 }
 
 function calculateFare() {
+    if(!startCoords || !endCoords) return 0;
     const dist = map.distance(startCoords, endCoords) / 1000;
     const price = Math.max(3000, Math.round((dist * 700 + 2000) / 250) * 250);
     document.getElementById("fareValue").innerText = price.toLocaleString();
@@ -153,13 +148,13 @@ function calculateFare() {
 map.on('moveend', async () => {
     if (currentStage === "confirmed") return;
     const center = map.getCenter();
-    const addr = await fetchDetailedAddress(center.lat, center.lng);
+    const addr = await fetchAddr(center.lat, center.lng);
     
     if (currentStage === "settingStart") {
         startCoords = [center.lat, center.lng];
         startName = addr;
         document.getElementById("startPointValue").innerText = addr;
-    } else if (currentStage === "settingEnd") {
+    } else {
         endCoords = [center.lat, center.lng];
         endName = addr;
         document.getElementById("endPointValue").innerText = addr;
@@ -180,55 +175,80 @@ mainBtn.onclick = () => {
 
 function sendOrder() {
     const phone = localStorage.getItem('phone');
-    if (!phone) return alert("سجل الدخول أولاً");
+    if (!phone) return alert("يرجى تسجيل الدخول");
 
     mainBtn.disabled = true;
-    mainBtn.innerText = "جاري البحث...";
+    mainBtn.innerText = "جاري الإرسال...";
     statusDiv.style.display = "block";
-    statusDiv.innerText = "🔍 جاري البحث عن أقرب سائق متاح...";
+    statusDiv.innerText = "🔍 جاري البحث عن أقرب سائق...";
 
     rideId = "R" + Date.now();
-    db.ref('rides/' + rideId).set({
+    const orderData = {
         riderPhone: phone,
         startLat: startCoords[0], startLng: startCoords[1],
         endLat: endCoords[0], endLng: endCoords[1],
         startArea: startName, endArea: endName,
         fare: calculateFare(),
         status: "waiting",
+        timestamp: ServerValue_Timestamp() // سيتم استخدام وقت السيرفر
+    };
+
+    db.ref('rides/' + rideId).set({
+        ...orderData,
         time: Date.now()
-    }).then(() => listenForDriver());
+    }).then(() => {
+        listenForDriver();
+    }).catch(err => {
+        alert("خطأ في الاتصال");
+        mainBtn.disabled = false;
+    });
 }
 
 function listenForDriver() {
     db.ref('rides/' + rideId).on('value', snap => {
-        const data = snap.val();
-        if (data && data.status === "accepted") {
-            statusDiv.innerHTML = `✅ الكابتن وافق على طلبك!<br>رقم السائق: <a href="tel:${data.driverPhone}">${data.driverPhone}</a>`;
+        const val = snap.val();
+        if(!val) return;
+        if(val.status === "accepted") {
+            statusDiv.innerHTML = `✅ تم قبول الطلب!<br>الكابتن في الطريق إليك.<br>اتصال: <a href="tel:${val.driverPhone}" style="color:red;font-weight:bold;">${val.driverPhone}</a>`;
             mainBtn.innerText = "إلغاء الرحلة";
             mainBtn.disabled = false;
-            mainBtn.onclick = () => { if(confirm("إلغاء؟")) location.reload(); };
+            mainBtn.style.background = "#cc0000";
+            mainBtn.onclick = () => { if(confirm("هل تريد الإلغاء؟")) location.reload(); };
         }
     });
 }
 
-function returnToStart() { currentStage = "settingStart"; updateUI(); }
-function returnToEnd() { currentStage = "settingEnd"; updateUI(); }
+function returnToStart() {
+    currentStage = "settingStart";
+    map.setView(startCoords, 16);
+    updateUI();
+}
 
-// نظام البحث
+function returnToEnd() {
+    currentStage = "settingEnd";
+    map.setView(endCoords || startCoords, 16);
+    updateUI();
+}
+
+// البحث
 const sInput = document.getElementById("search-input");
 const sRes = document.getElementById("searchResults");
 sInput.oninput = async () => {
-    if(sInput.value.length < 3) return sRes.style.display="none";
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${sInput.value}&format=json&countrycodes=iq&limit=5`);
+    if(sInput.value.length < 3) { sRes.style.display="none"; return; }
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${sInput.value}&format=json&countrycodes=iq&limit=5&accept-language=ar`);
     const d = await r.json();
-    sRes.innerHTML = d.map(i => `<div class="search-item" onclick="selectLoc(${i.lat},${i.lon})">${i.display_name}</div>`).join('');
-    sRes.style.display = "block";
-};
-
-window.selectLoc = (lat, lon) => {
-    map.setView([lat, lon], 16);
-    sRes.style.display = "none";
-    sInput.value = "";
+    sRes.innerHTML = ""; sRes.style.display="block";
+    d.forEach(i => {
+        const div = document.createElement("div");
+        div.className = "search-item";
+        div.innerText = i.display_name;
+        div.onclick = () => {
+            map.setView([i.lat, i.lon], 16);
+            sRes.style.display = "none";
+            sInput.value = "";
+        };
+        sRes.appendChild(div);
+    });
 };
 
 function logout() { localStorage.clear(); window.location.href="index.html"; }
@@ -237,7 +257,7 @@ window.onload = () => {
     if(!localStorage.getItem('phone')) window.location.href="index.html";
     navigator.geolocation.getCurrentPosition(p => {
         map.setView([p.coords.latitude, p.coords.longitude], 16);
-    }, () => {});
+    });
     updateUI();
 };
 </script>
