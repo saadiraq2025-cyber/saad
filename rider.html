@@ -10,67 +10,100 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         :root { --baly-yellow: #FFD200; --baly-black: #1A1A1A; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: #fff; }
-        #map { height: 100vh; width: 100%; z-index: 1; }
-        .bottom-sheet {
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        
+        .floating-panel {
             position: absolute; bottom: 0; left: 0; right: 0; 
-            background: white; border-radius: 24px 24px 0 0;
-            padding: 20px; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            background: white; border-radius: 25px 25px 0 0;
+            padding: 20px; z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
         }
-        .search-box { background: #f5f5f5; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; }
-        #destInput { border: none; background: transparent; width: 100%; outline: none; font-size: 16px; }
-        .btn-order { background: var(--baly-yellow); color: black; border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; display: none; }
-        .contact-info { background: #e3f2fd; padding: 15px; border-radius: 12px; margin-top: 10px; display: none; border: 1px solid #90caf9; }
-        #results { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; }
+
+        .input-group { background: #f8f8f8; border-radius: 12px; padding: 5px 15px; margin-bottom: 10px; border: 1px solid #eee; display: flex; align-items: center; }
+        .input-group input { border: none; background: transparent; width: 100%; padding: 10px; outline: none; font-size: 15px; }
+        
+        .btn-order { background: var(--baly-yellow); color: black; border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; display: none; margin-top: 10px; }
+        
+        .ride-stats { display: flex; justify-content: space-around; background: #FFF9E6; padding: 10px; border-radius: 10px; margin-top: 10px; border: 1px solid #FFE58F; display: none; }
+        
+        .marker-label { background: white; border: 2px solid black; border-radius: 5px; padding: 2px 5px; font-weight: bold; font-size: 12px; }
+        
+        #results { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; background: white; border-radius: 8px; position: absolute; width: 90%; top: 60px; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         #results li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        
+        .driver-card { background: #1A1A1A; color: white; padding: 15px; border-radius: 15px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="bottom-sheet">
-    <div id="statusHeader" style="font-weight: bold; margin-bottom: 10px;">أين وجهتك اليوم؟</div>
+<div class="floating-panel">
+    <div id="statusMsg" style="font-weight: bold; text-align: center; margin-bottom: 10px;">حدد نقطة الانطلاق والوصول على الخريطة</div>
     
-    <div id="searchSection">
-        <div class="search-box">🔍 <input type="text" id="destInput" placeholder="اكتب اسم المنطقة..."></div>
+    <div id="searchUI">
+        <div class="input-group">🟢 <input type="text" id="startInput" placeholder="موقع الانطلاق (اسحب العلامة الخضراء)"></div>
+        <div class="input-group">🔴 <input type="text" id="destInput" placeholder="البحث عن وجهة أو انقر على الخريطة"></div>
         <ul id="results"></ul>
     </div>
 
-    <div id="rideDetails" style="display:none; margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; background: #fffde7; padding: 10px; border-radius: 8px;">
-            <span>الأجرة: <b id="fare">0</b> د.ع</span>
-            <span>المسافة: <b id="dist">0</b> كم</span>
-        </div>
+    <div class="ride-stats" id="rideStats">
+        <div>الأجرة: <b id="fareTxt">0</b> د.ع</div>
+        <div>المسافة: <b id="distTxt">0</b> كم</div>
     </div>
 
-    <div class="contact-info" id="driverContact">
-        <div style="font-size: 14px; color: #555;">كابتن بلي في الطريق:</div>
-        <div id="driverPhoneNum" style="font-size: 20px; font-weight: 900; color: #000; margin-top: 5px;"></div>
-        <a id="callDriver" style="display:inline-block; margin-top:10px; color:#007bff; text-decoration:none; font-weight:bold;">📞 اتصل بالكابتن</a>
+    <div class="driver-card" id="driverCard">
+        <div>الكابتن قادم إليك: <b id="dPhone"></b></div>
+        <a id="callBtn" style="color: var(--baly-yellow); text-decoration: none; font-weight: bold;">📞 اتصال الآن</a>
     </div>
 
-    <button class="btn-order" id="sendBtn">اطلب بلي</button>
+    <button class="btn-order" id="orderBtn">طلب كابتن بلي</button>
 </div>
 
 <script>
 const firebaseConfig = { apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M", databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/" };
-const app = firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// خريطة نهارية (Day Map)
+// خريطة حديثة (Day)
 let map = L.map('map', {zoomControl: false}).setView([33.3152, 44.3661], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-let startPos, endPos, rideId;
+let startMarker, endMarker;
 const riderPhone = localStorage.getItem("phone") || "07700000000";
 
+// تحديد الموقع الأولي
 navigator.geolocation.getCurrentPosition(pos => {
-    startPos = [pos.coords.latitude, pos.coords.longitude];
-    map.setView(startPos, 15);
-    L.marker(startPos, {icon: L.divIcon({className: 'start', html: '📍'})}).addTo(map);
+    const p = [pos.coords.latitude, pos.coords.longitude];
+    map.setView(p, 15);
+    
+    startMarker = L.marker(p, {draggable: true, icon: L.divIcon({className: 'm', html: '🟢', iconSize: [25,25]})}).addTo(map);
+    endMarker = L.marker([p[0]+0.01, p[1]+0.01], {draggable: true, icon: L.divIcon({className: 'm', html: '🔴', iconSize: [25,25]})}).addTo(map);
+
+    startMarker.on('dragend', calculateRide);
+    endMarker.on('dragend', calculateRide);
+    calculateRide();
 });
 
+// النقر على الخريطة لتغيير وجهة الوصول
+map.on('click', function(e) {
+    endMarker.setLatLng(e.latlng);
+    calculateRide();
+});
+
+function calculateRide() {
+    const start = startMarker.getLatLng();
+    const end = endMarker.getLatLng();
+    const dist = (map.distance(start, end) / 1000).toFixed(1);
+    const fare = Math.round(dist * 1500);
+
+    document.getElementById('rideStats').style.display = 'flex';
+    document.getElementById('fareTxt').innerText = fare.toLocaleString();
+    document.getElementById('distTxt').innerText = dist;
+    document.getElementById('orderBtn').style.display = 'block';
+}
+
+// البحث عن الوجهة
 document.getElementById('destInput').addEventListener('input', async (e) => {
     if(e.target.value.length < 3) return;
     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${e.target.value}, Iraq&limit=5`);
@@ -81,42 +114,34 @@ document.getElementById('destInput').addEventListener('input', async (e) => {
         let li = document.createElement('li');
         li.innerText = p.display_name;
         li.onclick = () => {
-            endPos = [parseFloat(p.lat), parseFloat(p.lon)];
-            document.getElementById('destInput').value = p.display_name;
+            endMarker.setLatLng([p.lat, p.lon]);
+            map.flyTo([p.lat, p.lon], 15);
             list.innerHTML = '';
-            showPrice();
+            calculateRide();
         };
         list.appendChild(li);
     });
 });
 
-function showPrice() {
-    const d = (map.distance(startPos, endPos)/1000).toFixed(1);
-    const f = Math.round(d * 1500);
-    document.getElementById('fare').innerText = f.toLocaleString();
-    document.getElementById('dist').innerText = d;
-    document.getElementById('rideDetails').style.display = 'block';
-    document.getElementById('sendBtn').style.display = 'block';
-    L.marker(endPos).addTo(map);
-}
-
-document.getElementById('sendBtn').onclick = function() {
-    rideId = Date.now();
-    db.ref("rides/"+rideId).set({
-        riderPhone, start: startPos, end: endPos,
-        fare: document.getElementById('fare').innerText, status: "جديدة"
+document.getElementById('orderBtn').onclick = function() {
+    const id = Date.now();
+    db.ref("rides/"+id).set({
+        riderPhone,
+        start: [startMarker.getLatLng().lat, startMarker.getLatLng().lng],
+        end: [endMarker.getLatLng().lat, endMarker.getLatLng().lng],
+        fare: document.getElementById('fareTxt').innerText,
+        status: "جديدة"
     });
     this.style.display = 'none';
-    document.getElementById('searchSection').style.display = 'none';
-    document.getElementById('statusHeader').innerText = "جاري البحث عن كابتن...";
+    document.getElementById('statusMsg').innerText = "جاري البحث عن كابتن...";
     
-    db.ref("rides/"+rideId).on('value', snap => {
+    db.ref("rides/"+id).on('value', snap => {
         const r = snap.val();
         if(r.status === "مقبولة") {
-            document.getElementById('statusHeader').innerText = "تم قبول طلبك!";
-            document.getElementById('driverContact').style.display = 'block';
-            document.getElementById('driverPhoneNum').innerText = r.driverPhone;
-            document.getElementById('callDriver').href = "tel:" + r.driverPhone;
+            document.getElementById('statusMsg').innerText = "تم القبول!";
+            document.getElementById('driverCard').style.display = 'block';
+            document.getElementById('dPhone').innerText = r.driverPhone;
+            document.getElementById('callBtn').href = "tel:" + r.driverPhone;
         }
     });
 };
