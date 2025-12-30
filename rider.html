@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>بلي - الراكب</title>
+    <title>بلي - الراكب (تحديد من الخريطة)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -11,140 +11,175 @@
     <style>
         :root { --baly-yellow: #FFD200; --baly-black: #1A1A1A; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        #map { height: 100vh; width: 100%; }
-        .floating-panel { position: absolute; bottom: 0; left: 0; right: 0; background: white; border-radius: 25px 25px 0 0; padding: 20px; z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
-        .input-group { background: #f8f8f8; border-radius: 12px; padding: 5px 15px; margin-bottom: 10px; border: 1px solid #eee; display: flex; align-items: center; }
-        .input-group input { border: none; background: transparent; width: 100%; padding: 10px; outline: none; font-size: 15px; }
-        .btn-order { background: var(--baly-yellow); border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; display: none; margin-top: 10px; }
-        .btn-cancel { background: #ff4444; color: white; border: none; width: 100%; padding: 12px; border-radius: 12px; margin-top: 10px; cursor: pointer; }
-        .ride-stats { display: flex; justify-content: space-around; background: #FFF9E6; padding: 10px; border-radius: 10px; margin-top: 10px; border: 1px solid #FFE58F; display: none; }
-        .driver-card { background: #1A1A1A; color: white; padding: 15px; border-radius: 15px; margin-top: 10px; display: none; }
-        #results { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; background: white; position: absolute; width: 90%; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        #results li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        .floating-panel { 
+            position: absolute; bottom: 0; left: 0; right: 0; 
+            background: white; border-radius: 25px 25px 0 0; 
+            padding: 20px; z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); 
+        }
+
+        .status-header { text-align: center; font-weight: bold; margin-bottom: 15px; color: #333; }
+        
+        .location-info { background: #fdfdfd; border-radius: 15px; padding: 10px; margin-bottom: 10px; border: 1px solid #eee; }
+        .loc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .loc-row:last-child { border-bottom: none; }
+        .address-text { font-size: 13px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .ride-stats { display: flex; justify-content: space-around; background: #FFF9E6; padding: 12px; border-radius: 12px; margin-top: 10px; border: 1px solid #FFE58F; }
+        
+        .btn-order { background: var(--baly-yellow); border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(255, 210, 0, 0.3); }
+        .btn-cancel { background: #ff4757; color: white; border: none; width: 100%; padding: 12px; border-radius: 12px; margin-top: 10px; font-weight: bold; cursor: pointer; }
+        
+        .driver-card { background: var(--baly-black); color: white; padding: 15px; border-radius: 20px; margin-top: 15px; display: none; }
+        
+        /* علامات مخصصة */
+        .m-icon { font-size: 24px; text-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="floating-panel">
-    <div id="statusMsg" style="font-weight: bold; text-align: center; margin-bottom: 10px;">حدد الوجهة للطلب</div>
+<div class="floating-panel" id="mainPanel">
+    <div class="status-header" id="statusMsg">اسحب العلامات أو انقر على الخريطة لتحديد الموقع</div>
     
-    <div id="searchUI">
-        <div class="input-group">🟢 <input type="text" id="startInput" placeholder="موقع الانطلاق" readonly></div>
-        <div class="input-group">🔴 <input type="text" id="destInput" placeholder="البحث عن وجهة..."></div>
-        <ul id="results"></ul>
-    </div>
-
-    <div class="ride-stats" id="rideStats">
-        <div>الأجرة: <b id="fareTxt">0</b> د.ع</div>
-        <div>المسافة: <b id="distTxt">0</b> كم</div>
-    </div>
-
-    <div class="driver-card" id="driverCard">
-        <div>الكابتن قادم إليك: <b id="dPhone"></b></div>
-        <div style="margin-top:10px;">
-            <a id="callBtn" style="color: var(--baly-yellow); text-decoration: none; font-weight: bold; margin-right: 15px;">📞 اتصال</a>
-            <button class="btn-cancel" onclick="cancelRide()" style="width: auto; padding: 5px 15px; font-size: 14px;">إلغاء الرحلة</button>
+    <div id="bookingUI">
+        <div class="location-info">
+            <div class="loc-row">
+                <span>🟢</span>
+                <div class="address-text" id="startAddr">جاري جلب موقع الانطلاق...</div>
+            </div>
+            <div class="loc-row">
+                <span>🔴</span>
+                <div class="address-text" id="endAddr">انقر لتحديد وجهة الوصول</div>
+            </div>
         </div>
+
+        <div class="ride-stats" id="rideStats">
+            <div>الأجرة التقريبية: <b id="fareTxt">0</b> د.ع</div>
+            <div>المسافة: <b id="distTxt">0</b> كم</div>
+        </div>
+
+        <button class="btn-order" id="orderBtn">طلب كابتن بلي</button>
     </div>
 
-    <button class="btn-order" id="orderBtn">طلب كابتن بلي</button>
-    <button class="btn-cancel" id="cancelSearchBtn" style="display:none;" onclick="cancelRide()">إلغاء البحث</button>
+    <div id="activeRideUI" style="display: none;">
+        <div class="driver-card" id="driverCard">
+            <div style="font-size: 14px; opacity: 0.8;">كابتن بلي في الطريق إليك</div>
+            <div style="font-size: 20px; font-weight: bold; margin: 5px 0;" id="dPhone">078XXXXXXXX</div>
+            <a id="callBtn" style="display: inline-block; background: var(--baly-yellow); color: black; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 10px;">📞 اتصل بالكابتن</a>
+        </div>
+        <button class="btn-cancel" onclick="cancelRide()">إلغاء الرحلة الحالية</button>
+    </div>
 </div>
 
 <script>
+// إعداد Firebase
 const firebaseConfig = { apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M", databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let map = L.map('map', {zoomControl: false}).setView([33.3152, 44.3661], 13);
+let map = L.map('map', { zoomControl: false }).setView([33.3152, 44.3661], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let startMarker, endMarker, currentRideId = null;
 const riderPhone = localStorage.getItem("phone") || "07700000000";
 
+// أيقونات مخصصة
+const startIcon = L.divIcon({ html: '<div class="m-icon">🟢</div>', className: 'none', iconSize: [30, 30], iconAnchor: [15, 30] });
+const endIcon = L.divIcon({ html: '<div class="m-icon">🔴</div>', className: 'none', iconSize: [30, 30], iconAnchor: [15, 30] });
+
+// تحديد الموقع عند البدء
 navigator.geolocation.getCurrentPosition(pos => {
-    const p = [pos.coords.latitude, pos.coords.longitude];
-    map.setView(p, 15);
-    startMarker = L.marker(p, {draggable: true, icon: L.divIcon({html: '🟢', className:'m'})}).addTo(map);
-    endMarker = L.marker([p[0]+0.005, p[1]+0.005], {draggable: true, icon: L.divIcon({html: '🔴', className:'m'})}).addTo(map);
+    const latlng = [pos.coords.latitude, pos.coords.longitude];
+    map.setView(latlng, 15);
     
-    startMarker.on('dragend', calculateRide);
-    endMarker.on('dragend', calculateRide);
-    calculateRide();
+    startMarker = L.marker(latlng, { draggable: true, icon: startIcon }).addTo(map);
+    endMarker = L.marker([latlng[0] + 0.003, latlng[1] + 0.003], { draggable: true, icon: endIcon }).addTo(map);
+
+    startMarker.on('dragend', updateRouteInfo);
+    endMarker.on('dragend', updateRouteInfo);
+    updateRouteInfo();
 });
 
-async function getAddress(lat, lng, elementId) {
-    try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-        const data = await res.json();
-        document.getElementById(elementId).value = data.display_name.split(',')[0] + (data.display_name.split(',')[1] || "");
-    } catch(e) {}
-}
+// النقر لتغيير الوجهة
+map.on('click', (e) => {
+    if (currentRideId) return;
+    endMarker.setLatLng(e.latlng);
+    updateRouteInfo();
+});
 
-async function calculateRide() {
-    if(currentRideId) return;
+async function updateRouteInfo() {
+    if (currentRideId) return;
+    
     const start = startMarker.getLatLng();
     const end = endMarker.getLatLng();
-    const dist = (map.distance(start, end) / 1000).toFixed(1);
-    const fare = Math.round(dist * 1500);
+    
+    // حساب المسافة والأجرة
+    const distance = (map.distance(start, end) / 1000).toFixed(1);
+    const fare = Math.round(distance * 1500);
 
-    getAddress(start.lat, start.lng, 'startInput');
-    document.getElementById('rideStats').style.display = 'flex';
+    document.getElementById('distTxt').innerText = distance;
     document.getElementById('fareTxt').innerText = fare.toLocaleString();
-    document.getElementById('distTxt').innerText = dist;
-    document.getElementById('orderBtn').style.display = 'block';
+
+    // جلب أسماء المناطق (Reverse Geocoding)
+    fetchAddress(start, 'startAddr');
+    fetchAddress(end, 'endAddr');
+}
+
+async function fetchAddress(latlng, elementId) {
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=ar`);
+        const data = await response.json();
+        document.getElementById(elementId).innerText = data.display_name.split(',').slice(0, 2).join(', ');
+    } catch (e) {
+        document.getElementById(elementId).innerText = "موقع مخصص على الخريطة";
+    }
 }
 
 document.getElementById('orderBtn').onclick = function() {
     currentRideId = Date.now();
     const rideData = {
-        riderPhone,
+        riderPhone: riderPhone,
         start: [startMarker.getLatLng().lat, startMarker.getLatLng().lng],
         end: [endMarker.getLatLng().lat, endMarker.getLatLng().lng],
-        startAddr: document.getElementById('startInput').value,
-        endAddr: document.getElementById('destInput').value || "وجهة محددة على الخريطة",
+        startAddr: document.getElementById('startAddr').innerText,
+        endAddr: document.getElementById('endAddr').innerText,
         fare: document.getElementById('fareTxt').innerText,
         status: "جديدة"
     };
+
+    // إرسال للـ Firebase
+    db.ref("rides/" + currentRideId).set(rideData);
     
-    db.ref("rides/"+currentRideId).set(rideData);
-    document.getElementById('searchUI').style.opacity = "0.5";
-    document.getElementById('orderBtn').style.display = 'none';
-    document.getElementById('cancelSearchBtn').style.display = 'block';
-    document.getElementById('statusMsg').innerText = "جاري البحث عن كابتن...";
-    
-    db.ref("rides/"+currentRideId).on('value', snap => {
+    // تحديث الواجهة للمنع من طلب آخر
+    document.getElementById('bookingUI').style.display = 'none';
+    document.getElementById('activeRideUI').style.display = 'block';
+    document.getElementById('statusMsg').innerText = "جاري البحث عن أقرب كابتن...";
+
+    // مراقبة حالة الطلب
+    db.ref("rides/" + currentRideId).on('value', snap => {
         const r = snap.val();
-        if(!r) { resetUI(); return; }
-        if(r.status === "مقبولة") {
-            document.getElementById('statusMsg').innerText = "الكابتن وافق على طلبك!";
+        if (!r) return;
+
+        if (r.status === "مقبولة") {
+            document.getElementById('statusMsg').innerText = "تم قبول طلبك!";
             document.getElementById('driverCard').style.display = 'block';
-            document.getElementById('cancelSearchBtn').style.display = 'none';
-            document.getElementById('dPhone').innerText = r.driverPhone;
+            document.getElementById('dPhone').innerText = "كابتن: " + r.driverPhone;
             document.getElementById('callBtn').href = "tel:" + r.driverPhone;
-        } else if(r.status === "ملغية" || r.status === "مكتملة") {
-            alert(r.status === "ملغية" ? "تم إلغاء الرحلة" : "شكراً لرحلتك مع بلي!");
-            resetUI();
+        } else if (r.status === "مكتملة" || r.status === "ملغية") {
+            alert(r.status === "مكتملة" ? "وصلت إلى وجهتك، شكراً لك!" : "تم إلغاء الرحلة.");
+            location.reload(); // إعادة تفعيل الواجهة لطلب جديد
         }
     });
 };
 
 function cancelRide() {
-    if(currentRideId) {
-        db.ref("rides/"+currentRideId).update({status: "ملغية"});
-        resetUI();
+    if (currentRideId) {
+        db.ref("rides/" + currentRideId).update({ status: "ملغية" });
+        location.reload();
     }
-}
-
-function resetUI() {
-    currentRideId = null;
-    document.getElementById('searchUI').style.opacity = "1";
-    document.getElementById('driverCard').style.display = 'none';
-    document.getElementById('cancelSearchBtn').style.display = 'none';
-    document.getElementById('orderBtn').style.display = 'block';
-    document.getElementById('statusMsg').innerText = "حدد الوجهة للطلب";
 }
 </script>
 </body>
