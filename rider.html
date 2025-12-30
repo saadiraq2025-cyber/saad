@@ -10,28 +10,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         :root { --baly-yellow: #FFD200; --baly-black: #1A1A1A; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         #map { height: 100vh; width: 100%; }
-        
-        .floating-panel {
-            position: absolute; bottom: 0; left: 0; right: 0; 
-            background: white; border-radius: 25px 25px 0 0;
-            padding: 20px; z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
-        }
-
+        .floating-panel { position: absolute; bottom: 0; left: 0; right: 0; background: white; border-radius: 25px 25px 0 0; padding: 20px; z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
         .input-group { background: #f8f8f8; border-radius: 12px; padding: 5px 15px; margin-bottom: 10px; border: 1px solid #eee; display: flex; align-items: center; }
         .input-group input { border: none; background: transparent; width: 100%; padding: 10px; outline: none; font-size: 15px; }
-        
-        .btn-order { background: var(--baly-yellow); color: black; border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; display: none; margin-top: 10px; }
-        
+        .btn-order { background: var(--baly-yellow); border: none; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 18px; cursor: pointer; display: none; margin-top: 10px; }
+        .btn-cancel { background: #ff4444; color: white; border: none; width: 100%; padding: 12px; border-radius: 12px; margin-top: 10px; cursor: pointer; }
         .ride-stats { display: flex; justify-content: space-around; background: #FFF9E6; padding: 10px; border-radius: 10px; margin-top: 10px; border: 1px solid #FFE58F; display: none; }
-        
-        .marker-label { background: white; border: 2px solid black; border-radius: 5px; padding: 2px 5px; font-weight: bold; font-size: 12px; }
-        
-        #results { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; background: white; border-radius: 8px; position: absolute; width: 90%; top: 60px; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        #results li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
-        
         .driver-card { background: #1A1A1A; color: white; padding: 15px; border-radius: 15px; margin-top: 10px; display: none; }
+        #results { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; background: white; position: absolute; width: 90%; z-index: 2000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        #results li { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -39,11 +28,11 @@
 <div id="map"></div>
 
 <div class="floating-panel">
-    <div id="statusMsg" style="font-weight: bold; text-align: center; margin-bottom: 10px;">حدد نقطة الانطلاق والوصول على الخريطة</div>
+    <div id="statusMsg" style="font-weight: bold; text-align: center; margin-bottom: 10px;">حدد الوجهة للطلب</div>
     
     <div id="searchUI">
-        <div class="input-group">🟢 <input type="text" id="startInput" placeholder="موقع الانطلاق (اسحب العلامة الخضراء)"></div>
-        <div class="input-group">🔴 <input type="text" id="destInput" placeholder="البحث عن وجهة أو انقر على الخريطة"></div>
+        <div class="input-group">🟢 <input type="text" id="startInput" placeholder="موقع الانطلاق" readonly></div>
+        <div class="input-group">🔴 <input type="text" id="destInput" placeholder="البحث عن وجهة..."></div>
         <ul id="results"></ul>
     </div>
 
@@ -54,10 +43,14 @@
 
     <div class="driver-card" id="driverCard">
         <div>الكابتن قادم إليك: <b id="dPhone"></b></div>
-        <a id="callBtn" style="color: var(--baly-yellow); text-decoration: none; font-weight: bold;">📞 اتصال الآن</a>
+        <div style="margin-top:10px;">
+            <a id="callBtn" style="color: var(--baly-yellow); text-decoration: none; font-weight: bold; margin-right: 15px;">📞 اتصال</a>
+            <button class="btn-cancel" onclick="cancelRide()" style="width: auto; padding: 5px 15px; font-size: 14px;">إلغاء الرحلة</button>
+        </div>
     </div>
 
     <button class="btn-order" id="orderBtn">طلب كابتن بلي</button>
+    <button class="btn-cancel" id="cancelSearchBtn" style="display:none;" onclick="cancelRide()">إلغاء البحث</button>
 </div>
 
 <script>
@@ -65,86 +58,94 @@ const firebaseConfig = { apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M", data
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// خريطة حديثة (Day)
 let map = L.map('map', {zoomControl: false}).setView([33.3152, 44.3661], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-let startMarker, endMarker;
+let startMarker, endMarker, currentRideId = null;
 const riderPhone = localStorage.getItem("phone") || "07700000000";
 
-// تحديد الموقع الأولي
 navigator.geolocation.getCurrentPosition(pos => {
     const p = [pos.coords.latitude, pos.coords.longitude];
     map.setView(p, 15);
+    startMarker = L.marker(p, {draggable: true, icon: L.divIcon({html: '🟢', className:'m'})}).addTo(map);
+    endMarker = L.marker([p[0]+0.005, p[1]+0.005], {draggable: true, icon: L.divIcon({html: '🔴', className:'m'})}).addTo(map);
     
-    startMarker = L.marker(p, {draggable: true, icon: L.divIcon({className: 'm', html: '🟢', iconSize: [25,25]})}).addTo(map);
-    endMarker = L.marker([p[0]+0.01, p[1]+0.01], {draggable: true, icon: L.divIcon({className: 'm', html: '🔴', iconSize: [25,25]})}).addTo(map);
-
     startMarker.on('dragend', calculateRide);
     endMarker.on('dragend', calculateRide);
     calculateRide();
 });
 
-// النقر على الخريطة لتغيير وجهة الوصول
-map.on('click', function(e) {
-    endMarker.setLatLng(e.latlng);
-    calculateRide();
-});
+async function getAddress(lat, lng, elementId) {
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        const data = await res.json();
+        document.getElementById(elementId).value = data.display_name.split(',')[0] + (data.display_name.split(',')[1] || "");
+    } catch(e) {}
+}
 
-function calculateRide() {
+async function calculateRide() {
+    if(currentRideId) return;
     const start = startMarker.getLatLng();
     const end = endMarker.getLatLng();
     const dist = (map.distance(start, end) / 1000).toFixed(1);
     const fare = Math.round(dist * 1500);
 
+    getAddress(start.lat, start.lng, 'startInput');
     document.getElementById('rideStats').style.display = 'flex';
     document.getElementById('fareTxt').innerText = fare.toLocaleString();
     document.getElementById('distTxt').innerText = dist;
     document.getElementById('orderBtn').style.display = 'block';
 }
 
-// البحث عن الوجهة
-document.getElementById('destInput').addEventListener('input', async (e) => {
-    if(e.target.value.length < 3) return;
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${e.target.value}, Iraq&limit=5`);
-    const data = await res.json();
-    const list = document.getElementById('results');
-    list.innerHTML = '';
-    data.forEach(p => {
-        let li = document.createElement('li');
-        li.innerText = p.display_name;
-        li.onclick = () => {
-            endMarker.setLatLng([p.lat, p.lon]);
-            map.flyTo([p.lat, p.lon], 15);
-            list.innerHTML = '';
-            calculateRide();
-        };
-        list.appendChild(li);
-    });
-});
-
 document.getElementById('orderBtn').onclick = function() {
-    const id = Date.now();
-    db.ref("rides/"+id).set({
+    currentRideId = Date.now();
+    const rideData = {
         riderPhone,
         start: [startMarker.getLatLng().lat, startMarker.getLatLng().lng],
         end: [endMarker.getLatLng().lat, endMarker.getLatLng().lng],
+        startAddr: document.getElementById('startInput').value,
+        endAddr: document.getElementById('destInput').value || "وجهة محددة على الخريطة",
         fare: document.getElementById('fareTxt').innerText,
         status: "جديدة"
-    });
-    this.style.display = 'none';
+    };
+    
+    db.ref("rides/"+currentRideId).set(rideData);
+    document.getElementById('searchUI').style.opacity = "0.5";
+    document.getElementById('orderBtn').style.display = 'none';
+    document.getElementById('cancelSearchBtn').style.display = 'block';
     document.getElementById('statusMsg').innerText = "جاري البحث عن كابتن...";
     
-    db.ref("rides/"+id).on('value', snap => {
+    db.ref("rides/"+currentRideId).on('value', snap => {
         const r = snap.val();
+        if(!r) { resetUI(); return; }
         if(r.status === "مقبولة") {
-            document.getElementById('statusMsg').innerText = "تم القبول!";
+            document.getElementById('statusMsg').innerText = "الكابتن وافق على طلبك!";
             document.getElementById('driverCard').style.display = 'block';
+            document.getElementById('cancelSearchBtn').style.display = 'none';
             document.getElementById('dPhone').innerText = r.driverPhone;
             document.getElementById('callBtn').href = "tel:" + r.driverPhone;
+        } else if(r.status === "ملغية" || r.status === "مكتملة") {
+            alert(r.status === "ملغية" ? "تم إلغاء الرحلة" : "شكراً لرحلتك مع بلي!");
+            resetUI();
         }
     });
 };
+
+function cancelRide() {
+    if(currentRideId) {
+        db.ref("rides/"+currentRideId).update({status: "ملغية"});
+        resetUI();
+    }
+}
+
+function resetUI() {
+    currentRideId = null;
+    document.getElementById('searchUI').style.opacity = "1";
+    document.getElementById('driverCard').style.display = 'none';
+    document.getElementById('cancelSearchBtn').style.display = 'none';
+    document.getElementById('orderBtn').style.display = 'block';
+    document.getElementById('statusMsg').innerText = "حدد الوجهة للطلب";
+}
 </script>
 </body>
 </html>
