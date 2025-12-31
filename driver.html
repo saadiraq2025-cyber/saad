@@ -18,7 +18,7 @@
         .offline-overlay {
             position: absolute; bottom: 120px; left: 0; right: 0;
             z-index: 2000; display: flex; justify-content: center;
-            pointer-events: none; /* للسماح بالضغط على الخريطة */
+            pointer-events: none;
         }
         .btn-activate {
             pointer-events: auto;
@@ -88,7 +88,12 @@
         }
         .rider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-call { background: #4CAF50; color: white; margin-left: 10px; padding: 8px 20px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; }
+        
+        /* أزرار الاتصال و Waze */
+        .contact-actions { display: flex; gap: 10px; }
+        .btn-call { background: #4CAF50; color: white; padding: 8px 15px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold; font-size: 14px; }
+        .btn-waze { background: #33ccff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold; font-size: 14px; }
+
         .btn-finish { background: #f44336; color: white; }
 
         /* القائمة السفلية */
@@ -149,7 +154,10 @@
             <div style="font-size: 14px; color: #888;">الراكب</div>
             <b style="font-size: 18px;" id="riderPhone">07XXXXXXXX</b>
         </div>
-        <a href="#" id="callBtn" class="btn-call">📞 اتصال</a>
+        <div class="contact-actions">
+            <a href="#" id="wazeBtn" class="btn-waze" target="_blank">🚙 Waze</a>
+            <a href="#" id="callBtn" class="btn-call">📞 اتصال</a>
+        </div>
     </div>
     <button class="btn-action btn-finish" onclick="finishRide()">إنهاء الرحلة</button>
 </div>
@@ -197,16 +205,13 @@ function goOnline() {
     isOnline = true;
     document.getElementById('activateBtn').style.display = 'none';
     
-    // محاولة تشغيل الصوت وإيقافه فوراً لفك الحظر
     alertSound.play().then(() => {
         alertSound.pause();
         alertSound.currentTime = 0;
     }).catch(e => console.log("Audio requires interaction"));
 
-    // بدء مراقبة الطلبات
     listenForRides();
     
-    // محاكاة وتتبع الموقع
     if(navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude;
@@ -214,7 +219,6 @@ function goOnline() {
             driverMarker.setLatLng([lat, lng]);
             map.panTo([lat, lng]);
             
-            // تحديث الموقع في السيرفر
             db.ref("drivers/" + driverPhone).set({
                 lat: lat,
                 lng: lng,
@@ -224,20 +228,16 @@ function goOnline() {
     }
 }
 
-// الاستماع للطلبات (الكود المصحح)
+// الاستماع للطلبات
 function listenForRides() {
-    // إزالة أي مستمع سابق لتجنب التكرار
     db.ref("rides").off();
-
-    // الاستماع لكل الطلبات الجديدة (بدون limitToLast لتجنب ضياع البيانات)
     db.ref("rides").orderByChild("status").equalTo("جديدة").on("child_added", snap => {
-        if(!isOnline || currentRideKey) return; // إذا غير متصل أو مشغول
+        if(!isOnline || currentRideKey) return;
 
         const r = snap.val();
-        const rideTime = parseInt(snap.key); // المفتاح هو الوقت
+        const rideTime = parseInt(snap.key);
         const now = Date.now();
 
-        // **فلترة**: قبول الطلبات التي لم يمر عليها أكثر من 30 دقيقة فقط
         if (now - rideTime < 30 * 60 * 1000) {
             showRequest(snap.key, r);
         }
@@ -247,22 +247,18 @@ function listenForRides() {
 // إظهار واجهة الطلب
 function showRequest(key, r) {
     currentRideKey = key;
-    
-    // تشغيل الصوت
     alertSound.play().catch(e => console.error(e));
 
-    // تعبئة البيانات
     document.getElementById('reqFare').innerText = r.fare;
     document.getElementById('pickupAddr').innerText = r.startName || "موقع محدد على الخريطة";
     document.getElementById('dropoffAddr').innerText = r.endName || "وجهة محددة";
 
-    // حسابات تقديرية
     try {
         if(r.start) {
             const driverLoc = driverMarker.getLatLng();
             const pickupLoc = L.latLng(r.start[0], r.start[1]);
             const distM = driverLoc.distanceTo(pickupLoc);
-            document.getElementById('distToPickup').innerText = Math.ceil(distM / 400) + " دقيقة"; // 400م/دقيقة
+            document.getElementById('distToPickup').innerText = Math.ceil(distM / 400) + " دقيقة";
         }
         if(r.start && r.end) {
             const p1 = L.latLng(r.start[0], r.start[1]);
@@ -270,14 +266,9 @@ function showRequest(key, r) {
             const distK = (p1.distanceTo(p2) / 1000).toFixed(1);
             document.getElementById('tripDist').innerText = distK + " كم";
         }
-    } catch(e) {
-        console.log("Error calculating distance", e);
-    }
+    } catch(e) {}
 
-    // إظهار النافذة
     document.getElementById('requestSheet').classList.add('show');
-
-    // تفعيل زر القبول
     document.getElementById('acceptBtn').onclick = () => acceptRide(key, r);
 }
 
@@ -286,7 +277,6 @@ function acceptRide(key, r) {
     alertSound.pause();
     alertSound.currentTime = 0;
     
-    // تحديث الحالة
     db.ref("rides/" + key).update({
         status: "مقبولة",
         driverPhone: driverPhone
@@ -301,16 +291,22 @@ function rejectRide() {
     alertSound.pause();
     alertSound.currentTime = 0;
     document.getElementById('requestSheet').classList.remove('show');
-    currentRideKey = null; // السماح باستقبال طلب آخر
+    currentRideKey = null;
 }
 
-// واجهة الرحلة النشطة
+// واجهة الرحلة النشطة (مع زر Waze)
 function showActiveRide(r) {
     document.getElementById('activePanel').style.display = 'block';
     document.getElementById('riderPhone').innerText = r.riderPhone;
     document.getElementById('callBtn').href = "tel:" + r.riderPhone;
 
-    // رسم المسار
+    // إعداد رابط Waze
+    if (r.start) {
+        // الرابط يفتح Waze ويبدأ الملاحة إلى نقطة انطلاق الراكب
+        const wazeUrl = `https://www.waze.com/ul?ll=${r.start[0]},${r.start[1]}&navigate=yes`;
+        document.getElementById('wazeBtn').href = wazeUrl;
+    }
+
     if(r.start && r.end) {
         L.marker(r.start, {icon: L.divIcon({className: 'timeline-dot dot-green', html: ''})}).addTo(map);
         L.marker(r.end, {icon: L.divIcon({className: 'timeline-dot dot-black', html: ''})}).addTo(map);
@@ -323,7 +319,7 @@ function finishRide() {
     if(confirm("هل تريد إنهاء الرحلة؟")) {
         if(currentRideKey) {
             db.ref("rides/" + currentRideKey).update({status: "منتهية"});
-            location.reload(); // إعادة تحميل للعودة للوضع الجاهز
+            location.reload();
         }
     }
 }
