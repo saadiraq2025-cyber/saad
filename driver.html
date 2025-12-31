@@ -12,17 +12,13 @@
         :root { --baly-yellow: #FFD200; }
         body, html { margin:0; height:100%; font-family: sans-serif; }
         #map { height: 100%; width:100%; }
-        .popup-request {
-            position: fixed; bottom: 20px; left: 10px; right: 10px;
-            background: white; border-radius: 20px; padding: 20px;
-            z-index: 9999; box-shadow: 0 0 20px rgba(0,0,0,0.3);
-            display: none; text-align: center;
-        }
+        .popup-request { position: fixed; bottom: 20px; left: 10px; right: 10px; background: white; border-radius: 20px; padding: 20px; z-index: 9999; box-shadow: 0 0 20px rgba(0,0,0,0.3); display: none; text-align: center; }
         .active { display: block; animation: bounce 0.5s; }
-        .btn-accept { background: var(--baly-yellow); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size:20px; margin-top:10px; }
-        .btn-finish { background: #2ecc71; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; }
-        .btn-cancel-d { background: #e74c3c; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; margin-right:5px; }
-        #riderInfo { position:fixed; top:10px; left:10px; right:10px; z-index:1000; background:white; padding:15px; border-radius:15px; box-shadow:0 2px 10px rgba(0,0,0,0.1); display:none; }
+        .btn-accept { background: var(--baly-yellow); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size:20px; cursor:pointer; }
+        #riderActiveInfo { position:fixed; top:10px; left:10px; right:10px; z-index:1000; background:white; padding:15px; border-radius:15px; box-shadow:0 2px 10px rgba(0,0,0,0.1); display:none; }
+        .action-btns { display: flex; gap: 5px; margin-top: 10px; }
+        .btn-finish { background: #2ecc71; color: white; border:none; padding:10px; flex:1; border-radius:5px; font-weight:bold; }
+        .btn-cancel-d { background: #e74c3c; color: white; border:none; padding:10px; flex:1; border-radius:5px; font-weight:bold; }
     </style>
 </head>
 <body>
@@ -31,18 +27,16 @@
 
 <div class="popup-request" id="pop">
     <h2 style="margin:0;">طلب جديد 🚕</h2>
-    <div id="popDetails" style="margin:15px 0; font-size:18px; line-height:1.6;"></div>
-    <button class="btn-accept" id="accBtn">قـبـول الـطـلـب</button>
+    <div id="popDetails" style="margin:10px 0; font-size:16px; line-height:1.5;"></div>
+    <button class="btn-accept" id="accBtn">قـبـول</button>
 </div>
 
-<div id="riderInfo">
-    <div style="font-weight:bold; margin-bottom:5px;">بيانات الرحلة النشطة:</div>
-    <div id="addrDetails" style="font-size:13px; color:#666; margin-bottom:10px;"></div>
-    <strong>الراكب: </strong> <span id="rPhone"></span>
-    <div style="margin-top:10px; display:flex; gap:5px;">
-        <a id="rCall" style="background:#eee; padding:10px; border-radius:8px; text-decoration:none; flex:1; text-align:center;">📞 اتصال</a>
-        <button class="btn-finish" id="finishBtn" style="flex:1;">إنهاء الرحلة</button>
-        <button class="btn-cancel-d" id="cancelBtnD" style="flex:1;">إلغاء</button>
+<div id="riderActiveInfo">
+    <strong>الراكب: </strong> <span id="rPhone"></span><br>
+    <small id="rLocs"></small>
+    <div class="action-btns">
+        <button class="btn-finish" id="finishBtn">إنهاء الرحلة</button>
+        <button class="btn-cancel-d" id="cancelRideBtn">إلغاء</button>
     </div>
 </div>
 
@@ -56,7 +50,7 @@ let map = L.map('map', {zoomControl: false}).setView([33.3152, 44.3661], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let driverMarker = L.marker([33.3152, 44.3661]).addTo(map);
-let activeRideId = null;
+let currentRideKey = null;
 const driverPhone = localStorage.getItem("phone") || "07800000000";
 
 db.ref("rides").on("child_added", snap => {
@@ -65,44 +59,39 @@ db.ref("rides").on("child_added", snap => {
         alertSound.play();
         document.getElementById('popDetails').innerHTML = `
             <b>الأجرة: ${r.fare} د.ع</b><br>
-            <small>من: ${r.startAddr || 'موقع الراكب'}</small><br>
-            <small>إلى: ${r.endAddr || 'الوجهة المحددة'}</small>
+            من: ${r.startName || 'موقع الراكب'}<br>
+            إلى: ${r.endName || 'وجهة الراكب'}
         `;
         document.getElementById('pop').classList.add('active');
         
         document.getElementById('accBtn').onclick = () => {
-            activeRideId = snap.key;
+            currentRideKey = snap.key;
             db.ref("rides/"+snap.key).update({status: "مقبولة", driverPhone: driverPhone});
             document.getElementById('pop').classList.remove('active');
-            showRideOnMap(r);
+            showActiveRide(r);
         };
     }
 });
 
-function showRideOnMap(r) {
-    document.getElementById('riderInfo').style.display = 'block';
+function showActiveRide(r) {
+    document.getElementById('riderActiveInfo').style.display = 'block';
     document.getElementById('rPhone').innerText = r.riderPhone;
-    document.getElementById('rCall').href = "tel:" + r.riderPhone;
-    document.getElementById('addrDetails').innerText = `من: ${r.startAddr} \nإلى: ${r.endAddr}`;
+    document.getElementById('rLocs').innerText = `من: ${r.startName} \nإلى: ${r.endName}`;
     
-    L.marker(r.start, {icon: L.divIcon({html: '🟢'})}).addTo(map).bindPopup("البداية").openPopup();
-    L.marker(r.end, {icon: L.divIcon({html: '🏁'})}).addTo(map).bindPopup("النهاية");
+    L.marker(r.start, {icon: L.divIcon({html: '🟢'})}).addTo(map);
+    L.marker(r.end, {icon: L.divIcon({html: '🏁'})}).addTo(map);
     map.fitBounds([r.start, r.end]);
 }
 
-document.getElementById('finishBtn').onclick = () => {
-    if(activeRideId) {
-        db.ref("rides/"+activeRideId).update({status: "مكتملة"});
-        location.reload(); 
-    }
-};
+document.getElementById('finishBtn').onclick = () => updateStatus("منتهية");
+document.getElementById('cancelRideBtn').onclick = () => updateStatus("ملغية");
 
-document.getElementById('cancelBtnD').onclick = () => {
-    if(activeRideId) {
-        db.ref("rides/"+activeRideId).update({status: "ملغية"});
-        location.reload();
+function updateStatus(status) {
+    if(currentRideKey) {
+        db.ref("rides/" + currentRideKey).update({status: status});
+        location.reload(); // إعادة تشغيل الواجهة لاستقبال طلبات جديدة
     }
-};
+}
 
 setInterval(() => {
     navigator.geolocation.getCurrentPosition(pos => {
