@@ -198,6 +198,9 @@ function initMap() {
         iconSize: [26, 26]
     });
     driverMarker = L.marker([33.3152, 44.3661], {icon: driverIcon}).addTo(map);
+    
+    // التحقق من وجود رحلة محفوظة عند بدء التشغيل
+    checkSavedRide();
 }
 
 // تفعيل وضع المتصل
@@ -246,6 +249,8 @@ function listenForRides() {
 
 // إظهار واجهة الطلب
 function showRequest(key, r) {
+    if(currentRideKey) return; // منع التداخل إذا تم استرجاع رحلة
+
     currentRideKey = key;
     alertSound.play().catch(e => console.error(e));
 
@@ -277,6 +282,9 @@ function acceptRide(key, r) {
     alertSound.pause();
     alertSound.currentTime = 0;
     
+    // حفظ حالة الرحلة في الهاتف
+    localStorage.setItem("baly_active_ride", key);
+
     db.ref("rides/" + key).update({
         status: "مقبولة",
         driverPhone: driverPhone
@@ -296,6 +304,9 @@ function rejectRide() {
 
 // واجهة الرحلة النشطة (مع زر Waze)
 function showActiveRide(r) {
+    // تأكد من تفعيل وضع الأونلاين لإرسال الموقع
+    if(!isOnline) goOnline(); 
+
     document.getElementById('activePanel').style.display = 'block';
     document.getElementById('riderPhone').innerText = r.riderPhone;
     document.getElementById('callBtn').href = "tel:" + r.riderPhone;
@@ -319,8 +330,29 @@ function finishRide() {
     if(confirm("هل تريد إنهاء الرحلة؟")) {
         if(currentRideKey) {
             db.ref("rides/" + currentRideKey).update({status: "منتهية"});
+            
+            // حذف الرحلة المحفوظة
+            localStorage.removeItem("baly_active_ride");
+            
             location.reload();
         }
+    }
+}
+
+// دالة استرجاع الرحلة عند غلق المتصفح والعودة
+function checkSavedRide() {
+    const savedRideId = localStorage.getItem("baly_active_ride");
+    if(savedRideId) {
+        db.ref("rides/" + savedRideId).once('value', snap => {
+            const r = snap.val();
+            if(r && (r.status === "مقبولة" || r.status === "جارية")) {
+                currentRideKey = savedRideId;
+                showActiveRide(r);
+            } else {
+                // الرحلة انتهت أو ألغيت
+                localStorage.removeItem("baly_active_ride");
+            }
+        });
     }
 }
 
