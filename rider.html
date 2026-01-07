@@ -166,7 +166,6 @@ map.on('moveend', function() {
 });
 
 async function updateAddress(lat, lng) {
-    // نوقف التحديث إذا كنا في وضع التتبع (المرحلة 4)
     if(document.getElementById('step4').style.display === 'block') return;
 
     try {
@@ -188,30 +187,28 @@ function confirmStart() {
     document.getElementById('fixedStart').innerText = document.getElementById('startText').innerText;
     document.getElementById('step1').style.display = 'none';
     document.getElementById('step2').style.display = 'block';
-    // حركة بسيطة للخريطة لتوضيح التغيير
     map.panBy([0, 100]);
 }
 
 function confirmDest() {
     endCoords = map.getCenter();
     const dist = (map.distance(startCoords, endCoords) / 1000).toFixed(1);
-    const fare = Math.round(dist * 1500 + 1000); // معادلة السعر
+    const fare = Math.round(dist * 1500 + 1000); 
     
     document.getElementById('fareShow').innerText = fare.toLocaleString();
     document.getElementById('distShow').innerText = dist;
     
     document.getElementById('step2').style.display = 'none';
     document.getElementById('step3').style.display = 'block';
-    document.getElementById('pin').style.display = 'none'; // إخفاء الدبوس
+    document.getElementById('pin').style.display = 'none'; 
     
-    // رسم المسار (خط وهمي)
     L.polyline([startCoords, endCoords], {color: 'var(--baly-orange)', dashArray: '5, 10'}).addTo(map);
     map.fitBounds([startCoords, endCoords], {padding: [50, 50]});
 }
 
 // إرسال الطلب
 document.getElementById('orderBtn').onclick = function() {
-    currentRideId = Date.now().toString(); // تحويل لنص لضمان التوافق
+    currentRideId = Date.now().toString(); 
     const rideData = {
         riderPhone: localStorage.getItem("phone") || "07700000000",
         start: [startCoords.lat, startCoords.lng],
@@ -222,7 +219,6 @@ document.getElementById('orderBtn').onclick = function() {
         status: "جديدة"
     };
 
-    // حفظ معرف الرحلة في الجهاز
     localStorage.setItem("baly_ride_id", currentRideId);
 
     db.ref("rides/" + currentRideId).set(rideData);
@@ -250,11 +246,9 @@ function monitorRide(rideId) {
             document.getElementById('dPhone').innerText = r.driverPhone;
             document.getElementById('callBtn').href = "tel:" + r.driverPhone;
 
-            // بدء مراقبة موقع السائق
             trackDriver(r.driverPhone);
         } 
         else if(r.status === "منتهية" || r.status === "ملغية") {
-            // تنظيف البيانات عند الانتهاء
             localStorage.removeItem("baly_ride_id");
             alert("الرحلة " + r.status);
             stopTracking();
@@ -263,28 +257,25 @@ function monitorRide(rideId) {
     });
 }
 
-// دالة استرجاع الرحلة المخزنة عند فتح التطبيق
+// استرجاع الرحلة المخزنة
 function checkExistingRide() {
     const savedRideId = localStorage.getItem("baly_ride_id");
     if(savedRideId) {
         currentRideId = savedRideId;
         
-        // إخفاء خطوات البداية وإظهار شاشة التتبع
         document.getElementById('step1').style.display = 'none';
         document.getElementById('pin').style.display = 'none';
         document.getElementById('step4').style.display = 'block';
         
-        // إعادة تفعيل المراقبة
         monitorRide(savedRideId);
     } else {
-        // لا توجد رحلة، ابدأ من موقع المستخدم
         goToMyLoc();
     }
 }
 
 // دالة مراقبة موقع السائق
 function trackDriver(driverPhone) {
-    if(driverListener) return; // مراقبة نشطة بالفعل
+    if(driverListener) return; 
     
     driverListener = db.ref("drivers/" + driverPhone);
     driverListener.on('value', snap => {
@@ -293,7 +284,6 @@ function trackDriver(driverPhone) {
             const pos = [loc.lat, loc.lng];
             
             if(!driverMarker) {
-                // إنشاء أيقونة السيارة
                 const carIcon = L.divIcon({
                     className: 'car-icon',
                     html: '🚖',
@@ -302,7 +292,6 @@ function trackDriver(driverPhone) {
                 });
                 driverMarker = L.marker(pos, {icon: carIcon}).addTo(map);
             } else {
-                // تحريك السيارة
                 driverMarker.setLatLng(pos);
             }
         }
@@ -332,7 +321,6 @@ function goToMyLoc() {
     });
 }
 
-// التحقق من وجود رحلة عند التحميل
 checkExistingRide();
 </script>
 </body>
