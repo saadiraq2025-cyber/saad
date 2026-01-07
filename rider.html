@@ -166,6 +166,9 @@ map.on('moveend', function() {
 });
 
 async function updateAddress(lat, lng) {
+    // نوقف التحديث إذا كنا في وضع التتبع (المرحلة 4)
+    if(document.getElementById('step4').style.display === 'block') return;
+
     try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
         const data = await res.json();
@@ -208,7 +211,7 @@ function confirmDest() {
 
 // إرسال الطلب
 document.getElementById('orderBtn').onclick = function() {
-    currentRideId = Date.now();
+    currentRideId = Date.now().toString(); // تحويل لنص لضمان التوافق
     const rideData = {
         riderPhone: localStorage.getItem("phone") || "07700000000",
         start: [startCoords.lat, startCoords.lng],
@@ -219,13 +222,20 @@ document.getElementById('orderBtn').onclick = function() {
         status: "جديدة"
     };
 
+    // حفظ معرف الرحلة في الجهاز
+    localStorage.setItem("baly_ride_id", currentRideId);
+
     db.ref("rides/" + currentRideId).set(rideData);
 
     document.getElementById('step3').style.display = 'none';
     document.getElementById('step4').style.display = 'block';
 
-    // مراقبة حالة الطلب
-    db.ref("rides/" + currentRideId).on('value', snap => {
+    monitorRide(currentRideId);
+};
+
+// دالة مراقبة حالة الطلب
+function monitorRide(rideId) {
+    db.ref("rides/" + rideId).on('value', snap => {
         const r = snap.val();
         if(!r) return;
 
@@ -244,12 +254,33 @@ document.getElementById('orderBtn').onclick = function() {
             trackDriver(r.driverPhone);
         } 
         else if(r.status === "منتهية" || r.status === "ملغية") {
+            // تنظيف البيانات عند الانتهاء
+            localStorage.removeItem("baly_ride_id");
             alert("الرحلة " + r.status);
             stopTracking();
             location.reload();
         }
     });
-};
+}
+
+// دالة استرجاع الرحلة المخزنة عند فتح التطبيق
+function checkExistingRide() {
+    const savedRideId = localStorage.getItem("baly_ride_id");
+    if(savedRideId) {
+        currentRideId = savedRideId;
+        
+        // إخفاء خطوات البداية وإظهار شاشة التتبع
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('pin').style.display = 'none';
+        document.getElementById('step4').style.display = 'block';
+        
+        // إعادة تفعيل المراقبة
+        monitorRide(savedRideId);
+    } else {
+        // لا توجد رحلة، ابدأ من موقع المستخدم
+        goToMyLoc();
+    }
+}
 
 // دالة مراقبة موقع السائق
 function trackDriver(driverPhone) {
@@ -285,7 +316,10 @@ function stopTracking() {
 
 function cancelRide() {
     if(confirm("هل أنت متأكد من إلغاء الرحلة؟")) {
-        if(currentRideId) db.ref("rides/" + currentRideId).update({status: "ملغية"});
+        if(currentRideId) {
+            db.ref("rides/" + currentRideId).update({status: "ملغية"});
+            localStorage.removeItem("baly_ride_id");
+        }
         stopTracking();
         location.reload();
     }
@@ -298,8 +332,8 @@ function goToMyLoc() {
     });
 }
 
-// بدء التطبيق عند موقع المستخدم
-goToMyLoc();
+// التحقق من وجود رحلة عند التحميل
+checkExistingRide();
 </script>
 </body>
 </html>
