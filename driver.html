@@ -14,7 +14,7 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: #eee; overflow: hidden; }
         #map { height: 100%; width: 100%; z-index: 1; }
 
-        /* شاشة التفعيل (الأولى) */
+        /* شاشة التفعيل */
         .offline-overlay {
             position: absolute; bottom: 120px; left: 0; right: 0;
             z-index: 2000; display: flex; justify-content: center;
@@ -35,7 +35,7 @@
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
         }
 
-        /* نافذة استقبال الطلب (المنبثقة) */
+        /* نافذة الطلب */
         .request-sheet {
             position: fixed; bottom: -100%; left: 0; right: 0;
             background: white; z-index: 3000;
@@ -50,11 +50,9 @@
         .service-badge { background: #e3f2fd; color: #1976d2; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
         .price-display { font-size: 26px; font-weight: 900; color: #333; }
 
-        /* تصميم خط الرحلة */
         .trip-timeline { margin-bottom: 25px; padding-right: 15px; border-right: 2px solid #eee; margin-right: 10px; }
         .timeline-item { position: relative; margin-bottom: 25px; }
         .timeline-item:last-child { margin-bottom: 0; }
-        
         .timeline-dot {
             position: absolute; right: -22px; top: 3px;
             width: 12px; height: 12px; border-radius: 50%;
@@ -62,18 +60,15 @@
         }
         .dot-green { background: #4CAF50; }
         .dot-black { background: #000; }
-
         .info-title { font-size: 13px; color: #888; display: flex; gap: 10px; margin-bottom: 3px; }
         .info-address { font-size: 15px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* أزرار التحكم */
         .btn-accept {
             background: #2962ff; color: white; border: none;
             width: 100%; padding: 18px; border-radius: 15px;
             font-size: 18px; font-weight: bold; cursor: pointer;
             box-shadow: 0 5px 15px rgba(41, 98, 255, 0.3);
         }
-        
         .btn-reject {
             position: absolute; top: 20px; left: 20px;
             background: #f5f5f5; border: none; width: 35px; height: 35px;
@@ -87,16 +82,16 @@
             z-index: 2500; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: none;
         }
         .rider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 5px; }
+        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;}
         
-        /* ألوان الأزرار المتغيرة */
-        .btn-start { background: #4CAF50; color: white; } /* أخضر لبدء الرحلة */
-        .btn-finish { background: #f44336; color: white; } /* أحمر لإنهاء الرحلة */
-
-        /* أزرار الاتصال و Waze */
         .contact-actions { display: flex; gap: 10px; }
         .btn-call { background: #4CAF50; color: white; padding: 8px 15px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold; font-size: 14px; }
         .btn-waze { background: #33ccff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold; font-size: 14px; }
+
+        .btn-start { background: #FF9800; color: white; }
+        .btn-finish { background: #f44336; color: white; }
+        
+        .status-header { text-align: center; font-size: 14px; color: #555; margin-bottom: 10px; background: #f0f0f0; padding: 5px; border-radius: 5px;}
 
         /* القائمة السفلية */
         .bottom-nav {
@@ -121,36 +116,28 @@
 
 <div class="request-sheet" id="requestSheet">
     <button class="btn-reject" onclick="rejectRide()">✕</button>
-    
     <div class="sheet-header">
-        <div class="service-badge">⚡ سوبر</div>
+        <div class="service-badge">⚡ طلب جديد</div>
         <div class="price-display"><span id="reqFare">0</span> د.ع</div>
     </div>
-
     <div class="trip-timeline">
         <div class="timeline-item">
             <div class="timeline-dot dot-green"></div>
-            <div class="info-title">
-                <span>📍 نقطة الاستلام</span>
-                <b style="color:#2196F3" id="distToPickup">-- دقيقة</b>
-            </div>
+            <div class="info-title"><span>📍 نقطة الاستلام (الراكب)</span> <b style="color:#2196F3" id="distToPickup">--</b></div>
             <div class="info-address" id="pickupAddr">...</div>
         </div>
-
         <div class="timeline-item">
             <div class="timeline-dot dot-black"></div>
-            <div class="info-title">
-                <span>🏁 الوجهة</span>
-                <b id="tripDist">-- كم</b>
-            </div>
+            <div class="info-title"><span>🏁 الوجهة</span> <b id="tripDist">-- كم</b></div>
             <div class="info-address" id="dropoffAddr">...</div>
         </div>
     </div>
-
     <button class="btn-accept" id="acceptBtn">قبول الرحلة</button>
 </div>
 
 <div class="active-ride-panel" id="activePanel">
+    <div class="status-header" id="rideStatusText">في الطريق إلى الراكب</div>
+    
     <div class="rider-row">
         <div>
             <div style="font-size: 14px; color: #888;">الراكب</div>
@@ -161,7 +148,9 @@
             <a href="#" id="callBtn" class="btn-call">📞 اتصال</a>
         </div>
     </div>
-    <button id="mainActionBtn" class="btn-action"></button>
+
+    <button class="btn-action btn-start" id="startRideBtn" onclick="startRide()" style="display:none;">🚖 بدء الرحلة (ركب الزبون)</button>
+    <button class="btn-action btn-finish" id="finishRideBtn" onclick="finishRide()" style="display:none;">🏁 إنهاء الرحلة</button>
 </div>
 
 <div class="bottom-nav">
@@ -178,23 +167,19 @@ const firebaseConfig = { apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M", data
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// متغيرات النظام
 let map, driverMarker;
 let isOnline = false;
 let currentRideKey = null;
-let currentRideData = null; // لتخزين بيانات الرحلة الحالية
+let activeRideData = null; // لتخزين بيانات الرحلة الحالية
 const driverPhone = localStorage.getItem("phone") || "07800000000";
 
-// ملف الصوت
 const alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 alertSound.loop = true;
 
-// تهيئة الخريطة
 function initMap() {
     map = L.map('map', {zoomControl: false}).setView([33.3152, 44.3661], 13);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
     
-    // أيقونة السائق
     const driverIcon = L.divIcon({
         html: '<div style="background:#2196F3; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>',
         className: 'driver-dot',
@@ -202,22 +187,21 @@ function initMap() {
     });
     driverMarker = L.marker([33.3152, 44.3661], {icon: driverIcon}).addTo(map);
     
-    // التحقق من وجود رحلة محفوظة عند بدء التشغيل
     checkSavedRide();
 }
 
-// تفعيل وضع المتصل
 function goOnline() {
     isOnline = true;
     document.getElementById('activateBtn').style.display = 'none';
     
+    // تشغيل وإيقاف الصوت لتفعيل الصلاحيات
     alertSound.play().then(() => {
-        alertSound.pause();
-        alertSound.currentTime = 0;
+        alertSound.pause(); alertSound.currentTime = 0;
     }).catch(e => console.log("Audio requires interaction"));
 
     listenForRides();
-    
+    watchCompetition(); // مراقبة إذا تم أخذ الطلب
+
     if(navigator.geolocation) {
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude;
@@ -226,193 +210,210 @@ function goOnline() {
             map.panTo([lat, lng]);
             
             db.ref("drivers/" + driverPhone).set({
-                lat: lat,
-                lng: lng,
-                lastUpdate: Date.now()
+                lat: lat, lng: lng, lastUpdate: Date.now()
             });
         });
     }
 }
 
-// الاستماع للطلبات
+// الاستماع للطلبات مع شرط 3 كم
 function listenForRides() {
     db.ref("rides").off();
     db.ref("rides").orderByChild("status").equalTo("جديدة").on("child_added", snap => {
         if(!isOnline || currentRideKey) return;
 
         const r = snap.val();
-        const rideTime = parseInt(snap.key);
-        const now = Date.now();
+        
+        // --- الفلترة حسب المسافة (3 كم) ---
+        if(r.start) {
+            const driverLoc = driverMarker.getLatLng();
+            const pickupLoc = L.latLng(r.start[0], r.start[1]);
+            const distMeters = driverLoc.distanceTo(pickupLoc);
+            
+            if (distMeters > 3000) {
+                console.log("تم تجاهل طلب لكونه أبعد من 3 كم:", distMeters);
+                return; // لا تظهر الطلب
+            }
+            document.getElementById('distToPickup').innerText = Math.ceil(distMeters / 60) + " م"; // عرض بالأمتار أو الدقائق تقريباً
+        }
+        // --------------------------------
 
-        if (now - rideTime < 30 * 60 * 1000) {
+        const rideTime = parseInt(snap.key);
+        if (Date.now() - rideTime < 30 * 60 * 1000) {
             showRequest(snap.key, r);
         }
     });
 }
 
-// إظهار واجهة الطلب
+// مراقبة المنافسة (إذا أخذ سائق آخر الطلب)
+function watchCompetition() {
+    db.ref("rides").on("child_changed", snap => {
+        // إذا كان هذا الطلب معروضاً حالياً على الشاشة ولم نقم نحن بقبوله
+        if (currentRideKey === snap.key && !localStorage.getItem("baly_active_ride")) {
+            const val = snap.val();
+            if (val.status !== "جديدة") {
+                // الطلب لم يعد جديداً (أخذه أحد ما أو ألغاه الراكب)
+                alertSound.pause();
+                alertSound.currentTime = 0;
+                document.getElementById('requestSheet').classList.remove('show');
+                currentRideKey = null;
+                alert("⚠️ تم قبول الطلب من قبل كابتن آخر");
+            }
+        }
+    });
+    
+    // في حالة الحذف
+    db.ref("rides").on("child_removed", snap => {
+        if (currentRideKey === snap.key && !localStorage.getItem("baly_active_ride")) {
+            alertSound.pause();
+            document.getElementById('requestSheet').classList.remove('show');
+            currentRideKey = null;
+        }
+    });
+}
+
 function showRequest(key, r) {
-    if(currentRideKey) return; // منع التداخل إذا تم استرجاع رحلة
+    if(currentRideKey) return;
 
     currentRideKey = key;
     alertSound.play().catch(e => console.error(e));
 
     document.getElementById('reqFare').innerText = r.fare;
-    document.getElementById('pickupAddr').innerText = r.startName || "موقع محدد على الخريطة";
-    document.getElementById('dropoffAddr').innerText = r.endName || "وجهة محددة";
-
-    try {
-        if(r.start) {
-            const driverLoc = driverMarker.getLatLng();
-            const pickupLoc = L.latLng(r.start[0], r.start[1]);
-            const distM = driverLoc.distanceTo(pickupLoc);
-            document.getElementById('distToPickup').innerText = Math.ceil(distM / 400) + " دقيقة";
-        }
-        if(r.start && r.end) {
-            const p1 = L.latLng(r.start[0], r.start[1]);
-            const p2 = L.latLng(r.end[0], r.end[1]);
-            const distK = (p1.distanceTo(p2) / 1000).toFixed(1);
-            document.getElementById('tripDist').innerText = distK + " كم";
-        }
-    } catch(e) {}
+    document.getElementById('pickupAddr').innerText = r.startName;
+    document.getElementById('dropoffAddr').innerText = r.endName;
+    
+    // حساب المسافة الكلية
+    if(r.start && r.end) {
+        const p1 = L.latLng(r.start[0], r.start[1]);
+        const p2 = L.latLng(r.end[0], r.end[1]);
+        document.getElementById('tripDist').innerText = (p1.distanceTo(p2) / 1000).toFixed(1) + " كم";
+    }
 
     document.getElementById('requestSheet').classList.add('show');
     document.getElementById('acceptBtn').onclick = () => acceptRide(key, r);
 }
 
-// قبول الرحلة
 function acceptRide(key, r) {
     alertSound.pause();
     alertSound.currentTime = 0;
     
-    // حفظ حالة الرحلة في الهاتف
-    localStorage.setItem("baly_active_ride", key);
-    currentRideData = r; // حفظ البيانات محلياً
-
-    db.ref("rides/" + key).update({
-        status: "مقبولة",
-        driverPhone: driverPhone
-    });
-
-    document.getElementById('requestSheet').classList.remove('show');
-    
-    // تحديث البيانات لعرض حالة "مقبولة"
-    r.status = "مقبولة";
-    showActiveRide(r);
-    
-    // مراقبة إلغاء الرحلة
-    monitorRideStatus(key);
-}
-
-// مراقبة حالة الرحلة (للإشعار عند الإلغاء)
-function monitorRideStatus(key) {
-    db.ref("rides/" + key).on('value', snap => {
-        const r = snap.val();
-        if(!r) return;
-
-        // إذا قام الراكب بالإلغاء
-        if(r.status === "ملغية") {
-            try { navigator.vibrate(500); } catch(e){}
-            alert("⚠️ تنبيه: قام الراكب بإلغاء الرحلة!");
-            
-            // تنظيف البيانات وإعادة التشغيل
-            localStorage.removeItem("baly_active_ride");
-            location.reload();
+    // التحقق مرة أخيرة قبل القبول
+    db.ref("rides/" + key + "/status").once('value', snap => {
+        if (snap.val() !== "جديدة") {
+            alert("عذراً، تم أخذ الطلب للتو.");
+            document.getElementById('requestSheet').classList.remove('show');
+            currentRideKey = null;
+            return;
         }
+
+        // تثبيت القبول
+        localStorage.setItem("baly_active_ride", key);
+        db.ref("rides/" + key).update({
+            status: "مقبولة",
+            driverPhone: driverPhone
+        });
+
+        document.getElementById('requestSheet').classList.remove('show');
+        showActiveRide(r, "مقبولة");
+        monitorRideStatus(key);
     });
 }
 
-// رفض الرحلة
-function rejectRide() {
-    alertSound.pause();
-    alertSound.currentTime = 0;
-    document.getElementById('requestSheet').classList.remove('show');
-    currentRideKey = null;
-}
-
-// واجهة الرحلة النشطة (منطق التوجيه الجديد)
-function showActiveRide(r) {
+// واجهة الرحلة النشطة (مقسمة لمرحلتين)
+function showActiveRide(r, status) {
     if(!isOnline) goOnline(); 
-    currentRideData = r; // تأكد من تحديث البيانات
+    activeRideData = r; // حفظ البيانات محلياً
 
     document.getElementById('activePanel').style.display = 'block';
     document.getElementById('riderPhone').innerText = r.riderPhone;
     document.getElementById('callBtn').href = "tel:" + r.riderPhone;
 
-    const btn = document.getElementById('mainActionBtn');
+    // --- منطق المراحل ---
     const wazeBtn = document.getElementById('wazeBtn');
+    const startBtn = document.getElementById('startRideBtn');
+    const finishBtn = document.getElementById('finishRideBtn');
+    const statusText = document.getElementById('rideStatusText');
 
-    // === منطق التحكم في المراحل ===
-    if (r.status === "مقبولة") {
+    if (status === "مقبولة") {
         // المرحلة 1: الذهاب للراكب
-        btn.innerText = "🚩 بدء الرحلة (وصلت للراكب)";
-        btn.className = "btn-action btn-start";
-        btn.onclick = startTrip;
+        statusText.innerText = "📍 توجه إلى نقطة الاستلام (الراكب)";
+        statusText.style.background = "#e3f2fd";
+        statusText.style.color = "#1976d2";
         
-        // Waze يوجه لنقطة الاستلام
-        if (r.start) {
-            wazeBtn.href = `https://www.waze.com/ul?ll=${r.start[0]},${r.start[1]}&navigate=yes`;
-        }
-
-    } else if (r.status === "جارية") {
-        // المرحلة 2: الذهاب للوجهة
-        btn.innerText = "🏁 إنهاء الرحلة";
-        btn.className = "btn-action btn-finish";
-        btn.onclick = finishRide;
-
-        // Waze يوجه لنقطة الوصول
-        if (r.end) {
-            wazeBtn.href = `https://www.waze.com/ul?ll=${r.end[0]},${r.end[1]}&navigate=yes`;
-        }
-    }
-
-    // رسم النقاط على الخريطة
-    if(r.start && r.end) {
+        wazeBtn.href = `https://www.waze.com/ul?ll=${r.start[0]},${r.start[1]}&navigate=yes`;
+        wazeBtn.innerText = "🚙 Waze (للراكب)";
+        
+        startBtn.style.display = "block";
+        finishBtn.style.display = "none";
+        
+        // رسم خط ونقطة الراكب
+        map.eachLayer(layer => { if(layer instanceof L.Marker && layer !== driverMarker) map.removeLayer(layer); });
         L.marker(r.start, {icon: L.divIcon({className: 'timeline-dot dot-green', html: ''})}).addTo(map);
+        map.setView(r.start, 15);
+        
+    } else if (status === "جارية") {
+        // المرحلة 2: الذهاب للوجهة
+        statusText.innerText = "🏁 في الطريق إلى الوجهة";
+        statusText.style.background = "#fff3e0";
+        statusText.style.color = "#e65100";
+
+        wazeBtn.href = `https://www.waze.com/ul?ll=${r.end[0]},${r.end[1]}&navigate=yes`;
+        wazeBtn.innerText = "🚙 Waze (للوجهة)";
+        
+        startBtn.style.display = "none";
+        finishBtn.style.display = "block";
+
+        // رسم خط ونقطة الوصول
+        map.eachLayer(layer => { if(layer instanceof L.Marker && layer !== driverMarker) map.removeLayer(layer); });
         L.marker(r.end, {icon: L.divIcon({className: 'timeline-dot dot-black', html: ''})}).addTo(map);
-        map.fitBounds([r.start, r.end, driverMarker.getLatLng()], {padding: [50,50]});
+        map.setView(r.end, 15);
     }
 }
 
-// بدء الرحلة (تحويل الحالة من "مقبولة" إلى "جارية")
-function startTrip() {
-    if(confirm("هل وصلت للراكب وتريد بدء الرحلة؟")) {
-        if(currentRideKey) {
-            // تحديث قاعدة البيانات
-            db.ref("rides/" + currentRideKey).update({status: "جارية"});
-            
-            // تحديث الواجهة فوراً
-            if(currentRideData) {
-                currentRideData.status = "جارية";
-                showActiveRide(currentRideData);
-            }
-        }
+// دالة بدء الرحلة (بعد وصول السائق وركوب الزبون)
+function startRide() {
+    if(confirm("هل ركب الزبون وتريد بدء الرحلة؟")) {
+        db.ref("rides/" + currentRideKey).update({status: "جارية"});
+        showActiveRide(activeRideData, "جارية");
     }
 }
 
-// إنهاء الرحلة من السائق
+// دالة إنهاء الرحلة
 function finishRide() {
-    if(confirm("هل تريد إنهاء الرحلة؟")) {
+    if(confirm("هل وصلت للوجهة وتريد إنهاء الرحلة؟")) {
         if(currentRideKey) {
             db.ref("rides/" + currentRideKey).update({status: "منتهية"});
             localStorage.removeItem("baly_active_ride");
+            alert("🎉 تمت الرحلة بنجاح!");
             location.reload();
         }
     }
 }
 
-// استرجاع الرحلة عند غلق المتصفح والعودة
+function monitorRideStatus(key) {
+    db.ref("rides/" + key).on('value', snap => {
+        const r = snap.val();
+        if(!r) return;
+        if(r.status === "ملغية") {
+            navigator.vibrate(500);
+            alert("⚠️ تنبيه: قام الراكب بإلغاء الرحلة!");
+            localStorage.removeItem("baly_active_ride");
+            location.reload();
+        }
+    });
+}
+
 function checkSavedRide() {
     const savedRideId = localStorage.getItem("baly_active_ride");
     if(savedRideId) {
         db.ref("rides/" + savedRideId).once('value', snap => {
             const r = snap.val();
-            // نسترجع الرحلة إذا كانت مقبولة أو جارية
+            // استعادة الحالة الصحيحة (مقبولة أو جارية)
             if(r && (r.status === "مقبولة" || r.status === "جارية")) {
                 currentRideKey = savedRideId;
-                currentRideData = r;
-                showActiveRide(r);
-                monitorRideStatus(savedRideId); 
+                activeRideData = r;
+                showActiveRide(r, r.status);
+                monitorRideStatus(savedRideId);
             } else {
                 localStorage.removeItem("baly_active_ride");
             }
