@@ -87,14 +87,16 @@
             z-index: 2500; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: none;
         }
         .rider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 5px; }
         
+        /* ألوان الأزرار المتغيرة */
+        .btn-start { background: #4CAF50; color: white; } /* أخضر لبدء الرحلة */
+        .btn-finish { background: #f44336; color: white; } /* أحمر لإنهاء الرحلة */
+
         /* أزرار الاتصال و Waze */
         .contact-actions { display: flex; gap: 10px; }
         .btn-call { background: #4CAF50; color: white; padding: 8px 15px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold; font-size: 14px; }
         .btn-waze { background: #33ccff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold; font-size: 14px; }
-
-        .btn-finish { background: #f44336; color: white; }
 
         /* القائمة السفلية */
         .bottom-nav {
@@ -159,7 +161,7 @@
             <a href="#" id="callBtn" class="btn-call">📞 اتصال</a>
         </div>
     </div>
-    <button class="btn-action btn-finish" onclick="finishRide()">إنهاء الرحلة</button>
+    <button id="mainActionBtn" class="btn-action"></button>
 </div>
 
 <div class="bottom-nav">
@@ -180,6 +182,7 @@ const db = firebase.database();
 let map, driverMarker;
 let isOnline = false;
 let currentRideKey = null;
+let currentRideData = null; // لتخزين بيانات الرحلة الحالية
 const driverPhone = localStorage.getItem("phone") || "07800000000";
 
 // ملف الصوت
@@ -284,6 +287,7 @@ function acceptRide(key, r) {
     
     // حفظ حالة الرحلة في الهاتف
     localStorage.setItem("baly_active_ride", key);
+    currentRideData = r; // حفظ البيانات محلياً
 
     db.ref("rides/" + key).update({
         status: "مقبولة",
@@ -291,6 +295,9 @@ function acceptRide(key, r) {
     });
 
     document.getElementById('requestSheet').classList.remove('show');
+    
+    // تحديث البيانات لعرض حالة "مقبولة"
+    r.status = "مقبولة";
     showActiveRide(r);
     
     // مراقبة إلغاء الرحلة
@@ -323,23 +330,63 @@ function rejectRide() {
     currentRideKey = null;
 }
 
-// واجهة الرحلة النشطة
+// واجهة الرحلة النشطة (منطق التوجيه الجديد)
 function showActiveRide(r) {
     if(!isOnline) goOnline(); 
+    currentRideData = r; // تأكد من تحديث البيانات
 
     document.getElementById('activePanel').style.display = 'block';
     document.getElementById('riderPhone').innerText = r.riderPhone;
     document.getElementById('callBtn').href = "tel:" + r.riderPhone;
 
-    if (r.start) {
-        const wazeUrl = `https://www.waze.com/ul?ll=${r.start[0]},${r.start[1]}&navigate=yes`;
-        document.getElementById('wazeBtn').href = wazeUrl;
+    const btn = document.getElementById('mainActionBtn');
+    const wazeBtn = document.getElementById('wazeBtn');
+
+    // === منطق التحكم في المراحل ===
+    if (r.status === "مقبولة") {
+        // المرحلة 1: الذهاب للراكب
+        btn.innerText = "🚩 بدء الرحلة (وصلت للراكب)";
+        btn.className = "btn-action btn-start";
+        btn.onclick = startTrip;
+        
+        // Waze يوجه لنقطة الاستلام
+        if (r.start) {
+            wazeBtn.href = `https://www.waze.com/ul?ll=${r.start[0]},${r.start[1]}&navigate=yes`;
+        }
+
+    } else if (r.status === "جارية") {
+        // المرحلة 2: الذهاب للوجهة
+        btn.innerText = "🏁 إنهاء الرحلة";
+        btn.className = "btn-action btn-finish";
+        btn.onclick = finishRide;
+
+        // Waze يوجه لنقطة الوصول
+        if (r.end) {
+            wazeBtn.href = `https://www.waze.com/ul?ll=${r.end[0]},${r.end[1]}&navigate=yes`;
+        }
     }
 
+    // رسم النقاط على الخريطة
     if(r.start && r.end) {
         L.marker(r.start, {icon: L.divIcon({className: 'timeline-dot dot-green', html: ''})}).addTo(map);
         L.marker(r.end, {icon: L.divIcon({className: 'timeline-dot dot-black', html: ''})}).addTo(map);
         map.fitBounds([r.start, r.end, driverMarker.getLatLng()], {padding: [50,50]});
+    }
+}
+
+// بدء الرحلة (تحويل الحالة من "مقبولة" إلى "جارية")
+function startTrip() {
+    if(confirm("هل وصلت للراكب وتريد بدء الرحلة؟")) {
+        if(currentRideKey) {
+            // تحديث قاعدة البيانات
+            db.ref("rides/" + currentRideKey).update({status: "جارية"});
+            
+            // تحديث الواجهة فوراً
+            if(currentRideData) {
+                currentRideData.status = "جارية";
+                showActiveRide(currentRideData);
+            }
+        }
     }
 }
 
@@ -360,10 +407,12 @@ function checkSavedRide() {
     if(savedRideId) {
         db.ref("rides/" + savedRideId).once('value', snap => {
             const r = snap.val();
+            // نسترجع الرحلة إذا كانت مقبولة أو جارية
             if(r && (r.status === "مقبولة" || r.status === "جارية")) {
                 currentRideKey = savedRideId;
+                currentRideData = r;
                 showActiveRide(r);
-                monitorRideStatus(savedRideId); // تفعيل مراقبة الإلغاء هنا أيضاً
+                monitorRideStatus(savedRideId); 
             } else {
                 localStorage.removeItem("baly_active_ride");
             }
