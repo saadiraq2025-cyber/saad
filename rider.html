@@ -14,7 +14,6 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; background: #eee; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* دبوس التثبيت في المنتصف */
         .center-pin {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -100%);
@@ -23,7 +22,6 @@
         }
         .pin-shadow { width: 12px; height: 12px; background: rgba(0,0,0,0.2); border-radius: 50%; margin: 5px auto; }
 
-        /* اللوحة السفلية */
         .bottom-ui {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: white; border-radius: 20px 20px 0 0;
@@ -31,7 +29,6 @@
             text-align: center; transition: bottom 0.3s;
         }
 
-        /* مربعات العناوين */
         .address-box {
             background: #f8f9fa; border-radius: 12px;
             padding: 15px; margin-bottom: 15px;
@@ -41,7 +38,6 @@
         .address-box span { color: #333; font-size: 15px; flex-grow: 1; text-align: right; font-weight: 500; }
         .address-label { background: #eee; padding: 4px 10px; border-radius: 6px; font-size: 12px; margin-left: 10px; color: #666; }
 
-        /* الأزرار الرئيسية */
         .btn-confirm {
             background: var(--baly-orange); color: white; border: none;
             width: 100%; padding: 16px; border-radius: 12px;
@@ -50,7 +46,6 @@
         }
         .btn-confirm:active { transform: scale(0.98); }
 
-        /* بطاقة السائق */
         .driver-panel {
             display: none; text-align: right;
             background: #fff; padding: 5px;
@@ -69,11 +64,11 @@
         }
 
         .status-badge {
-            display: inline-block; padding: 5px 15px; background: #e3f2fd;
+            display: inline-block; padding: 10px 20px; background: #e3f2fd;
             color: #1976d2; border-radius: 20px; font-size: 14px; margin-bottom: 15px; font-weight: bold;
+            width: 100%; box-sizing: border-box;
         }
 
-        /* زر موقعي */
         .myloc-btn {
             position: absolute; bottom: 300px; right: 20px;
             background: white; width: 45px; height: 45px;
@@ -81,7 +76,6 @@
             justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; cursor: pointer;
         }
         
-        /* أيقونة سيارة السائق */
         .car-icon { font-size: 30px; line-height: 1; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
     </style>
 </head>
@@ -128,7 +122,7 @@
     </div>
 
     <div id="step4" style="display:none;">
-        <div class="status-badge" id="statusMsg">جاري البحث عن كابتن...</div>
+        <div class="status-badge" id="statusMsg">جاري البحث عن كابتن قريب (3كم)...</div>
         
         <div class="driver-panel" id="driverPanel">
             <div class="driver-info">
@@ -146,12 +140,10 @@
 </div>
 
 <script>
-// إعدادات Firebase
 const firebaseConfig = { apiKey: "AIzaSyBZy7GTKn62CqeXAgm2fLrXI67P4Lc4Q3M", databaseURL: "https://taxi-15314-default-rtdb.firebaseio.com/" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// إعداد الخريطة
 let map = L.map('map', {zoomControl: false}).setView([33.3152, 44.3661], 14);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
 
@@ -159,7 +151,6 @@ let startCoords, endCoords, currentRideId;
 let driverMarker = null;
 let driverListener = null;
 
-// تحديث العنوان عند تحريك الخريطة
 map.on('moveend', function() {
     let center = map.getCenter();
     updateAddress(center.lat, center.lng);
@@ -181,7 +172,6 @@ async function updateAddress(lat, lng) {
     } catch(e) {}
 }
 
-// خطوات الطلب
 function confirmStart() {
     startCoords = map.getCenter();
     document.getElementById('fixedStart').innerText = document.getElementById('startText').innerText;
@@ -206,7 +196,6 @@ function confirmDest() {
     map.fitBounds([startCoords, endCoords], {padding: [50, 50]});
 }
 
-// إرسال الطلب
 document.getElementById('orderBtn').onclick = function() {
     currentRideId = Date.now().toString(); 
     const rideData = {
@@ -220,7 +209,6 @@ document.getElementById('orderBtn').onclick = function() {
     };
 
     localStorage.setItem("baly_ride_id", currentRideId);
-
     db.ref("rides/" + currentRideId).set(rideData);
 
     document.getElementById('step3').style.display = 'none';
@@ -229,35 +217,50 @@ document.getElementById('orderBtn').onclick = function() {
     monitorRide(currentRideId);
 };
 
-// دالة مراقبة حالة الطلب
+// مراقبة حالة الطلب وتحديث الواجهة للراكب
 function monitorRide(rideId) {
     db.ref("rides/" + rideId).on('value', snap => {
         const r = snap.val();
         if(!r) return;
 
+        const statusMsg = document.getElementById('statusMsg');
+        const driverPanel = document.getElementById('driverPanel');
+        const cancelSearch = document.getElementById('cancelSearchBtn');
+
         if(r.status === "مقبولة") {
-            document.getElementById('statusMsg').innerText = "تم قبول الرحلة! الكابتن في الطريق";
-            document.getElementById('statusMsg').style.background = "#e8f5e9";
-            document.getElementById('statusMsg').style.color = "#2e7d32";
+            statusMsg.innerText = "تم قبول الرحلة! الكابتن قادم إليك";
+            statusMsg.style.background = "#e8f5e9";
+            statusMsg.style.color = "#2e7d32";
             
-            document.getElementById('cancelSearchBtn').style.display = 'none';
-            document.getElementById('driverPanel').style.display = 'block';
+            cancelSearch.style.display = 'none';
+            driverPanel.style.display = 'block';
             
             document.getElementById('dPhone').innerText = r.driverPhone;
             document.getElementById('callBtn').href = "tel:" + r.driverPhone;
 
             trackDriver(r.driverPhone);
-        } 
-        else if(r.status === "منتهية" || r.status === "ملغية") {
+        }
+        else if (r.status === "جارية") {
+            // تحديث عند بدء الرحلة من قبل السائق
+            statusMsg.innerText = "🚀 الرحلة بدأت! في الطريق للوجهة";
+            statusMsg.style.background = "#fff3e0";
+            statusMsg.style.color = "#e65100";
+        }
+        else if(r.status === "منتهية") {
             localStorage.removeItem("baly_ride_id");
-            alert("الرحلة " + r.status);
+            stopTracking();
+            alert("✅ شكراً لاستخدامك بلي، وصلت لوجهتك!");
+            location.reload();
+        }
+        else if(r.status === "ملغية") {
+            localStorage.removeItem("baly_ride_id");
+            alert("❌ تم إلغاء الرحلة.");
             stopTracking();
             location.reload();
         }
     });
 }
 
-// استرجاع الرحلة المخزنة
 function checkExistingRide() {
     const savedRideId = localStorage.getItem("baly_ride_id");
     if(savedRideId) {
@@ -273,7 +276,6 @@ function checkExistingRide() {
     }
 }
 
-// دالة مراقبة موقع السائق
 function trackDriver(driverPhone) {
     if(driverListener) return; 
     
