@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-
 :root{
 --red:#D52B1E;
 --blue:#0A4D92;
@@ -56,10 +55,15 @@ background:#fafafa;
 }
 
 .product-img img{
-width:95%;
-max-width:420px;
+width:100%;
+max-width:400px;
 border-radius:15px;
 box-shadow:0 5px 20px rgba(0,0,0,.15);
+transition: transform 0.3s ease;
+}
+
+.product-img img:hover {
+    transform: scale(1.02);
 }
 
 .content{
@@ -91,6 +95,12 @@ margin-top:0;
 color:var(--green);
 }
 
+.tags{
+display: flex;
+flex-wrap: wrap;
+justify-content: center;
+}
+
 .tags span{
 display:inline-block;
 background:#fff;
@@ -99,6 +109,7 @@ margin:4px;
 border-radius:20px;
 font-size:13px;
 box-shadow:0 2px 5px rgba(0,0,0,.05);
+border: 1px solid #eee;
 }
 
 .highlight{
@@ -106,6 +117,7 @@ background:#fff3cd;
 border-right:5px solid #ffc107;
 border-left:5px solid #ffc107;
 font-weight:bold;
+text-align: center;
 }
 
 .whatsapp{
@@ -124,6 +136,7 @@ transition:.3s;
 
 .whatsapp:hover{
 background:#1da851;
+box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
 }
 
 footer{
@@ -132,7 +145,6 @@ font-size:12px;
 padding:20px;
 color:#777;
 }
-
 </style>
 </head>
 
@@ -149,8 +161,7 @@ GLENCORE SWISS 🇨🇭
 </div>
 
 <div class="product-img">
-<!-- تأكد أن الصورة باسم product.jpg -->
-<img src="product.jpg" alt="Glyncure DiabeCare">
+<img src="product.jpg" alt="Glyncure DiabeCare - Blood Sugar Support">
 </div>
 
 <div class="content">
@@ -163,16 +174,16 @@ GLENCORE SWISS 🇨🇭
 
 <div class="section">
 <h3>شرح المنتج</h3>
-يساعد هذا المكمل الغذائي على دعم تنظيم مستوى السكر في الدم، وقد يساهم في تحسين قراءة السكر التراكمية عند استخدامه مع نظام غذائي صحي ونمط حياة متوازن.
+يساعد هذا المكمل الغذائي على دعم تنظيم مستوى السكر في الدم، وقد يساهم في تحسين قراءة السكر التراكمية (HbA1c) عند استخدامه مع نظام غذائي صحي ونمط حياة متوازن.
 </div>
 
 <div class="section">
 <h3>المكونات الطبيعية</h3>
 <div class="tags">
-<span>بذور الكتان</span>
-<span>بذور الشيا</span>
-<span>الجمنيميا</span>
-<span>بذور النيم</span>
+<span>بذور الكتان (Flax Seeds)</span>
+<span>بذور الشيا (Chia Seeds)</span>
+<span>الجمنيميا (Gymnema)</span>
+<span>بذور النيم (Neem Seeds)</span>
 </div>
 </div>
 
