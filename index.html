@@ -12,7 +12,7 @@
       --swiss-red: #D52B1E;
       --medical-blue: #0A4D92;
       --health-green: #2D6A4F;
-      --light-bg: #F4F7F6;
+      --light-bg: #F0F2F5;
     }
 
     body {
@@ -21,179 +21,162 @@
       font-family: 'Poppins', 'Cairo', sans-serif;
       background: var(--light-bg);
       color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* الهيدر */
     header {
       width: 100%;
       background: white;
       padding: 15px 0;
       text-align: center;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      border-bottom: 4px solid var(--swiss-red);
+      border-bottom: 5px solid var(--swiss-red);
       position: sticky;
       top: 0;
-      z-index: 1000;
+      z-index: 100;
     }
 
-    .brand-logo {
+    .brand-name {
       font-weight: 900;
       color: var(--swiss-red);
       font-size: 24px;
       letter-spacing: 1px;
     }
 
-    /* الحاوية الرئيسية */
-    .container {
-      max-width: 500px;
-      margin: 20px auto;
+    .hero-container {
+      max-width: 480px;
+      width: 95%;
       background: white;
+      margin: 20px auto;
       border-radius: 25px;
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-      width: 92%;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.1);
     }
 
     .badge-top {
       background: var(--swiss-red);
       color: white;
       text-align: center;
-      padding: 8px;
+      padding: 10px;
       font-weight: bold;
       font-size: 14px;
     }
 
-    /* منطقة الصورة */
-    .product-image-container {
-      padding: 20px;
-      text-align: center;
+    /* قسم الصورة لضمان ظهورها */
+    .product-display {
+      width: 100%;
       background: #fff;
+      padding: 20px 0;
+      text-align: center;
     }
 
-    .product-image-container img {
-      max-width: 100%;
+    .product-display img {
+      max-width: 90%;
       height: auto;
       border-radius: 15px;
-      transition: transform 0.3s ease;
+      /* تم استخدام الرابط المباشر للصورة التي أرفقتها */
     }
 
-    .product-image-container img:hover {
-      transform: scale(1.02);
-    }
-
-    /* المحتوى النصي */
     .content {
-      padding: 0 25px 30px 25px;
+      padding: 0 30px 30px 30px;
       text-align: center;
     }
 
     h1 {
       color: var(--medical-blue);
-      font-size: 28px;
       margin: 10px 0;
+      font-size: 28px;
     }
 
-    .description {
-      font-size: 16px;
+    .subtitle {
       color: #666;
       font-weight: 600;
       margin-bottom: 20px;
+      line-height: 1.4;
     }
 
-    .specs-grid {
+    .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       margin-bottom: 25px;
     }
 
-    .spec-item {
+    .info-card {
       background: #f8f9fa;
       padding: 12px;
       border-radius: 12px;
-      border: 1px solid #eef0f2;
+      border: 1px solid #eee;
     }
 
-    .spec-item strong {
+    .info-card strong {
       display: block;
       color: var(--medical-blue);
-      font-size: 14px;
     }
 
-    .spec-item span {
+    .info-card span {
       font-size: 12px;
-      color: #777;
+      color: #888;
     }
 
-    /* المكونات */
-    .ingredients-section {
-      background: #edf7ed;
+    .ingredients-box {
+      background: #eef7f2;
       padding: 20px;
-      border-radius: 18px;
+      border-radius: 20px;
       margin-bottom: 25px;
     }
 
-    .ingredients-section h3 {
-      margin: 0 0 15px 0;
+    .ingredients-box h3 {
+      margin-top: 0;
       color: var(--health-green);
       font-size: 18px;
     }
 
-    .tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-    }
-
     .tag {
+      display: inline-block;
       background: white;
       padding: 6px 14px;
       border-radius: 20px;
+      margin: 4px;
       font-size: 13px;
       font-weight: 600;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      border: 1px solid #dceddc;
     }
 
-    /* طريقة الاستخدام */
-    .usage-card {
-      background: #fff9e6;
-      border-right: 5px solid #ffcc00;
-      border-left: 5px solid #ffcc00;
+    .usage-instruction {
+      background: #fff9c4;
       padding: 15px;
-      border-radius: 10px;
+      border-radius: 12px;
+      border-right: 5px solid #fbc02d;
+      border-left: 5px solid #fbc02d;
       margin-bottom: 30px;
       font-weight: bold;
       color: #856404;
     }
 
-    /* زر الواتساب */
     .btn-whatsapp {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      display: block;
       background: #25D366;
       color: white;
       text-decoration: none;
-      padding: 18px;
+      padding: 20px;
       border-radius: 15px;
-      font-size: 19px;
+      font-size: 20px;
       font-weight: bold;
-      transition: all 0.3s;
+      transition: 0.3s;
       box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
     }
 
     .btn-whatsapp:hover {
-      background: #1eb954;
-      transform: translateY(-3px);
-      box-shadow: 0 12px 25px rgba(37, 211, 102, 0.4);
+      background: #128C7E;
+      transform: translateY(-2px);
     }
 
     footer {
-      text-align: center;
       padding: 30px;
+      text-align: center;
       font-size: 12px;
       color: #999;
       line-height: 1.6;
@@ -205,61 +188,58 @@
 <body>
 
 <header>
-  <div class="brand-logo">GLENCORE SWISS +</div>
+  <div class="brand-name">GLENCORE SWISS 🇨🇭</div>
 </header>
 
-<div class="container">
-  <div class="badge-top">
-    ORIGINAL PRODUCT | منتج أصلي 🇨🇭
-  </div>
-
-  <div class="product-image-container">
-    <img src="https://i.ibb.co/C3mshn8h/image.png" alt="Glyncure DiabeCare Box">
+<div class="hero-container">
+  <div class="badge-top">ORIGINAL SWISS FORMULA | خلطة سويسرية أصلية</div>
+  
+  <div class="product-display">
+    <img src="https://i.ibb.co/C3mshn8h/image.png" alt="Glyncure DiabeCare">
   </div>
 
   <div class="content">
     <h1>Glyncure DiabeCare</h1>
-    <div class="description">
-      Blood Sugar & HbA1c Management<br>
-      <span class="lang-ar">علاج السكر والتراكمي</span>
+    <div class="subtitle">
+      Blood Sugar & HbA1c Support<br>
+      <span class="lang-ar">دعم سكر الدم والتراكمي</span>
     </div>
 
-    <div class="specs-grid">
-      <div class="spec-item">
+    <div class="info-grid">
+      <div class="info-card">
         <strong>50 Capsules</strong>
         <span>٥٠ كبسولة</span>
       </div>
-      <div class="spec-item">
+      <div class="info-card">
         <strong>WHO Licensed</strong>
-        <span>مرخص من الصحة العالمية</span>
+        <span>مرخص عالمياً</span>
       </div>
     </div>
 
-    <div class="ingredients-section">
-      <h3>Active Ingredients | المكونات الفعالة</h3>
-      <div class="tags-container">
-        <div class="tag">Flaxseeds | بذور الكتان</div>
-        <div class="tag">Chia Seeds | بذور الشيا</div>
-        <div class="tag">Gymnema | عشبة الجمنيميا</div>
-        <div class="tag">Neem Seeds | بذور النيم</div>
-      </div>
+    <div class="ingredients-box">
+      <h3>Natural Ingredients | المكونات الطبيعية</h3>
+      <div class="tag">Flaxseeds | بذور الكتان</div>
+      <div class="tag">Chia Seeds | بذور الشيا</div>
+      <div class="tag">Gymnema | عشبة الجمنيميا</div>
+      <div class="tag">Neem Seeds | بذور النيم</div>
     </div>
 
-    <div class="usage-card">
-      Take 1 capsule after each meal<br>
-      <span class="lang-ar">طريقة الاستخدام: كبسولة بعد كل وجبة طعام</span>
+    <div class="usage-instruction">
+      Dosage: 1 capsule after each meal<br>
+      <span class="lang-ar">الاستخدام: كبسولة واحدة بعد كل وجبة طعام</span>
     </div>
 
     <a href="https://wa.me/9647816175944" class="btn-whatsapp">
-      <span>Order via WhatsApp | اطلب الآن</span>
+      Order Now via WhatsApp<br>
+      <span style="font-size: 15px; font-weight: normal;">اطلب الآن عبر الواتساب</span>
     </a>
   </div>
 </div>
 
 <footer>
-  Manufactured by Glencore Swiss Pharmaceuticals<br>
+  Produced by Glencore Swiss Pharmaceutical Company<br>
   The product is licensed by the World Health Organization (WHO)<br>
-  <span class="lang-ar">تم التصنيع من قبل شركة غلنكور السويسرية<br>المنتج مرخص من قبل منظمة الصحة العالمية</span>
+  <span class="lang-ar">إنتاج شركة غلنكور السويسرية للصناعات الدوائية<br>المنتج مرخص من قبل منظمة الصحة العالمية</span>
 </footer>
 
 </body>
