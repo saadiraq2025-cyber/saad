@@ -3,16 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Glyncure DiabeCare</title>
+<title>Glyncure DiabeCare - الحل الأمثل لمرضى السكري</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 
 <style>
 :root{
 --red:#D52B1E;
 --blue:#0A4D92;
 --green:#2D6A4F;
+--light-green:#eafaf1;
 --bg:#F3F5F7;
+--gold: #d4af37;
 }
 
 body{
@@ -20,6 +22,7 @@ margin:0;
 font-family:'Cairo',sans-serif;
 background:var(--bg);
 color:#333;
+line-height: 1.6;
 }
 
 header{
@@ -27,38 +30,43 @@ background:#fff;
 text-align:center;
 padding:15px;
 border-bottom:5px solid var(--red);
-font-weight:bold;
-font-size:22px;
+font-weight:900;
+font-size:24px;
+color: var(--blue);
+box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .container{
 max-width:520px;
 margin:20px auto;
 background:#fff;
-border-radius:20px;
+border-radius:25px;
 overflow:hidden;
-box-shadow:0 10px 30px rgba(0,0,0,.1);
+box-shadow:0 15px 40px rgba(0,0,0,.12);
+border: 1px solid #eee;
 }
 
 .badge{
 background:var(--red);
 color:#fff;
 text-align:center;
-padding:10px;
+padding:12px;
 font-weight:bold;
+font-size: 18px;
+letter-spacing: 1px;
 }
 
 .product-img{
-padding:20px;
+padding:10px;
 text-align:center;
-background:#fafafa;
+background: #fff;
 }
 
 .product-img img{
 width:100%;
-max-width:400px;
+max-width:450px;
 border-radius:15px;
-box-shadow:0 5px 20px rgba(0,0,0,.15);
+transition: transform 0.3s ease;
 }
 
 .content{
@@ -67,77 +75,136 @@ padding:25px;
 
 h1{
 color:var(--blue);
-margin:10px 0;
+margin:5px 0;
 text-align:center;
+font-size: 28px;
+font-weight: 900;
 }
 
 .subtitle{
 text-align:center;
-color:#666;
+color:var(--green);
 margin-bottom:20px;
+font-weight: bold;
+font-size: 18px;
+}
+
+.price-tag {
+background: var(--light-green);
+border: 2px dashed var(--green);
+border-radius: 15px;
+padding: 15px;
+text-align: center;
+margin-bottom: 20px;
+}
+
+.price-iqd {
+display: block;
+font-size: 32px;
+font-weight: 900;
+color: var(--green);
+}
+
+.price-usd {
+font-size: 18px;
+color: #666;
+text-decoration: none;
+}
+
+.delivery-info {
+background: #fff3cd;
+color: #856404;
+text-align: center;
+padding: 10px;
+border-radius: 10px;
+margin-bottom: 20px;
+font-weight: bold;
+border: 1px solid #ffeeba;
 }
 
 .section{
 margin-bottom:20px;
 padding:15px;
-border-radius:12px;
-background:#f9fafb;
-line-height:1.7;
+border-radius:15px;
+background:#f8f9fa;
+border-right: 5px solid var(--blue);
 }
 
 .section h3{
 margin-top:0;
-color:var(--green);
+color:var(--blue);
+font-size: 19px;
+margin-bottom: 10px;
+}
+
+.section p {
+margin: 0;
+font-size: 15px;
+color: #444;
+text-align: justify;
 }
 
 .tags{
 display: flex;
 flex-wrap: wrap;
-justify-content: center;
+justify-content: flex-start;
+gap: 8px;
+margin-top: 10px;
 }
 
 .tags span{
-display:inline-block;
-background:#fff;
-padding:6px 12px;
-margin:4px;
-border-radius:20px;
-font-size:13px;
-box-shadow:0 2px 5px rgba(0,0,0,.05);
-border: 1px solid #eee;
+background: var(--blue);
+color: white;
+padding: 5px 12px;
+border-radius: 50px;
+font-size: 13px;
+font-weight: bold;
 }
 
-.highlight{
-background:#fff3cd;
-border-right:5px solid #ffc107;
-border-left:5px solid #ffc107;
-font-weight:bold;
+.usage-box {
+background: var(--blue);
+color: #fff;
 text-align: center;
+padding: 15px;
+border-radius: 15px;
+margin-top: 10px;
+font-weight: bold;
+box-shadow: 0 4px 15px rgba(10, 77, 146, 0.3);
 }
 
 .whatsapp{
-display:block;
-text-align:center;
+display:flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
 background:#25D366;
 color:#fff;
 padding:18px;
-border-radius:15px;
-font-size:18px;
+border-radius:20px;
+font-size:20px;
 font-weight:bold;
 text-decoration:none;
-margin-top:10px;
+margin-top:25px;
 transition:.3s;
+box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2);
 }
 
 .whatsapp:hover{
-background:#1da851;
+transform: translateY(-3px);
+box-shadow: 0 15px 25px rgba(37, 211, 102, 0.3);
 }
 
 footer{
 text-align:center;
-font-size:12px;
-padding:20px;
-color:#777;
+font-size:13px;
+padding:30px 20px;
+color:#888;
+}
+
+.swiss-flag {
+width: 20px;
+vertical-align: middle;
+margin-left: 5px;
 }
 </style>
 </head>
@@ -151,7 +218,7 @@ GLENCORE SWISS 🇨🇭
 <div class="container">
 
 <div class="badge">
-خلطة سويسرية أصلية لدعم سكر الدم
+صنع في سويسرا - المنتج الأصلي
 </div>
 
 <div class="product-img">
@@ -161,40 +228,49 @@ GLENCORE SWISS 🇨🇭
 <div class="content">
 
 <h1>Glyncure DiabeCare</h1>
+<div class="subtitle">علاج تنظيم السكر والتراكمي</div>
 
-<div class="subtitle">
-دعم وتنظيم مستوى السكر في الدم
+<div class="delivery-info">
+🚚 يوجد خدمة توصيل لكافة المحافظات - التوصيل مجاناً
+</div>
+
+<div class="price-tag">
+    <span class="price-iqd">20,000 دينار عراقي</span>
+    <span class="price-usd">السعر: 16$ دولار أمريكي</span>
 </div>
 
 <div class="section">
-<h3>شرح المنتج</h3>
-يساعد هذا المكمل الغذائي على دعم تنظيم مستوى السكر في الدم، وقد يساهم في تحسين قراءة السكر التراكمية (HbA1c) عند استخدامه مع نظام غذائي صحي ونمط حياة متوازن.
+<h3>حول المنتج والشرح</h3>
+<p>
+يعمل هذا المنتج المتطور على تنظيم مستويات السكر في الدم بشكل فعال، ويعالج الأعراض الجانبية لمرضى السكري بشكل نهائي. كما يساهم في خفض مستوى السكر التراكمي (HbA1c) وصولاً إلى المستويات الطبيعية، مما يمهد الطريق للتشافي التام من مرض السكري في حال الاستمرار والمواظبة على استخدامه.
+</p>
 </div>
 
 <div class="section">
-<h3>المكونات الطبيعية</h3>
+<h3>المكونات الطبيعية (50 كبسولة)</h3>
 <div class="tags">
-<span>بذور الكتان (Flax Seeds)</span>
-<span>بذور الشيا (Chia Seeds)</span>
-<span>الجمنيميا (Gymnema)</span>
-<span>بذور النيم (Neem Seeds)</span>
+<span>بذور الكتان</span>
+<span>بذور الشيا</span>
+<span>الجمنيميا</span>
+<span>بذور النيم</span>
 </div>
 </div>
 
-<div class="section highlight">
-طريقة الاستخدام: كبسولة واحدة بعد كل وجبة
+<div class="usage-box">
+💡 طريقة الاستخدام: كبسولة واحدة بعد كل وجبة طعام
 </div>
 
 <a href="https://wa.me/9647816175944" class="whatsapp">
-اطلب الآن عبر واتساب
+<span>اضغط هنا للطلب عبر واتساب</span>
 </a>
 
 </div>
 </div>
 
 <footer>
-مكمل غذائي يحتوي على 50 كبسولة — ليس بديلاً عن العلاج الطبي<br>
-يفضل استشارة الطبيب قبل الاستخدام
+<strong>ملاحظة هامة:</strong> هذا المنتج مكمل غذائي بتركيبة سويسرية.<br>
+يرجى الالتزام بالجرعة المحددة لضمان أفضل النتائج.<br>
+© 2024 Glyncure DiabeCare Switzerland
 </footer>
 
 </body>
