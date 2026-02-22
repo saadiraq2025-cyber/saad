@@ -1,245 +1,192 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Glyncure DiabeCare - Glencore Swiss</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --swiss-red: #D52B1E;
-      --medical-blue: #0A4D92;
-      --health-green: #2D6A4F;
-      --light-bg: #F0F2F5;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glyncure DiabeCare</title>
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', 'Cairo', sans-serif;
-      background: var(--light-bg);
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
-    header {
-      width: 100%;
-      background: white;
-      padding: 15px 0;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      border-bottom: 5px solid var(--swiss-red);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+<style>
 
-    .brand-name {
-      font-weight: 900;
-      color: var(--swiss-red);
-      font-size: 24px;
-      letter-spacing: 1px;
-    }
+:root{
+--red:#D52B1E;
+--blue:#0A4D92;
+--green:#2D6A4F;
+--bg:#F3F5F7;
+}
 
-    .hero-container {
-      max-width: 480px;
-      width: 95%;
-      background: white;
-      margin: 20px auto;
-      border-radius: 25px;
-      overflow: hidden;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-    }
+body{
+margin:0;
+font-family:'Cairo',sans-serif;
+background:var(--bg);
+color:#333;
+}
 
-    .badge-top {
-      background: var(--swiss-red);
-      color: white;
-      text-align: center;
-      padding: 10px;
-      font-weight: bold;
-      font-size: 14px;
-    }
+header{
+background:#fff;
+text-align:center;
+padding:15px;
+border-bottom:5px solid var(--red);
+font-weight:bold;
+font-size:22px;
+}
 
-    /* قسم الصورة لضمان ظهورها */
-    .product-display {
-      width: 100%;
-      background: #fff;
-      padding: 20px 0;
-      text-align: center;
-    }
+.container{
+max-width:500px;
+margin:20px auto;
+background:#fff;
+border-radius:20px;
+overflow:hidden;
+box-shadow:0 10px 30px rgba(0,0,0,.1);
+}
 
-    .product-display img {
-      max-width: 90%;
-      height: auto;
-      border-radius: 15px;
-      /* تم استخدام الرابط المباشر للصورة التي أرفقتها */
-    }
+.badge{
+background:var(--red);
+color:#fff;
+text-align:center;
+padding:10px;
+font-weight:bold;
+}
 
-    .content {
-      padding: 0 30px 30px 30px;
-      text-align: center;
-    }
+.product-img{
+padding:20px;
+text-align:center;
+background:#fafafa;
+}
 
-    h1 {
-      color: var(--medical-blue);
-      margin: 10px 0;
-      font-size: 28px;
-    }
+.product-img img{
+width:90%;
+border-radius:15px;
+box-shadow:0 5px 20px rgba(0,0,0,.1);
+}
 
-    .subtitle {
-      color: #666;
-      font-weight: 600;
-      margin-bottom: 20px;
-      line-height: 1.4;
-    }
+.content{
+padding:25px;
+}
 
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 25px;
-    }
+h1{
+color:var(--blue);
+margin:10px 0;
+text-align:center;
+}
 
-    .info-card {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #eee;
-    }
+.subtitle{
+text-align:center;
+color:#666;
+margin-bottom:20px;
+}
 
-    .info-card strong {
-      display: block;
-      color: var(--medical-blue);
-    }
+.section{
+margin-bottom:20px;
+padding:15px;
+border-radius:12px;
+background:#f9fafb;
+}
 
-    .info-card span {
-      font-size: 12px;
-      color: #888;
-    }
+.section h3{
+margin-top:0;
+color:var(--green);
+}
 
-    .ingredients-box {
-      background: #eef7f2;
-      padding: 20px;
-      border-radius: 20px;
-      margin-bottom: 25px;
-    }
+.tags span{
+display:inline-block;
+background:#fff;
+padding:6px 12px;
+margin:4px;
+border-radius:20px;
+font-size:13px;
+box-shadow:0 2px 5px rgba(0,0,0,.05);
+}
 
-    .ingredients-box h3 {
-      margin-top: 0;
-      color: var(--health-green);
-      font-size: 18px;
-    }
+.highlight{
+background:#fff3cd;
+border-right:5px solid #ffc107;
+border-left:5px solid #ffc107;
+font-weight:bold;
+}
 
-    .tag {
-      display: inline-block;
-      background: white;
-      padding: 6px 14px;
-      border-radius: 20px;
-      margin: 4px;
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
+.whatsapp{
+display:block;
+text-align:center;
+background:#25D366;
+color:#fff;
+padding:18px;
+border-radius:15px;
+font-size:18px;
+font-weight:bold;
+text-decoration:none;
+margin-top:10px;
+transition:.3s;
+}
 
-    .usage-instruction {
-      background: #fff9c4;
-      padding: 15px;
-      border-radius: 12px;
-      border-right: 5px solid #fbc02d;
-      border-left: 5px solid #fbc02d;
-      margin-bottom: 30px;
-      font-weight: bold;
-      color: #856404;
-    }
+.whatsapp:hover{
+background:#1da851;
+}
 
-    .btn-whatsapp {
-      display: block;
-      background: #25D366;
-      color: white;
-      text-decoration: none;
-      padding: 20px;
-      border-radius: 15px;
-      font-size: 20px;
-      font-weight: bold;
-      transition: 0.3s;
-      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
-    }
+footer{
+text-align:center;
+font-size:12px;
+padding:20px;
+color:#777;
+}
 
-    .btn-whatsapp:hover {
-      background: #128C7E;
-      transform: translateY(-2px);
-    }
-
-    footer {
-      padding: 30px;
-      text-align: center;
-      font-size: 12px;
-      color: #999;
-      line-height: 1.6;
-    }
-
-    .lang-ar { direction: rtl; font-family: 'Cairo', sans-serif; }
-  </style>
+</style>
 </head>
+
 <body>
 
 <header>
-  <div class="brand-name">GLENCORE SWISS 🇨🇭</div>
+GLENCORE SWISS 🇨🇭
 </header>
 
-<div class="hero-container">
-  <div class="badge-top">ORIGINAL SWISS FORMULA | خلطة سويسرية أصلية</div>
-  
-  <div class="product-display">
-    <img src="https://i.ibb.co/C3mshn8h/image.png" alt="Glyncure DiabeCare">
-  </div>
+<div class="container">
 
-  <div class="content">
-    <h1>Glyncure DiabeCare</h1>
-    <div class="subtitle">
-      Blood Sugar & HbA1c Support<br>
-      <span class="lang-ar">دعم سكر الدم والتراكمي</span>
-    </div>
+<div class="badge">
+خلطة سويسرية أصلية لدعم سكر الدم
+</div>
 
-    <div class="info-grid">
-      <div class="info-card">
-        <strong>50 Capsules</strong>
-        <span>٥٠ كبسولة</span>
-      </div>
-      <div class="info-card">
-        <strong>WHO Licensed</strong>
-        <span>مرخص عالمياً</span>
-      </div>
-    </div>
+<div class="product-img">
+<img src="product.jpg" alt="Glyncure DiabeCare">
+</div>
 
-    <div class="ingredients-box">
-      <h3>Natural Ingredients | المكونات الطبيعية</h3>
-      <div class="tag">Flaxseeds | بذور الكتان</div>
-      <div class="tag">Chia Seeds | بذور الشيا</div>
-      <div class="tag">Gymnema | عشبة الجمنيميا</div>
-      <div class="tag">Neem Seeds | بذور النيم</div>
-    </div>
+<div class="content">
 
-    <div class="usage-instruction">
-      Dosage: 1 capsule after each meal<br>
-      <span class="lang-ar">الاستخدام: كبسولة واحدة بعد كل وجبة طعام</span>
-    </div>
+<h1>Glyncure DiabeCare</h1>
 
-    <a href="https://wa.me/9647816175944" class="btn-whatsapp">
-      Order Now via WhatsApp<br>
-      <span style="font-size: 15px; font-weight: normal;">اطلب الآن عبر الواتساب</span>
-    </a>
-  </div>
+<div class="subtitle">
+دعم وتنظيم سكر الدم والتراكمي
+</div>
+
+<div class="section">
+<h3>شرح المنتج</h3>
+يساعد المنتج على دعم وتنظيم مستوى السكر في الدم، وقد يساهم في تحسين قراءة السكر التراكمية عند استخدامه مع نظام غذائي صحي ونمط حياة متوازن.
+</div>
+
+<div class="section">
+<h3>المكونات الطبيعية</h3>
+<div class="tags">
+<span>بذور الكتان</span>
+<span>بذور الشيا</span>
+<span>الجمنيميا</span>
+<span>بذور النيم</span>
+</div>
+</div>
+
+<div class="section highlight">
+طريقة الاستخدام: كبسولة واحدة بعد كل وجبة طعام
+</div>
+
+<a href="https://wa.me/9647816175944" class="whatsapp">
+اطلب الآن عبر واتساب
+</a>
+
+</div>
 </div>
 
 <footer>
-  Produced by Glencore Swiss Pharmaceutical Company<br>
-  The product is licensed by the World Health Organization (WHO)<br>
-  <span class="lang-ar">إنتاج شركة غلنكور السويسرية للصناعات الدوائية<br>المنتج مرخص من قبل منظمة الصحة العالمية</span>
+منتج مكمل غذائي — ليس بديلاً عن العلاج الطبي<br>
+يفضل استشارة الطبيب عند الاستخدام
 </footer>
 
 </body>
