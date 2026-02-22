@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -12,7 +12,7 @@
       --swiss-red: #D52B1E;
       --medical-blue: #0A4D92;
       --health-green: #2D6A4F;
-      --light-bg: #F0F2F5;
+      --light-bg: #F4F7F6;
     }
 
     body {
@@ -20,205 +20,246 @@
       padding: 0;
       font-family: 'Poppins', 'Cairo', sans-serif;
       background: var(--light-bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      direction: ltr; /* Default English */
+      color: #333;
     }
 
-    .arabic-text {
-      direction: rtl;
-      font-family: 'Cairo', sans-serif;
-    }
-
+    /* الهيدر */
     header {
       width: 100%;
       background: white;
       padding: 15px 0;
       text-align: center;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      border-bottom: 5px solid var(--swiss-red);
+      border-bottom: 4px solid var(--swiss-red);
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 1000;
     }
 
-    .hero-container {
-      max-width: 450px;
-      width: 95%;
-      background: white;
+    .brand-logo {
+      font-weight: 900;
+      color: var(--swiss-red);
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+
+    /* الحاوية الرئيسية */
+    .container {
+      max-width: 500px;
       margin: 20px auto;
-      border-radius: 20px;
+      background: white;
+      border-radius: 25px;
       overflow: hidden;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      width: 92%;
     }
 
-    .product-img-box {
-      width: 100%;
-      background: #fff;
-      padding: 10px 0;
-      text-align: center;
-    }
-
-    .product-img-box img {
-      max-width: 90%;
-      height: auto;
-      border-radius: 10px;
-    }
-
-    .badge {
+    .badge-top {
       background: var(--swiss-red);
       color: white;
+      text-align: center;
       padding: 8px;
       font-weight: bold;
       font-size: 14px;
-      text-align: center;
     }
 
+    /* منطقة الصورة */
+    .product-image-container {
+      padding: 20px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .product-image-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 15px;
+      transition: transform 0.3s ease;
+    }
+
+    .product-image-container img:hover {
+      transform: scale(1.02);
+    }
+
+    /* المحتوى النصي */
     .content {
-      padding: 25px;
+      padding: 0 25px 30px 25px;
       text-align: center;
     }
 
-    .main-title {
+    h1 {
       color: var(--medical-blue);
-      margin: 0;
-      font-size: 26px;
+      font-size: 28px;
+      margin: 10px 0;
     }
 
-    .section-divider {
-      height: 2px;
-      background: #eee;
-      margin: 20px 0;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .description {
+      font-size: 16px;
+      color: #666;
+      font-weight: 600;
       margin-bottom: 20px;
     }
 
-    .info-card {
+    .specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .spec-item {
       background: #f8f9fa;
-      padding: 10px;
+      padding: 12px;
       border-radius: 12px;
-      border: 1px solid #e0e0e0;
-      font-size: 13px;
+      border: 1px solid #eef0f2;
     }
 
-    .ingredients-list {
-      background: #e8f5e9;
-      padding: 15px;
-      border-radius: 15px;
-      margin: 15px 0;
+    .spec-item strong {
+      display: block;
+      color: var(--medical-blue);
+      font-size: 14px;
     }
 
-    .ingredients-list h3 {
-      margin-top: 0;
+    .spec-item span {
+      font-size: 12px;
+      color: #777;
+    }
+
+    /* المكونات */
+    .ingredients-section {
+      background: #edf7ed;
+      padding: 20px;
+      border-radius: 18px;
+      margin-bottom: 25px;
+    }
+
+    .ingredients-section h3 {
+      margin: 0 0 15px 0;
       color: var(--health-green);
       font-size: 18px;
     }
 
-    .tag {
-      display: inline-block;
-      background: white;
-      color: #333;
-      padding: 5px 12px;
-      border-radius: 20px;
-      margin: 4px;
-      font-size: 14px;
-      font-weight: 600;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
     }
 
-    .usage-box {
-      background: #fff9c4;
+    .tag {
+      background: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border: 1px solid #dceddc;
+    }
+
+    /* طريقة الاستخدام */
+    .usage-card {
+      background: #fff9e6;
+      border-right: 5px solid #ffcc00;
+      border-left: 5px solid #ffcc00;
       padding: 15px;
       border-radius: 10px;
-      border-left: 5px solid #fbc02d;
-      margin: 20px 0;
+      margin-bottom: 30px;
       font-weight: bold;
+      color: #856404;
     }
 
-    .order-btn {
-      display: block;
+    /* زر الواتساب */
+    .btn-whatsapp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       background: #25D366;
       color: white;
       text-decoration: none;
       padding: 18px;
       border-radius: 15px;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: bold;
-      transition: 0.3s;
-      box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+      transition: all 0.3s;
+      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
     }
 
-    .order-btn:hover {
-      background: #128C7E;
-      transform: translateY(-2px);
+    .btn-whatsapp:hover {
+      background: #1eb954;
+      transform: translateY(-3px);
+      box-shadow: 0 12px 25px rgba(37, 211, 102, 0.4);
     }
 
     footer {
-      padding: 20px;
       text-align: center;
+      padding: 30px;
       font-size: 12px;
-      color: #888;
+      color: #999;
+      line-height: 1.6;
     }
+
+    .lang-ar { direction: rtl; font-family: 'Cairo', sans-serif; }
   </style>
 </head>
-
 <body>
 
 <header>
-  <div style="font-weight: 900; color: var(--swiss-red); font-size: 22px;">GLENCORE SWISS 🇨🇭</div>
+  <div class="brand-logo">GLENCORE SWISS +</div>
 </header>
 
-<div class="hero-container">
-  <div class="badge">MADE IN SWITZERLAND | صنع في سويسرا</div>
-  
-  <div class="product-img-box">
-    <img src="https://i.ibb.co/C3mshn8h/image.png" alt="Glyncure DiabeCare Product">
+<div class="container">
+  <div class="badge-top">
+    ORIGINAL PRODUCT | منتج أصلي 🇨🇭
+  </div>
+
+  <div class="product-image-container">
+    <img src="https://i.ibb.co/C3mshn8h/image.png" alt="Glyncure DiabeCare Box">
   </div>
 
   <div class="content">
-    <h1 class="main-title">Glyncure DiabeCare</h1>
-    <p style="color: #555; font-weight: 600;">Blood Sugar & HbA1c Treatment</p>
-    
-    <div class="section-divider"></div>
+    <h1>Glyncure DiabeCare</h1>
+    <div class="description">
+      Blood Sugar & HbA1c Management<br>
+      <span class="lang-ar">علاج السكر والتراكمي</span>
+    </div>
 
-    <div class="info-grid">
-      <div class="info-card">
-        <strong>50 Capsules</strong><br>٥٠ كبسولة
+    <div class="specs-grid">
+      <div class="spec-item">
+        <strong>50 Capsules</strong>
+        <span>٥٠ كبسولة</span>
       </div>
-      <div class="info-card">
-        <strong>WHO Licensed</strong><br>مرخص عالمياً
+      <div class="spec-item">
+        <strong>WHO Licensed</strong>
+        <span>مرخص من الصحة العالمية</span>
       </div>
     </div>
 
-    <div class="ingredients-list">
-      <h3>Active Herbal Ingredients<br><span class="arabic-text">المكونات العشبية الفعالة</span></h3>
-      <div class="tag">Flaxseeds | بذور الكتان</div>
-      <div class="tag">Chia Seeds | بذور الشيا</div>
-      <div class="tag">Gymnema | عشبة الجمنيميا</div>
-      <div class="tag">Neem Seeds | بذور النيم</div>
+    <div class="ingredients-section">
+      <h3>Active Ingredients | المكونات الفعالة</h3>
+      <div class="tags-container">
+        <div class="tag">Flaxseeds | بذور الكتان</div>
+        <div class="tag">Chia Seeds | بذور الشيا</div>
+        <div class="tag">Gymnema | عشبة الجمنيميا</div>
+        <div class="tag">Neem Seeds | بذور النيم</div>
+      </div>
     </div>
 
-    <div class="usage-box">
-      How to use: 1 capsule after each meal<br>
-      <span class="arabic-text">طريقة الاستخدام: كبسولة بعد كل وجبة طعام</span>
+    <div class="usage-card">
+      Take 1 capsule after each meal<br>
+      <span class="lang-ar">طريقة الاستخدام: كبسولة بعد كل وجبة طعام</span>
     </div>
 
-    <a href="https://wa.me/9647816175944" class="order-btn">
-      Order via WhatsApp<br>
-      <span style="font-size: 14px; font-weight: normal;">اطلب الآن عبر الواتساب</span>
+    <a href="https://wa.me/9647816175944" class="btn-whatsapp">
+      <span>Order via WhatsApp | اطلب الآن</span>
     </a>
   </div>
 </div>
 
 <footer>
-  Licensed by the World Health Organization (WHO)<br>
-  المنتج مرخص من وزارة الصحة العالمية
+  Manufactured by Glencore Swiss Pharmaceuticals<br>
+  The product is licensed by the World Health Organization (WHO)<br>
+  <span class="lang-ar">تم التصنيع من قبل شركة غلنكور السويسرية<br>المنتج مرخص من قبل منظمة الصحة العالمية</span>
 </footer>
 
 </body>
