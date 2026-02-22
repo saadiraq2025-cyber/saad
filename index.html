@@ -1,196 +1,217 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>تكسي العراق الشامل</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Glencore Swiss - Diabetes Support</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100%;
+    :root {
+      --swiss-red: #D52B1E;
+      --health-green: #2D6A4F;
+      --dark-blue: #1B4332;
+      --light-bg: #F8F9FA;
     }
 
     body {
-      font-family: "Tahoma", sans-serif;
-      background: #795548;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: var(--light-bg);
+      color: #333;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 15px;
-      position: relative;
-      box-sizing: border-box;
     }
 
     header {
-      margin-bottom: 10px;
+      width: 100%;
+      background: white;
+      padding: 20px 0;
       text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-bottom: 4px solid var(--swiss-red);
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--swiss-red);
+      letter-spacing: 1px;
+    }
+
+    .hero-container {
+      max-width: 500px;
+      width: 90%;
+      background: white;
+      margin: 30px 15px;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .product-badge {
+      background: var(--swiss-red);
+      color: white;
+      padding: 10px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    h1 {
+      color: var(--dark-blue);
       font-size: 28px;
-      font-weight: bold;
-      color: #ffeb3b;
+      margin-bottom: 5px;
     }
 
-    .container {
-      background: #a1887f;
-      border: 3px solid #000;
-      border-radius: 18px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-      padding: 25px;
-      width: 95%;
-      max-width: 360px;
-      text-align: center;
-    }
-
-    h2 {
-      color: #ffeb3b;
-      font-size: 24px;
-      margin-bottom: 18px;
-      font-weight: bold;
-    }
-
-    input, select {
-      width: 190px;
-      padding: 12px;
-      margin: 10px auto;
+    .subtitle {
+      color: var(--health-green);
+      font-weight: 600;
+      margin-bottom: 20px;
       display: block;
-      border: 2px solid #000;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .feature-item {
+      background: #f1f8f5;
+      padding: 10px;
       border-radius: 10px;
+      font-size: 13px;
+      border-left: 3px solid var(--health-green);
+    }
+
+    .ingredients-box {
+      margin-top: 25px;
+      padding: 20px;
+      background: #fff;
+      border: 1px dashed #ccc;
+      border-radius: 15px;
+    }
+
+    .ingredients-box h3 {
       font-size: 18px;
-      background: #f7f7f7;
-      text-align: center;
+      margin-top: 0;
+      color: var(--dark-blue);
     }
 
-    button {
-      width: 190px;
-      padding: 12px;
-      margin: 10px auto;
-      display: block;
-      border: 2px solid #000;
-      background: #ffeb3b;
-      color: #000;
-      font-weight: bold;
+    .ingredient-tag {
+      display: inline-block;
+      background: #e9ecef;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin: 4px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .usage-instruction {
+      background: #fff8e1;
+      padding: 15px;
       border-radius: 10px;
+      margin: 20px 0;
+      font-weight: 600;
+      border: 1px solid #ffe082;
+    }
+
+    .btn-order {
+      background: var(--health-green);
+      color: white;
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
       font-size: 18px;
+      font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-      transition: 0.2s;
-    }
-
-    button:hover {
-      background: #fff176;
-    }
-
-    .switch {
-      width: 190px;
-      padding: 12px;
-      margin: 12px auto;
-      border-radius: 10px;
-      background: #ffecb3;
-      border: 2px solid #000;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      display: block;
-    }
-
-    .support-inside {
-      font-size: 16px;
-      font-weight: bold;
-      color: #ffeb3b;
-      margin-top: 5px;
-    }
-
-    .whatsapp {
-      width: 190px;
-      padding: 12px;
-      margin: 10px auto;
-      background: #4caf50;
-      color: #fff;
-      border: 2px solid #000;
-      border-radius: 10px;
-      font-size: 17px;
-      font-weight: bold;
-      cursor: pointer;
-      text-align: center;
-      display: block;
+      transition: transform 0.2s;
       text-decoration: none;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .btn-order:hover {
+      transform: scale(1.02);
+      background: #1b4332;
+    }
+
+    .footer-info {
+      font-size: 12px;
+      color: #777;
+      margin-top: 20px;
+      line-height: 1.5;
+    }
+
+    .whatsapp-float {
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #25D366;
+      text-decoration: none;
+      font-weight: bold;
     }
 
   </style>
-
-  <!-- منع الخروج — إذا كان مسجل دخول يدخل مباشرة -->
-  <script>
-    window.onload = function () {
-      let phone = localStorage.getItem("phone");
-      let type  = localStorage.getItem("userType");
-
-      if (phone && type) {
-        if (type === "driver")   window.location.href = "driver.html";
-        if (type === "rider")    window.location.href = "rider.html";
-        if (type === "admin")    window.location.href = "admin.html";
-      }
-    };
-  </script>
-
 </head>
 
 <body>
 
-<header>🚕 تكسي العراق</header>
+<header>
+  <div class="logo">GLENCORE SWISS +</div>
+</header>
 
-<!-- تسجيل الدخول -->
-<div class="container" id="loginBox">
-  <h2>تسجيل الدخول</h2>
+<div class="hero-container">
+  <div class="product-badge">ORIGINAL SWISS FORMULA</div>
+  
+  <div class="content">
+    <h1>Advanced Glucose Control</h1>
+    <span class="subtitle">Natural HbA1c Management</span>
+    
+    <div class="features-grid">
+      <div class="feature-item">🇨🇭 Made in Switzerland</div>
+      <div class="feature-item">💊 50 Premium Capsules</div>
+      <div class="feature-item">🌿 100% Herbal Extract</div>
+      <div class="feature-item">✅ WHO Licensed</div>
+    </div>
 
-  <input id="loginPhone" placeholder="رقم الهاتف">
-  <input id="loginPassword" type="password" placeholder="كلمة المرور">
+    <div class="ingredients-box">
+      <h3>Active Herbal Ingredients</h3>
+      <div class="ingredient-tag">Flaxseeds</div>
+      <div class="ingredient-tag">Chia Seeds</div>
+      <div class="ingredient-tag">Gymnema Sylvestre</div>
+      <div class="ingredient-tag">Neem Seeds</div>
+    </div>
 
-  <button onclick="login()">تسجيل الدخول</button>
-  <div class="switch" onclick="showRegister()">تسجيل جديد</div>
+    <div class="usage-instruction">
+      💡 Usage: Take 1 capsule after every meal.
+    </div>
 
-  <div class="support-inside">اتصل بالدعم الفني</div>
-  <a class="whatsapp" href="https://wa.me/9647816175944">واتساب</a>
+    <a href="https://wa.me/9647816175944" class="btn-order">ORDER NOW</a>
+    
+    <a href="https://wa.me/9647816175944" class="whatsapp-float">
+      Contact Medical Support via WhatsApp
+    </a>
+
+    <div class="footer-info">
+      Licensed by the World Health Organization (WHO)<br>
+      © 2026 Glencore Swiss Pharmaceutical Group. All rights reserved.
+    </div>
+  </div>
 </div>
-
-<!-- تسجيل جديد -->
-<div class="container" id="registerBox" style="display:none;">
-  <h2>تسجيل جديد</h2>
-
-  <input id="regPhone" placeholder="رقم الهاتف">
-  <input id="regPassword" type="password" placeholder="كلمة المرور">
-
-  <select id="regType">
-    <option value="rider">راكب</option>
-    <option value="driver">سائق</option>
-  </select>
-
-  <button onclick="register()">تسجيل</button>
-  <div class="switch" onclick="showLogin()">عودة</div>
-
-  <div class="support-inside">اتصل بالدعم الفني</div>
-  <a class="whatsapp" href="https://wa.me/9647816175944">واتساب</a>
-</div>
-
-<script>
-  function showRegister(){
-    loginBox.style.display = "none";
-    registerBox.style.display = "block";
-  }
-
-  function showLogin(){
-    registerBox.style.display = "none";
-    loginBox.style.display = "block";
-  }
-</script>
-
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-
-<script src="app.js"></script>
 
 </body>
 </html>
