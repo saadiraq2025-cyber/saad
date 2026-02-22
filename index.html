@@ -14,7 +14,6 @@
 --green:#2D6A4F;
 --light-green:#eafaf1;
 --bg:#F3F5F7;
---gold: #d4af37;
 }
 
 body{
@@ -53,29 +52,31 @@ text-align:center;
 padding:12px;
 font-weight:bold;
 font-size: 18px;
-letter-spacing: 1px;
 }
 
 .product-img{
-padding:10px;
+padding:15px;
 text-align:center;
 background: #fff;
+line-height: 0; /* حذف أي مساحة تحت الصورة */
 }
 
 .product-img img{
 width:100%;
-max-width:450px;
+height: auto;
+max-width: 480px;
 border-radius:15px;
-transition: transform 0.3s ease;
+display: block; /* يضمن عدم وجود مسافات فارغة */
+margin: 0 auto;
 }
 
 .content{
-padding:25px;
+padding:20px 25px;
 }
 
 h1{
 color:var(--blue);
-margin:5px 0;
+margin:0;
 text-align:center;
 font-size: 28px;
 font-weight: 900;
@@ -84,16 +85,28 @@ font-weight: 900;
 .subtitle{
 text-align:center;
 color:var(--green);
-margin-bottom:20px;
+margin-bottom:15px;
 font-weight: bold;
 font-size: 18px;
+}
+
+.delivery-info {
+background: #fff3cd;
+color: #856404;
+text-align: center;
+padding: 10px;
+border-radius: 10px;
+margin-bottom: 15px;
+font-weight: bold;
+border: 1px solid #ffeeba;
+font-size: 14px;
 }
 
 .price-tag {
 background: var(--light-green);
 border: 2px dashed var(--green);
 border-radius: 15px;
-padding: 15px;
+padding: 12px;
 text-align: center;
 margin-bottom: 20px;
 }
@@ -108,22 +121,10 @@ color: var(--green);
 .price-usd {
 font-size: 18px;
 color: #666;
-text-decoration: none;
-}
-
-.delivery-info {
-background: #fff3cd;
-color: #856404;
-text-align: center;
-padding: 10px;
-border-radius: 10px;
-margin-bottom: 20px;
-font-weight: bold;
-border: 1px solid #ffeeba;
 }
 
 .section{
-margin-bottom:20px;
+margin-bottom:15px;
 padding:15px;
 border-radius:15px;
 background:#f8f9fa;
@@ -131,10 +132,9 @@ border-right: 5px solid var(--blue);
 }
 
 .section h3{
-margin-top:0;
+margin:0 0 8px 0;
 color:var(--blue);
-font-size: 19px;
-margin-bottom: 10px;
+font-size: 18px;
 }
 
 .section p {
@@ -147,7 +147,6 @@ text-align: justify;
 .tags{
 display: flex;
 flex-wrap: wrap;
-justify-content: flex-start;
 gap: 8px;
 margin-top: 10px;
 }
@@ -155,9 +154,9 @@ margin-top: 10px;
 .tags span{
 background: var(--blue);
 color: white;
-padding: 5px 12px;
+padding: 4px 12px;
 border-radius: 50px;
-font-size: 13px;
+font-size: 12px;
 font-weight: bold;
 }
 
@@ -169,14 +168,12 @@ padding: 15px;
 border-radius: 15px;
 margin-top: 10px;
 font-weight: bold;
-box-shadow: 0 4px 15px rgba(10, 77, 146, 0.3);
 }
 
 .whatsapp{
 display:flex;
 align-items: center;
 justify-content: center;
-gap: 10px;
 background:#25D366;
 color:#fff;
 padding:18px;
@@ -184,27 +181,17 @@ border-radius:20px;
 font-size:20px;
 font-weight:bold;
 text-decoration:none;
-margin-top:25px;
+margin-top:20px;
 transition:.3s;
-box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2);
 }
 
-.whatsapp:hover{
-transform: translateY(-3px);
-box-shadow: 0 15px 25px rgba(37, 211, 102, 0.3);
-}
+.whatsapp:hover{ transform: scale(1.02); }
 
 footer{
 text-align:center;
-font-size:13px;
-padding:30px 20px;
+font-size:12px;
+padding:25px;
 color:#888;
-}
-
-.swiss-flag {
-width: 20px;
-vertical-align: middle;
-margin-left: 5px;
 }
 </style>
 </head>
@@ -222,7 +209,7 @@ GLENCORE SWISS 🇨🇭
 </div>
 
 <div class="product-img">
-<img src="https://images2.imgbox.com/71/2c/3T6oYp98_o.jpg" alt="Glyncure DiabeCare">
+<img src="https://i.ibb.co/3ykG5Mv8/image.png" alt="Glyncure DiabeCare">
 </div>
 
 <div class="content">
@@ -231,23 +218,23 @@ GLENCORE SWISS 🇨🇭
 <div class="subtitle">علاج تنظيم السكر والتراكمي</div>
 
 <div class="delivery-info">
-🚚 يوجد خدمة توصيل لكافة المحافظات - التوصيل مجاناً
+🚚 خدمة توصيل لكافة المحافظات - مجاناً
 </div>
 
 <div class="price-tag">
     <span class="price-iqd">20,000 دينار عراقي</span>
-    <span class="price-usd">السعر: 16$ دولار أمريكي</span>
+    <span class="price-usd">السعر: 16$ دولار</span>
 </div>
 
 <div class="section">
-<h3>حول المنتج والشرح</h3>
+<h3>شرح المنتج</h3>
 <p>
-يعمل هذا المنتج المتطور على تنظيم مستويات السكر في الدم بشكل فعال، ويعالج الأعراض الجانبية لمرضى السكري بشكل نهائي. كما يساهم في خفض مستوى السكر التراكمي (HbA1c) وصولاً إلى المستويات الطبيعية، مما يمهد الطريق للتشافي التام من مرض السكري في حال الاستمرار والمواظبة على استخدامه.
+يعمل المنتج على تنظيم مستويات السكر ويعالج الأعراض الجانبية لمرضى السكري بشكل نهائي كما ينزل مستوى السكر التراكمي إلى المستوى الطبيعي، مما يعني قد يتشافى تماماً من مرض السكري إذا استمر المريض بتناول هذا المنتج.
 </p>
 </div>
 
 <div class="section">
-<h3>المكونات الطبيعية (50 كبسولة)</h3>
+<h3>المكونات الطبيعية</h3>
 <div class="tags">
 <span>بذور الكتان</span>
 <span>بذور الشيا</span>
@@ -257,20 +244,19 @@ GLENCORE SWISS 🇨🇭
 </div>
 
 <div class="usage-box">
-💡 طريقة الاستخدام: كبسولة واحدة بعد كل وجبة طعام
+💡 الاستخدام: كبسولة واحدة بعد كل وجبة
 </div>
 
 <a href="https://wa.me/9647816175944" class="whatsapp">
-<span>اضغط هنا للطلب عبر واتساب</span>
+اطلب الآن عبر واتساب
 </a>
 
 </div>
 </div>
 
 <footer>
-<strong>ملاحظة هامة:</strong> هذا المنتج مكمل غذائي بتركيبة سويسرية.<br>
-يرجى الالتزام بالجرعة المحددة لضمان أفضل النتائج.<br>
-© 2024 Glyncure DiabeCare Switzerland
+مكمل غذائي سويسري أصلي (50 كبسولة)<br>
+© 2026 Glyncure DiabeCare
 </footer>
 
 </body>
