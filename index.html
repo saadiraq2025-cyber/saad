@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>متجر GLENCORE SWISS</title>
+<title>متجر GLENCORE SWISS - الإدارة</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 
@@ -39,7 +39,6 @@ header{
     z-index: 1000;
 }
 
-/* لوحة الإدارة مخفية افتراضياً */
 #adminPanel {
     display: none; 
     max-width: 550px;
@@ -56,20 +55,17 @@ header{
 input[type="text"], textarea {
     width: 100%;
     padding: 12px;
-    margin: 10px 0;
+    margin: 8px 0;
     border: 1px solid #ddd;
     border-radius: 10px;
     box-sizing: border-box;
     font-family: 'Cairo';
 }
 
-.image-preview {
-    max-width: 100%;
-    max-height: 150px;
+.btn-group {
+    display: flex;
+    gap: 10px;
     margin-top: 10px;
-    border-radius: 10px;
-    display: block;
-    object-fit: contain;
 }
 
 .add-btn {
@@ -77,40 +73,60 @@ input[type="text"], textarea {
     color: white;
     border: none;
     padding: 12px;
-    width: 100%;
+    flex: 2;
     border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
 }
 
-.container{
-    max-width:550px;
-    margin:20px auto;
-    background:#fff;
-    border-radius:25px;
-    overflow:hidden;
-    box-shadow:0 15px 40px rgba(0,0,0,.15);
+.cancel-btn {
+    background: #777;
+    color: white;
+    border: none;
+    padding: 12px;
+    flex: 1;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    display: none;
+}
+
+.container {
+    max-width: 550px;
+    margin: 20px auto;
+    background: #fff;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0,0,0,.1);
     position: relative;
 }
 
-/* زر الحذف يظهر فقط للأدمن */
-.delete-btn {
-    display: none; 
+/* أدوات التحكم للأدمن */
+.admin-tools {
+    display: none;
     position: absolute;
     top: 10px;
     left: 10px;
-    background: #ff4d4d;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    z-index: 5;
+    z-index: 10;
+    gap: 5px;
 }
+
+.admin-tools button {
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    font-family: 'Cairo';
+}
+
+.del-btn { background: #ff4d4d; color: white; }
+.edit-btn { background: #ffaa00; color: white; }
 
 .product-image {
     width: 100%;
-    height: 250px;
+    height: 280px;
     object-fit: cover;
 }
 
@@ -118,8 +134,9 @@ input[type="text"], textarea {
     background: var(--red);
     color: white;
     text-align: center;
-    padding: 10px;
+    padding: 8px;
     font-weight: bold;
+    font-size: 14px;
 }
 
 .product-info-header {
@@ -131,19 +148,19 @@ h1 { color: var(--blue); margin: 0; font-size: 24px; }
 
 .price-box {
     background: var(--light-green);
-    padding: 10px 20px;
+    padding: 8px 20px;
     border-radius: 15px;
     border: 2px solid var(--green);
     display: inline-block;
     margin-top: 10px;
 }
 
-.iqd { font-size: 20px; font-weight: 900; color: var(--green); }
+.iqd { font-size: 22px; font-weight: 900; color: var(--green); }
 
 .main-desc {
     padding: 15px;
     background: #f8f9fa;
-    margin: 10px 20px;
+    margin: 0 20px 15px 20px;
     border-radius: 15px;
     font-size: 14px;
     border-right: 5px solid var(--blue);
@@ -155,7 +172,7 @@ h1 { color: var(--blue); margin: 0; font-size: 24px; }
     color: white;
     text-align: center;
     padding: 15px;
-    margin: 20px;
+    margin: 15px 20px;
     border-radius: 15px;
     text-decoration: none;
     font-weight: 900;
@@ -163,8 +180,7 @@ h1 { color: var(--blue); margin: 0; font-size: 24px; }
 
 footer { text-align: center; padding: 20px; font-size: 11px; color: #777; }
 
-/* زر مخفي للدخول */
-#login-trigger { cursor: pointer; user-select: none; }
+#login-trigger { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -174,40 +190,44 @@ footer { text-align: center; padding: 20px; font-size: 11px; color: #777; }
 </header>
 
 <div id="adminPanel">
-    <h2>🔐 لوحة التحكم (الأدمن فقط)</h2>
+    <h2 id="panelTitle">🔐 إضافة منتج جديد</h2>
     <input type="text" id="pName" placeholder="اسم المنتج">
-    <input type="text" id="pPrice" placeholder="السعر (مثال: 25,000 د.ع)">
-    <input type="text" id="imageURL" placeholder="رابط صورة المنتج (URL)">
+    <input type="text" id="pPrice" placeholder="السعر">
+    <input type="text" id="imageURL" placeholder="رابط الصورة (URL)">
     <textarea id="pDesc" rows="3" placeholder="وصف المنتج..."></textarea>
-    <button class="add-btn" onclick="addProduct()">نشر المنتج في المتجر</button>
-    <button onclick="logout()" style="margin-top:10px; background:none; border:none; color:red; cursor:pointer;">تسجيل خروج الأدمن</button>
+    
+    <div class="btn-group">
+        <button class="add-btn" id="submitBtn" onclick="addProduct()">نشر المنتج في المتجر</button>
+        <button class="cancel-btn" id="cancelBtn" onclick="resetForm()">إلغاء التعديل</button>
+    </div>
+    
+    <button onclick="logout()" style="margin-top:15px; background:none; border:none; color:red; cursor:pointer; width:100%; text-align:center;">تسجيل خروج الأدمن</button>
 </div>
 
-<div id="products-list">
-    </div>
+<div id="products-list"></div>
 
 <script>
-// كلمة المرور الافتراضية
 const ADMIN_PASSWORD = "1234"; 
 let isAdmin = false;
+let editIndex = null; // لتتبع أي منتج نقوم بتعديله حالياً
 
 let products = JSON.parse(localStorage.getItem('myStoreProducts')) || [];
 
 function adminLogin() {
-    const pass = prompt("الرجاء إدخال كلمة مرور الإدارة:");
+    const pass = prompt("كلمة مرور الإدارة:");
     if (pass === ADMIN_PASSWORD) {
         isAdmin = true;
         document.getElementById('adminPanel').style.display = 'block';
         renderProducts();
-        alert("تم الدخول بصلاحية الأدمن. يمكنك الآن إضافة أو حذف المنتجات.");
     } else {
-        alert("كلمة مرور خاطئة!");
+        alert("خطأ!");
     }
 }
 
 function logout() {
     isAdmin = false;
     document.getElementById('adminPanel').style.display = 'none';
+    resetForm();
     renderProducts();
 }
 
@@ -219,7 +239,10 @@ function renderProducts() {
         const imageUrl = product.image || 'https://via.placeholder.com/550x250?text=No+Image';
         list.innerHTML += `
             <div class="container">
-                <button class="delete-btn" style="display: ${isAdmin ? 'block' : 'none'}" onclick="deleteProduct(${index})">حذف المنتج 🗑️</button>
+                <div class="admin-tools" style="display: ${isAdmin ? 'flex' : 'none'}">
+                    <button class="edit-btn" onclick="startEdit(${index})">تعديل 📝</button>
+                    <button class="del-btn" onclick="deleteProduct(${index})">حذف 🗑️</button>
+                </div>
                 
                 <img src="${imageUrl}" class="product-image">
                 <div class="delivery-banner">🚚 التوصيل مجاني لكافة محافظات العراق</div>
@@ -231,15 +254,11 @@ function renderProducts() {
                     </div>
                 </div>
 
-                <div class="main-desc">
-                    ${product.description}
-                </div>
+                <div class="main-desc">${product.description}</div>
 
-                <a href="https://wa.me/9647816175944?text=استفسار عن طلب: ${product.name}" class="whatsapp-btn">
+                <a href="https://wa.me/9647816175944?text=طلب: ${product.name}" class="whatsapp-btn">
                     اطلب الآن عبر واتساب
                 </a>
-
-                <footer>Original Swiss Formula</footer>
             </div>
         `;
     });
@@ -251,30 +270,63 @@ function addProduct() {
     const desc = document.getElementById('pDesc').value;
     const image = document.getElementById('imageURL').value;
 
-    if(name && price && desc) {
+    if(!name || !price || !desc) return alert("أكمل البيانات!");
+
+    if(editIndex === null) {
+        // إضافة جديد
         products.push({ name, price, description: desc, image: image });
-        localStorage.setItem('myStoreProducts', JSON.stringify(products));
-        renderProducts();
-        
-        // مسح الحقول
-        document.getElementById('pName').value = '';
-        document.getElementById('pPrice').value = '';
-        document.getElementById('pDesc').value = '';
-        document.getElementById('imageURL').value = '';
     } else {
-        alert("يرجى ملء البيانات!");
+        // حفظ تعديل
+        products[editIndex] = { name, price, description: desc, image: image };
+        editIndex = null;
     }
+
+    saveAndRefresh();
+    resetForm();
+}
+
+function startEdit(index) {
+    editIndex = index;
+    const p = products[index];
+    
+    // تعبئة الحقول بالبيانات القديمة
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pDesc').value = p.description;
+    document.getElementById('imageURL').value = p.image || '';
+    
+    // تغيير شكل اللوحة
+    document.getElementById('panelTitle').innerText = "📝 تعديل المنتج";
+    document.getElementById('submitBtn').innerText = "حفظ التعديلات";
+    document.getElementById('cancelBtn').style.display = "block";
+    
+    // الصعود لأعلى الصفحة للبدء بالتعديل
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function resetForm() {
+    editIndex = null;
+    document.getElementById('pName').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pDesc').value = '';
+    document.getElementById('imageURL').value = '';
+    document.getElementById('panelTitle').innerText = "🔐 إضافة منتج جديد";
+    document.getElementById('submitBtn').innerText = "نشر المنتج في المتجر";
+    document.getElementById('cancelBtn').style.display = "none";
 }
 
 function deleteProduct(index) {
-    if(confirm("هل تريد حذف هذا المنتج نهائياً؟")) {
+    if(confirm("حذف المنتج؟")) {
         products.splice(index, 1);
-        localStorage.setItem('myStoreProducts', JSON.stringify(products));
-        renderProducts();
+        saveAndRefresh();
     }
 }
 
-// التشغيل الأولي
+function saveAndRefresh() {
+    localStorage.setItem('myStoreProducts', JSON.stringify(products));
+    renderProducts();
+}
+
 renderProducts();
 </script>
 
