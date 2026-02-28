@@ -52,7 +52,7 @@ header{
 
 .admin-panel h2 { color: var(--blue); font-size: 18px; margin-top: 0; }
 
-input[type="text"], textarea {
+input[type="text"], input[type="file"], textarea {
     width: 100%;
     padding: 12px;
     margin: 8px 0;
@@ -60,6 +60,24 @@ input[type="text"], textarea {
     border-radius: 10px;
     box-sizing: border-box;
     font-family: 'Cairo';
+}
+
+/* نمط مخصص لرفع الملفات */
+input[type="file"] {
+    background: #f8f9fa;
+    border: 1px dashed var(--blue);
+    cursor: pointer;
+}
+
+.preview-img-container {
+    text-align: center;
+    margin: 10px 0;
+}
+#imgPreview {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 10px;
+    display: none;
 }
 
 .btn-group {
@@ -101,7 +119,6 @@ input[type="text"], textarea {
     position: relative;
 }
 
-/* أدوات التحكم للأدمن */
 .admin-tools {
     display: none;
     position: absolute;
@@ -192,8 +209,15 @@ footer { text-align: center; padding: 20px; font-size: 11px; color: #777; }
 <div id="adminPanel">
     <h2 id="panelTitle">🔐 إضافة منتج جديد</h2>
     <input type="text" id="pName" placeholder="اسم المنتج">
-    <input type="text" id="pPrice" placeholder="السعر">
-    <input type="text" id="imageURL" placeholder="رابط الصورة (URL)">
+    <input type="text" id="pPrice" placeholder="السعر (مثال: 25,000 د.ع)">
+    
+    <label style="font-size: 12px; color: var(--blue); font-weight: bold;">اختر صورة المنتج من جهازك:</label>
+    <input type="file" id="pImageFile" accept="image/*" onchange="previewImage(event)">
+    
+    <div class="preview-img-container">
+        <img id="imgPreview" src="" alt="معاينة">
+    </div>
+
     <textarea id="pDesc" rows="3" placeholder="وصف المنتج..."></textarea>
     
     <div class="btn-group">
@@ -209,7 +233,8 @@ footer { text-align: center; padding: 20px; font-size: 11px; color: #777; }
 <script>
 const ADMIN_PASSWORD = "1234"; 
 let isAdmin = false;
-let editIndex = null; // لتتبع أي منتج نقوم بتعديله حالياً
+let editIndex = null;
+let currentImageData = ""; // لتخزين كود الصورة المرفوعة
 
 let products = JSON.parse(localStorage.getItem('myStoreProducts')) || [];
 
@@ -220,7 +245,24 @@ function adminLogin() {
         document.getElementById('adminPanel').style.display = 'block';
         renderProducts();
     } else {
-        alert("خطأ!");
+        alert("خطأ في كلمة المرور!");
+    }
+}
+
+// وظيفة لمعاينة الصورة وتحويلها لـ Base64
+function previewImage(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function() {
+        const preview = document.getElementById('imgPreview');
+        preview.src = reader.result;
+        preview.style.display = 'inline-block';
+        currentImageData = reader.result; // حفظ الصورة في المتغير
+    }
+    
+    if (file) {
+        reader.readAsDataURL(file);
     }
 }
 
@@ -268,16 +310,15 @@ function addProduct() {
     const name = document.getElementById('pName').value;
     const price = document.getElementById('pPrice').value;
     const desc = document.getElementById('pDesc').value;
-    const image = document.getElementById('imageURL').value;
 
-    if(!name || !price || !desc) return alert("أكمل البيانات!");
+    if(!name || !price || !desc || !currentImageData) {
+        return alert("يرجى ملء كافة البيانات واختيار صورة للمنتج!");
+    }
 
     if(editIndex === null) {
-        // إضافة جديد
-        products.push({ name, price, description: desc, image: image });
+        products.push({ name, price, description: desc, image: currentImageData });
     } else {
-        // حفظ تعديل
-        products[editIndex] = { name, price, description: desc, image: image };
+        products[editIndex] = { name, price, description: desc, image: currentImageData };
         editIndex = null;
     }
 
@@ -289,42 +330,49 @@ function startEdit(index) {
     editIndex = index;
     const p = products[index];
     
-    // تعبئة الحقول بالبيانات القديمة
     document.getElementById('pName').value = p.name;
     document.getElementById('pPrice').value = p.price;
     document.getElementById('pDesc').value = p.description;
-    document.getElementById('imageURL').value = p.image || '';
+    currentImageData = p.image;
     
-    // تغيير شكل اللوحة
+    const preview = document.getElementById('imgPreview');
+    preview.src = p.image;
+    preview.style.display = 'inline-block';
+    
     document.getElementById('panelTitle').innerText = "📝 تعديل المنتج";
     document.getElementById('submitBtn').innerText = "حفظ التعديلات";
     document.getElementById('cancelBtn').style.display = "block";
     
-    // الصعود لأعلى الصفحة للبدء بالتعديل
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function resetForm() {
     editIndex = null;
+    currentImageData = "";
     document.getElementById('pName').value = '';
     document.getElementById('pPrice').value = '';
     document.getElementById('pDesc').value = '';
-    document.getElementById('imageURL').value = '';
+    document.getElementById('pImageFile').value = '';
+    document.getElementById('imgPreview').style.display = 'none';
     document.getElementById('panelTitle').innerText = "🔐 إضافة منتج جديد";
     document.getElementById('submitBtn').innerText = "نشر المنتج في المتجر";
     document.getElementById('cancelBtn').style.display = "none";
 }
 
 function deleteProduct(index) {
-    if(confirm("حذف المنتج؟")) {
+    if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
         products.splice(index, 1);
         saveAndRefresh();
     }
 }
 
 function saveAndRefresh() {
-    localStorage.setItem('myStoreProducts', JSON.stringify(products));
-    renderProducts();
+    try {
+        localStorage.setItem('myStoreProducts', JSON.stringify(products));
+        renderProducts();
+    } catch (e) {
+        alert("تنبيه: حجم الصور كبير جداً، يرجى محاولة رفع صور بحجم أصغر.");
+    }
 }
 
 renderProducts();
