@@ -1,237 +1,48 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق التكسي التفاعلي</title>
-    <style>
-        :root {
-            --primary-color: #f1c40f;
-            --dark-color: #2c3e50;
-            --bg-color: #f4f7f6;
-        }
+import random
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+def start_game():
+    print("--- مرحباً بك في مسابقة من سيربح المليون! ---")
+    print("لديك 20 سؤالاً للوصول إلى المليون. هل أنت مستعد؟\n")
 
-        .container {
-            display: flex;
-            gap: 20px;
-            width: 100%;
-            max-width: 1000px;
-            flex-wrap: wrap;
-        }
+    # قائمة الأسئلة: (السؤال، الخيارات، الإجابة الصحيحة)
+    questions = [
+        ("ما هي عاصمة مصر؟", ["1. الإسكندرية", "2. القاهرة", "3. الجيزة", "4. السويس"], "2"),
+        ("ما هو أكبر كوكب في المجموعة الشمسية؟", ["1. المريخ", "2. الأرض", "3. المشتري", "4. زحل"], "3"),
+        ("كم عدد ألوان قوس قزح؟", ["1. 5", "2. 6", "3. 7", "4. 8"], "3"),
+        ("ما هو المعدن السائل في درجة الحرارة العادية؟", ["1. الحديد", "2. النحاس", "3. الزئبق", "4. الذهب"], "3"),
+        ("من هو مخترع المصباح الكهربائي؟", ["1. أينشتاين", "2. نيوتن", "3. إديسون", "4. تسلا"], "3"),
+        # يمكنك إضافة بقية الـ 20 سؤالاً هنا بنفس النمط...
+    ]
 
-        .app-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            flex: 1;
-            min-width: 300px;
-            overflow: hidden;
-            border-top: 5px solid var(--primary-color);
-        }
+    # توسيع القائمة لتشمل 20 سؤالاً (اختصاراً سأكرر بعضها هنا)
+    while len(questions) < 20:
+        questions.append(("سؤال تجريبي رقم " + str(len(questions)+1), ["1", "2", "3", "4"], "1"))
 
-        .header {
-            background: var(--dark-color);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-        }
+    money_ladder = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 
+                    64000, 125000, 250000, 500000, 1000000, 2000000, 5000000, 10000000, 50000000, 100000000]
+    
+    current_balance = 0
 
-        .content {
-            padding: 20px;
-            height: 350px;
-            display: flex;
-            flex-direction: column;
-        }
+    for i in range(len(questions)):
+        print(f"السؤال رقم {i+1} - الجائزة: {money_ladder[i]} ريال")
+        print(questions[i][0])
+        for option in questions[i][1]:
+            print(option)
+        
+        choice = input("\nاختر رقم الإجابة (أو اكتب 'انسحاب'): ").strip()
 
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-bottom: 15px;
-            display: inline-block;
-        }
+        if choice.lower() == 'انسحاب':
+            print(f"لقد قررت الانسحاب! رصيدك النهائي هو: {current_balance} ريال.")
+            return
 
-        .status-online { background: #e7fbd3; color: #2ecc71; }
-        .status-offline { background: #ffe5e5; color: #e74c3c; }
+        if choice == questions[i][2]:
+            current_balance = money_ladder[i]
+            print(f"إجابة صحيحة! رصيدك الحالي هو {current_balance} ريال.\n")
+            if i == 19:
+                print("*** مبروووك! لقد ربحت المليون (والأكثر منها)! ***")
+        else:
+            print("للأسف إجابة خاطئة.. خسرت كل شيء!")
+            return
 
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            box-sizing: border-box;
-        }
-
-        button {
-            background: var(--primary-color);
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover { opacity: 0.9; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-
-        .map-sim {
-            background: #e0e0e0;
-            height: 120px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #777;
-            position: relative;
-        }
-
-        .car-icon {
-            position: absolute;
-            transition: 2s linear;
-        }
-
-        .notification {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        #driver-ride-request {
-            border: 2px dashed var(--primary-color);
-            padding: 10px;
-            margin-top: 10px;
-            display: none;
-        }
-    </style>
-</head>
-<body>
-
-    <h2 style="color: var(--dark-color);">نظام التكسي الذكي (تجريبي)</h2>
-
-    <div class="container">
-        <div class="app-card" id="passenger-app">
-            <div class="header">واجهة الراكب</div>
-            <div class="content">
-                <div class="map-sim" id="p-map">محاكاة الخريطة 📍</div>
-                <input type="text" id="destination" placeholder="إلى أين تريد الذهاب؟">
-                <button id="request-btn" onclick="requestRide()">طلب تكسي الآن</button>
-                <div id="p-status" class="notification">جاري البحث عن سائق قريب...</div>
-            </div>
-        </div>
-
-        <div class="app-card" id="driver-app">
-            <div class="header">واجهة السائق</div>
-            <div class="content">
-                <div id="driver-status-label" class="status-badge status-offline">أنت غير متصل</div>
-                <button id="toggle-driver" onclick="toggleDriver()">الذهاب للوضع النشط</button>
-                
-                <div id="driver-ride-request">
-                    <p><strong>طلب رحلة جديد!</strong></p>
-                    <p id="ride-info"></p>
-                    <button onclick="acceptRide()" style="background: #2ecc71; color: white;">قبول الرحلة</button>
-                </div>
-
-                <div id="d-status" class="notification">أنت في رحلة الآن 🚕</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let isDriverOnline = false;
-        let activeRide = null;
-
-        function toggleDriver() {
-            const btn = document.getElementById('toggle-driver');
-            const label = document.getElementById('driver-status-label');
-            
-            isDriverOnline = !isDriverOnline;
-            
-            if (isDriverOnline) {
-                btn.innerText = "الخروج من الوضع النشط";
-                btn.style.background = "#e74c3c";
-                btn.style.color = "white";
-                label.innerText = "أنت متصل الآن";
-                label.className = "status-badge status-online";
-            } else {
-                btn.innerText = "الذهاب للوضع النشط";
-                btn.style.background = "var(--primary-color)";
-                btn.style.color = "black";
-                label.innerText = "أنت غير متصل";
-                label.className = "status-badge status-offline";
-                document.getElementById('driver-ride-request').style.display = 'none';
-            }
-        }
-
-        function requestRide() {
-            const dest = document.getElementById('destination').value;
-            if (!dest) {
-                alert("يرجى تحديد الوجهة");
-                return;
-            }
-
-            document.getElementById('p-status').style.display = 'block';
-            document.getElementById('request-btn').disabled = true;
-
-            // محاكاة إرسال الطلب للسائق
-            if (isDriverOnline) {
-                setTimeout(() => {
-                    document.getElementById('driver-ride-request').style.display = 'block';
-                    document.getElementById('ride-info').innerText = "الوجهة: " + dest;
-                }, 1500);
-            } else {
-                setTimeout(() => {
-                    alert("عذراً، لا يوجد سائقون متصلون حالياً");
-                    document.getElementById('p-status').style.display = 'none';
-                    document.getElementById('request-btn').disabled = false;
-                }, 2000);
-            }
-        }
-
-        function acceptRide() {
-            document.getElementById('driver-ride-request').style.display = 'none';
-            document.getElementById('d-status').style.display = 'block';
-            
-            document.getElementById('p-status').innerText = "تم قبول طلبك! السائق في الطريق إليك.";
-            document.getElementById('p-status').style.background = "#d4edda";
-
-            // محاكاة حركة السيارة
-            const map = document.getElementById('p-map');
-            map.innerHTML = '<span class="car-icon">🚕</span>';
-            const car = map.querySelector('.car-icon');
-            
-            setTimeout(() => {
-                car.style.right = "80%";
-                setTimeout(() => {
-                    alert("وصل السائق إلى وجهتك!");
-                    resetApp();
-                }, 2500);
-            }, 100);
-        }
-
-        function resetApp() {
-            document.getElementById('p-status').style.display = 'none';
-            document.getElementById('p-status').innerText = "جاري البحث عن سائق قريب...";
-            document.getElementById('p-status').style.background = "#fff3cd";
-            document.getElementById('request-btn').disabled = false;
-            document.getElementById('d-status').style.display = 'none';
-            document.getElementById('destination').value = "";
-            document.getElementById('p-map').innerHTML = "محاكاة الخريطة 📍";
-        }
-    </script>
-</body>
-</html>
+if __name__ == "__main__":
+    start_game()
