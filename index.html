@@ -1,382 +1,237 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>متجر GLENCORE SWISS - الإدارة</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق التكسي التفاعلي</title>
+    <style>
+        :root {
+            --primary-color: #f1c40f;
+            --dark-color: #2c3e50;
+            --bg-color: #f4f7f6;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
 
-<style>
-:root{
-    --red:#D52B1E;
-    --blue:#0A4D92;
-    --green:#1B4332;
-    --light-green:#d8f3dc;
-    --bg:#f0f2f5;
-}
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+            flex-wrap: wrap;
+        }
 
-body{
-    margin:0;
-    font-family:'Cairo',sans-serif;
-    background:var(--bg);
-    color:#333;
-    line-height: 1.6;
-    padding-bottom: 50px;
-}
+        .app-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 300px;
+            overflow: hidden;
+            border-top: 5px solid var(--primary-color);
+        }
 
-header{
-    background:#fff;
-    text-align:center;
-    padding:20px;
-    border-bottom:5px solid var(--red);
-    font-weight:900;
-    font-size:26px;
-    color: var(--blue);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-}
+        .header {
+            background: var(--dark-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
 
-#adminPanel {
-    display: none; 
-    max-width: 550px;
-    margin: 20px auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    border: 2px dashed var(--blue);
-}
+        .content {
+            padding: 20px;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+        }
 
-.admin-panel h2 { color: var(--blue); font-size: 18px; margin-top: 0; }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
 
-input[type="text"], input[type="file"], textarea {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-sizing: border-box;
-    font-family: 'Cairo';
-}
+        .status-online { background: #e7fbd3; color: #2ecc71; }
+        .status-offline { background: #ffe5e5; color: #e74c3c; }
 
-/* نمط مخصص لرفع الملفات */
-input[type="file"] {
-    background: #f8f9fa;
-    border: 1px dashed var(--blue);
-    cursor: pointer;
-}
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
 
-.preview-img-container {
-    text-align: center;
-    margin: 10px 0;
-}
-#imgPreview {
-    max-width: 100%;
-    max-height: 150px;
-    border-radius: 10px;
-    display: none;
-}
+        button {
+            background: var(--primary-color);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
 
-.btn-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
+        button:hover { opacity: 0.9; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
 
-.add-btn {
-    background: var(--blue);
-    color: white;
-    border: none;
-    padding: 12px;
-    flex: 2;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-}
+        .map-sim {
+            background: #e0e0e0;
+            height: 120px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            position: relative;
+        }
 
-.cancel-btn {
-    background: #777;
-    color: white;
-    border: none;
-    padding: 12px;
-    flex: 1;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    display: none;
-}
+        .car-icon {
+            position: absolute;
+            transition: 2s linear;
+        }
 
-.container {
-    max-width: 550px;
-    margin: 20px auto;
-    background: #fff;
-    border-radius: 25px;
-    overflow: hidden;
-    box-shadow: 0 15px 40px rgba(0,0,0,.1);
-    position: relative;
-}
+        .notification {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
 
-.admin-tools {
-    display: none;
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-    gap: 5px;
-}
-
-.admin-tools button {
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 12px;
-    font-family: 'Cairo';
-}
-
-.del-btn { background: #ff4d4d; color: white; }
-.edit-btn { background: #ffaa00; color: white; }
-
-.product-image {
-    width: 100%;
-    height: 280px;
-    object-fit: cover;
-}
-
-.delivery-banner {
-    background: var(--red);
-    color: white;
-    text-align: center;
-    padding: 8px;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.product-info-header {
-    text-align: center;
-    padding: 20px;
-}
-
-h1 { color: var(--blue); margin: 0; font-size: 24px; }
-
-.price-box {
-    background: var(--light-green);
-    padding: 8px 20px;
-    border-radius: 15px;
-    border: 2px solid var(--green);
-    display: inline-block;
-    margin-top: 10px;
-}
-
-.iqd { font-size: 22px; font-weight: 900; color: var(--green); }
-
-.main-desc {
-    padding: 15px;
-    background: #f8f9fa;
-    margin: 0 20px 15px 20px;
-    border-radius: 15px;
-    font-size: 14px;
-    border-right: 5px solid var(--blue);
-}
-
-.whatsapp-btn {
-    display: block;
-    background: #25D366;
-    color: white;
-    text-align: center;
-    padding: 15px;
-    margin: 15px 20px;
-    border-radius: 15px;
-    text-decoration: none;
-    font-weight: 900;
-}
-
-footer { text-align: center; padding: 20px; font-size: 11px; color: #777; }
-
-#login-trigger { cursor: pointer; }
-</style>
+        #driver-ride-request {
+            border: 2px dashed var(--primary-color);
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-<header>
-    GLENCORE SWISS 🇨🇭 - <span id="login-trigger" onclick="adminLogin()">المتجر</span>
-</header>
+    <h2 style="color: var(--dark-color);">نظام التكسي الذكي (تجريبي)</h2>
 
-<div id="adminPanel">
-    <h2 id="panelTitle">🔐 إضافة منتج جديد</h2>
-    <input type="text" id="pName" placeholder="اسم المنتج">
-    <input type="text" id="pPrice" placeholder="السعر (مثال: 25,000 د.ع)">
-    
-    <label style="font-size: 12px; color: var(--blue); font-weight: bold;">اختر صورة المنتج من جهازك:</label>
-    <input type="file" id="pImageFile" accept="image/*" onchange="previewImage(event)">
-    
-    <div class="preview-img-container">
-        <img id="imgPreview" src="" alt="معاينة">
-    </div>
-
-    <textarea id="pDesc" rows="3" placeholder="وصف المنتج..."></textarea>
-    
-    <div class="btn-group">
-        <button class="add-btn" id="submitBtn" onclick="addProduct()">نشر المنتج في المتجر</button>
-        <button class="cancel-btn" id="cancelBtn" onclick="resetForm()">إلغاء التعديل</button>
-    </div>
-    
-    <button onclick="logout()" style="margin-top:15px; background:none; border:none; color:red; cursor:pointer; width:100%; text-align:center;">تسجيل خروج الأدمن</button>
-</div>
-
-<div id="products-list"></div>
-
-<script>
-const ADMIN_PASSWORD = "1234"; 
-let isAdmin = false;
-let editIndex = null;
-let currentImageData = ""; // لتخزين كود الصورة المرفوعة
-
-let products = JSON.parse(localStorage.getItem('myStoreProducts')) || [];
-
-function adminLogin() {
-    const pass = prompt("كلمة مرور الإدارة:");
-    if (pass === ADMIN_PASSWORD) {
-        isAdmin = true;
-        document.getElementById('adminPanel').style.display = 'block';
-        renderProducts();
-    } else {
-        alert("خطأ في كلمة المرور!");
-    }
-}
-
-// وظيفة لمعاينة الصورة وتحويلها لـ Base64
-function previewImage(event) {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = function() {
-        const preview = document.getElementById('imgPreview');
-        preview.src = reader.result;
-        preview.style.display = 'inline-block';
-        currentImageData = reader.result; // حفظ الصورة في المتغير
-    }
-    
-    if (file) {
-        reader.readAsDataURL(file);
-    }
-}
-
-function logout() {
-    isAdmin = false;
-    document.getElementById('adminPanel').style.display = 'none';
-    resetForm();
-    renderProducts();
-}
-
-function renderProducts() {
-    const list = document.getElementById('products-list');
-    list.innerHTML = '';
-
-    products.forEach((product, index) => {
-        const imageUrl = product.image || 'https://via.placeholder.com/550x250?text=No+Image';
-        list.innerHTML += `
-            <div class="container">
-                <div class="admin-tools" style="display: ${isAdmin ? 'flex' : 'none'}">
-                    <button class="edit-btn" onclick="startEdit(${index})">تعديل 📝</button>
-                    <button class="del-btn" onclick="deleteProduct(${index})">حذف 🗑️</button>
-                </div>
-                
-                <img src="${imageUrl}" class="product-image">
-                <div class="delivery-banner">🚚 التوصيل مجاني لكافة محافظات العراق</div>
-                
-                <div class="product-info-header">
-                    <h1>${product.name}</h1>
-                    <div class="price-box">
-                        <span class="iqd">${product.price}</span>
-                    </div>
-                </div>
-
-                <div class="main-desc">${product.description}</div>
-
-                <a href="https://wa.me/9647816175944?text=طلب: ${product.name}" class="whatsapp-btn">
-                    اطلب الآن عبر واتساب
-                </a>
+    <div class="container">
+        <div class="app-card" id="passenger-app">
+            <div class="header">واجهة الراكب</div>
+            <div class="content">
+                <div class="map-sim" id="p-map">محاكاة الخريطة 📍</div>
+                <input type="text" id="destination" placeholder="إلى أين تريد الذهاب؟">
+                <button id="request-btn" onclick="requestRide()">طلب تكسي الآن</button>
+                <div id="p-status" class="notification">جاري البحث عن سائق قريب...</div>
             </div>
-        `;
-    });
-}
+        </div>
 
-function addProduct() {
-    const name = document.getElementById('pName').value;
-    const price = document.getElementById('pPrice').value;
-    const desc = document.getElementById('pDesc').value;
+        <div class="app-card" id="driver-app">
+            <div class="header">واجهة السائق</div>
+            <div class="content">
+                <div id="driver-status-label" class="status-badge status-offline">أنت غير متصل</div>
+                <button id="toggle-driver" onclick="toggleDriver()">الذهاب للوضع النشط</button>
+                
+                <div id="driver-ride-request">
+                    <p><strong>طلب رحلة جديد!</strong></p>
+                    <p id="ride-info"></p>
+                    <button onclick="acceptRide()" style="background: #2ecc71; color: white;">قبول الرحلة</button>
+                </div>
 
-    if(!name || !price || !desc || !currentImageData) {
-        return alert("يرجى ملء كافة البيانات واختيار صورة للمنتج!");
-    }
+                <div id="d-status" class="notification">أنت في رحلة الآن 🚕</div>
+            </div>
+        </div>
+    </div>
 
-    if(editIndex === null) {
-        products.push({ name, price, description: desc, image: currentImageData });
-    } else {
-        products[editIndex] = { name, price, description: desc, image: currentImageData };
-        editIndex = null;
-    }
+    <script>
+        let isDriverOnline = false;
+        let activeRide = null;
 
-    saveAndRefresh();
-    resetForm();
-}
+        function toggleDriver() {
+            const btn = document.getElementById('toggle-driver');
+            const label = document.getElementById('driver-status-label');
+            
+            isDriverOnline = !isDriverOnline;
+            
+            if (isDriverOnline) {
+                btn.innerText = "الخروج من الوضع النشط";
+                btn.style.background = "#e74c3c";
+                btn.style.color = "white";
+                label.innerText = "أنت متصل الآن";
+                label.className = "status-badge status-online";
+            } else {
+                btn.innerText = "الذهاب للوضع النشط";
+                btn.style.background = "var(--primary-color)";
+                btn.style.color = "black";
+                label.innerText = "أنت غير متصل";
+                label.className = "status-badge status-offline";
+                document.getElementById('driver-ride-request').style.display = 'none';
+            }
+        }
 
-function startEdit(index) {
-    editIndex = index;
-    const p = products[index];
-    
-    document.getElementById('pName').value = p.name;
-    document.getElementById('pPrice').value = p.price;
-    document.getElementById('pDesc').value = p.description;
-    currentImageData = p.image;
-    
-    const preview = document.getElementById('imgPreview');
-    preview.src = p.image;
-    preview.style.display = 'inline-block';
-    
-    document.getElementById('panelTitle').innerText = "📝 تعديل المنتج";
-    document.getElementById('submitBtn').innerText = "حفظ التعديلات";
-    document.getElementById('cancelBtn').style.display = "block";
-    
-    window.scrollTo({top: 0, behavior: 'smooth'});
-}
+        function requestRide() {
+            const dest = document.getElementById('destination').value;
+            if (!dest) {
+                alert("يرجى تحديد الوجهة");
+                return;
+            }
 
-function resetForm() {
-    editIndex = null;
-    currentImageData = "";
-    document.getElementById('pName').value = '';
-    document.getElementById('pPrice').value = '';
-    document.getElementById('pDesc').value = '';
-    document.getElementById('pImageFile').value = '';
-    document.getElementById('imgPreview').style.display = 'none';
-    document.getElementById('panelTitle').innerText = "🔐 إضافة منتج جديد";
-    document.getElementById('submitBtn').innerText = "نشر المنتج في المتجر";
-    document.getElementById('cancelBtn').style.display = "none";
-}
+            document.getElementById('p-status').style.display = 'block';
+            document.getElementById('request-btn').disabled = true;
 
-function deleteProduct(index) {
-    if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
-        products.splice(index, 1);
-        saveAndRefresh();
-    }
-}
+            // محاكاة إرسال الطلب للسائق
+            if (isDriverOnline) {
+                setTimeout(() => {
+                    document.getElementById('driver-ride-request').style.display = 'block';
+                    document.getElementById('ride-info').innerText = "الوجهة: " + dest;
+                }, 1500);
+            } else {
+                setTimeout(() => {
+                    alert("عذراً، لا يوجد سائقون متصلون حالياً");
+                    document.getElementById('p-status').style.display = 'none';
+                    document.getElementById('request-btn').disabled = false;
+                }, 2000);
+            }
+        }
 
-function saveAndRefresh() {
-    try {
-        localStorage.setItem('myStoreProducts', JSON.stringify(products));
-        renderProducts();
-    } catch (e) {
-        alert("تنبيه: حجم الصور كبير جداً، يرجى محاولة رفع صور بحجم أصغر.");
-    }
-}
+        function acceptRide() {
+            document.getElementById('driver-ride-request').style.display = 'none';
+            document.getElementById('d-status').style.display = 'block';
+            
+            document.getElementById('p-status').innerText = "تم قبول طلبك! السائق في الطريق إليك.";
+            document.getElementById('p-status').style.background = "#d4edda";
 
-renderProducts();
-</script>
+            // محاكاة حركة السيارة
+            const map = document.getElementById('p-map');
+            map.innerHTML = '<span class="car-icon">🚕</span>';
+            const car = map.querySelector('.car-icon');
+            
+            setTimeout(() => {
+                car.style.right = "80%";
+                setTimeout(() => {
+                    alert("وصل السائق إلى وجهتك!");
+                    resetApp();
+                }, 2500);
+            }, 100);
+        }
 
+        function resetApp() {
+            document.getElementById('p-status').style.display = 'none';
+            document.getElementById('p-status').innerText = "جاري البحث عن سائق قريب...";
+            document.getElementById('p-status').style.background = "#fff3cd";
+            document.getElementById('request-btn').disabled = false;
+            document.getElementById('d-status').style.display = 'none';
+            document.getElementById('destination').value = "";
+            document.getElementById('p-map').innerHTML = "محاكاة الخريطة 📍";
+        }
+    </script>
 </body>
 </html>
