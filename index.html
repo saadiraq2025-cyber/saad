@@ -1,98 +1,144 @@
-import random
-import time
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لعبة من سيربح المليون</title>
+    <style>
+        body {
+            background-color: #000033;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #game-container {
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            border: 2px solid #ffd700;
+            padding: 20px;
+            border-radius: 15px;
+            background: linear-gradient(145deg, #000066, #000022);
+        }
+        .question-box {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #555;
+            border-radius: 10px;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        button {
+            background: #000033;
+            color: white;
+            border: 1px solid #ffd700;
+            padding: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: 0.3s;
+        }
+        button:hover { background: #ffd700; color: black; }
+        .helpers { margin-top: 20px; }
+        .helper-btn { background: #b8860b; font-size: 14px; }
+        #status { margin-top: 20px; color: #ffd700; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-# دالة وسيلة المساعدة 50:50
-def help_50_50(question_data):
-    correct_idx = int(question_data[2]) - 1
-    options_indices = list(range(4))
-    options_indices.remove(correct_idx)
-    to_remove = random.sample(options_indices, 2)
+<div id="game-container">
+    <div id="level-info">السؤال: 1 / 20 | الجائزة: 100 ريال</div>
+    <div class="question-box" id="question">جاري التحميل...</div>
+    <div class="options-grid" id="options">
+        </div>
+    <div class="helpers">
+        <button class="helper-btn" id="btn-50" onclick="use5050()">مساعدة 50/50</button>
+        <button class="helper-btn" onclick="withdraw()">انسحاب</button>
+    </div>
+    <div id="status"></div>
+</div>
+
+<script>
+    const questions = [
+        { q: "ما هي عاصمة العراق؟", a: ["البصرة", "بغداد", "الموصل", "أربيل"], correct: 1 },
+        { q: "ما هو أكبر محيط في العالم؟", a: ["الأطلسي", "الهندي", "الهادي", "المتجمد"], correct: 2 },
+        { q: "من هو مخترع الهاتف؟", a: ["إديسون", "نيوتن", "جراهام بيل", "أينشتاين"], correct: 2 },
+        { q: "ما هو الكوكب الأحمر؟", a: ["الزهرة", "المريخ", "زحل", "عطارد"], correct: 1 },
+        { q: "كم عدد ألوان قوس قزح؟", a: ["5", "6", "7", "8"], correct: 2 },
+        // ... أضف المزيد من الأسئلة هنا لتصل إلى 20
+    ];
+
+    // تكملة تلقائية لـ 20 سؤالاً للغرض التجريبي
+    while(questions.length < 20) {
+        questions.push({ q: "سؤال تجريبي رقم " + (questions.length + 1), a: ["خيار صحيح", "خطأ", "خطأ", "خطأ"], correct: 0 });
+    }
+
+    const moneySteps = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 125000, 250000, 500000, 1000000, 2000000, 5000000, 10000000, 50000000, 100000000];
     
-    print("\n[ نظام المساعدة ]: تم حذف إجابتين خاطئتين...")
-    for i in range(4):
-        if i == correct_idx or i not in to_remove:
-            print(question_data[1][i])
-        else:
-            print(f"{i+1}. [ -------- ]")
+    let currentStep = 0;
+    let score = 0;
 
-def start_millionaire():
-    # قائمة 20 سؤالاً (سؤال، خيارات، إجابة)
-    questions = [
-        ("ما هي عاصمة العراق؟", ["1. البصرة", "2. بغداد", "3. الموصل", "4. أربيل"], "2"),
-        ("ما هو أكبر محيط في العالم؟", ["1. الأطلسي", "2. الهندي", "3. الهادي", "4. المتجمد"], "3"),
-        ("ما هي العملة المستخدمة في اليابان؟", ["1. اليوان", "2. الين", "3. الوون", "4. الدولار"], "2"),
-        ("من هو مخترع الهاتف؟", ["1. إديسون", "2. نيوتن", "3. جراهام بيل", "4. أينشتاين"], "3"),
-        ("كم عدد كواكب المجموعة الشمسية؟", ["1. 7", "2. 8", "3. 9", "4. 10"], "2"),
-        ("ما هو العنصر الكيميائي الذي رمزه O؟", ["1. الذهب", "2. الحديد", "3. الأكسجين", "4. الهيدروجين"], "3"),
-        ("أين تقع أهرامات الجيزة؟", ["1. السودان", "2. المكسيك", "3. مصر", "4. العراق"], "3"),
-        ("ما هو أسرع حيوان بري؟", ["1. الأسد", "2. الفهد", "3. الغزال", "4. الحصان"], "2"),
-        ("من صاحب لوحة الموناليزا؟", ["1. بيكاسو", "2. دافنشي", "3. فان جوخ", "4. مايكل أنجلو"], "2"),
-        ("ما هي عاصمة فرنسا؟", ["1. مدريد", "2. روما", "3. باريس", "4. لندن"], "3"),
-        ("كم عدد أضلاع المثلث؟", ["1. 4", "2. 3", "3. 5", "4. 2"], "2"),
-        ("ما هو المعدن السائل؟", ["1. الفضة", "2. النحاس", "3. الزئبق", "4. القصدير"], "3"),
-        ("من هو مكتشف الجاذبية؟", ["1. جاليليو", "2. نيوتن", "3. تسلا", "4. كوبرنيكس"], "2"),
-        ("ما هي أكبر قارة في العالم؟", ["1. أفريقيا", "2. أوروبا", "3. آسيا", "4. أمريكا"], "3"),
-        ("ما هو الحيوان الذي يُلقب بسفينة الصحراء؟", ["1. الخيل", "2. الجمل", "3. الحمار", "4. الفيل"], "2"),
-        ("كم عدد أسنان الإنسان البالغ؟", ["1. 28", "2. 30", "3. 32", "4. 34"], "3"),
-        ("ما هو الغاز الذي يتنفسه الإنسان؟", ["1. النيتروجين", "2. الأكسجين", "3. الكربون", "4. الهيليوم"], "2"),
-        ("أطول نهر في العالم هو؟", ["1. الأمازون", "2. النيل", "3. المسيسيبي", "4. اليانغتسي"], "2"),
-        ("ما هي وحدة قياس الحرارة؟", ["1. المتر", "2. الكيلو", "3. الدرجة المئوية", "4. اللتر"], "3"),
-        ("من هو مؤسس شركة مايكروسوفت؟", ["1. ستيف جوبز", "2. بيل جيتس", "3. مارك زوكربيرغ", "4. إيلون ماسك"], "2")
-    ]
-
-    money_steps = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 
-                   64000, 125000, 250000, 500000, 1000000, 2000000, 5000000, 10000000, 50000000, 100000000]
-    
-    current_money = 0
-    guaranteed_money = 0
-    helper_available = True
-
-    print("--- 🏆 مسابقة من سيربح المليون 🏆 ---")
-    print("قواعد اللعبة: أجب على 20 سؤالاً. المستوى 5 و 10 يثبتان الرصيد.\n")
-
-    for i in range(len(questions)):
-        # تحديث الرصيد المضمون
-        if i == 5: guaranteed_money = 1000
-        if i == 10: guaranteed_money = 32000
-
-        print(f"----------------------------------------")
-        print(f"السؤال {i+1} | الجائزة: {money_steps[i]} ريال")
-        print(f"السؤال: {questions[i][0]}")
-        for option in questions[i][1]:
-            print(option)
+    function loadQuestion() {
+        const qData = questions[currentStep];
+        document.getElementById("level-info").innerText = `السؤال: ${currentStep + 1} / 20 | الجائزة: ${moneySteps[currentStep]} ريال`;
+        document.getElementById("question").innerText = qData.q;
+        const optionsDiv = document.getElementById("options");
+        optionsDiv.innerHTML = "";
         
-        # مدخلات المستخدم مع التحقق
-        options_text = "اختر رقم الإجابة (1-4) أو 'س' للانسحاب"
-        if helper_available:
-            options_text += " أو 'م' للمساعدة (50:50)"
-        
-        while True:
-            choice = input(f"{options_text}: ").strip().lower()
+        qData.a.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index);
+            optionsDiv.appendChild(btn);
+        });
+        document.getElementById("status").innerText = "";
+    }
 
-            if choice == 'م' and helper_available:
-                helper_available = False
-                help_50_50(questions[i])
-                continue # للسماح له باختيار الإجابة بعد الحذف
-            
-            if choice == 'س':
-                print(f"\n💰 انسحبت بذكاء! رصيدك النهائي هو: {current_money} ريال.")
-                return
+    function checkAnswer(index) {
+        if (index === questions[currentStep].correct) {
+            score = moneySteps[currentStep];
+            currentStep++;
+            if (currentStep < 20) {
+                document.getElementById("status").innerText = "إجابة صحيحة! ننتقل للسؤال التالي...";
+                setTimeout(loadQuestion, 1000);
+            } else {
+                alert("مبروك! لقد فزت بالمليار!");
+                location.reload();
+            }
+        } else {
+            alert("للأسف إجابة خاطئة. انتهت اللعبة!");
+            location.reload();
+        }
+    }
 
-            if choice in ['1', '2', '3', '4']:
-                break
-            print("❌ إدخال غير صحيح، حاول مرة أخرى.")
+    function use5050() {
+        const correct = questions[currentStep].correct;
+        const buttons = document.getElementById("options").children;
+        let removed = 0;
+        for (let i = 0; i < buttons.length; i++) {
+            if (i !== correct && removed < 2) {
+                buttons[i].style.visibility = "hidden";
+                removed++;
+            }
+        }
+        document.getElementById("btn-50").disabled = true;
+        document.getElementById("btn-50").style.opacity = "0.5";
+    }
 
-        # التحقق من النتيجة
-        if choice == questions[i][2]:
-            current_money = money_steps[i]
-            print(f"✅ إجابة صحيحة! أحسنت.")
-            time.sleep(0.5)
-        else:
-            print(f"❌ إجابة خاطئة! الإجابة الصحيحة هي: {questions[i][2]}")
-            print(f"تغادرنا بمبلغ مضمون قدره: {guaranteed_money} ريال.")
-            return
+    function withdraw() {
+        alert("انسحبت بمبلغ: " + score + " ريال.");
+        location.reload();
+    }
 
-    print(f"\n🎉🎊 مبرووووووك! لقد ربحت الجائزة الكبرى: {current_money} ريال! 🎊🎉")
+    loadQuestion();
+</script>
 
-if __name__ == "__main__":
-    start_millionaire()
+</body>
+</html>
