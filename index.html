@@ -2,143 +2,224 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لعبة من سيربح المليون</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مؤشر سعر الدولار لحظة بلحظة</title>
+    <!-- استيراد خط تجملي من جوجل -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
         body {
-            background-color: #000033;
-            color: white;
-            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f8fafc;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        #game-container {
-            width: 90%;
-            max-width: 600px;
-            text-align: center;
-            border: 2px solid #ffd700;
             padding: 20px;
-            border-radius: 15px;
-            background: linear-gradient(145deg, #000066, #000022);
         }
-        .question-box {
-            font-size: 24px;
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+
+        .price-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 16px;
+            padding: 25px;
             margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #555;
-            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
         }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+
+        .price-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: #38bdf8;
         }
-        button {
-            background: #000033;
+
+        .currency-name {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .price-value {
+            font-size: 2.4rem;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .price-value span {
+            font-size: 1rem;
+            color: #38bdf8;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .status-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse 2s infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        .refresh-btn {
+            width: 100%;
+            background: #0284c7;
             color: white;
-            border: 1px solid #ffd700;
-            padding: 15px;
-            font-size: 18px;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            border-radius: 25px;
-            transition: 0.3s;
+            transition: background 0.3s ease, transform 0.1s ease;
         }
-        button:hover { background: #ffd700; color: black; }
-        .helpers { margin-top: 20px; }
-        .helper-btn { background: #b8860b; font-size: 14px; }
-        #status { margin-top: 20px; color: #ffd700; font-weight: bold; }
+
+        .refresh-btn:hover {
+            background: #0369a1;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.98);
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="level-info">السؤال: 1 / 20 | الجائزة: 100 ريال</div>
-    <div class="question-box" id="question">جاري التحميل...</div>
-    <div class="options-grid" id="options">
+    <div class="container">
+        <div class="header">
+            <h1>أسعار العملات المباشرة</h1>
+            <p>متابعة سعر صرف الدولار الأمريكي لحظة بلحظة</p>
         </div>
-    <div class="helpers">
-        <button class="helper-btn" id="btn-50" onclick="use5050()">مساعدة 50/50</button>
-        <button class="helper-btn" onclick="withdraw()">انسحاب</button>
+
+        <div class="price-card">
+            <div class="currency-name">1 دولار أمريكي (USD)</div>
+            <div class="price-value" id="priceDisplay">جاري التحميل...<span>دينار عراقي</span></div>
+        </div>
+
+        <div class="status-box">
+            <div>
+                <span class="pulse-dot"></span>
+                <span id="updateStatus">متصل بالسوق المباشر</span>
+            </div>
+            <div id="lastUpdateTime">آخر تحديث: --:--:--</div>
+        </div>
+
+        <button class="refresh-btn" onclick="fetchDollarPrice()">تحديث السعر الآن</button>
+
+        <div class="footer-note">
+            يتم تحديث البيانات تلقائياً كل دقيقة من مصادر أسعار الصرف العالمية.
+        </div>
     </div>
-    <div id="status"></div>
-</div>
 
-<script>
-    const questions = [
-        { q: "ما هي عاصمة العراق؟", a: ["البصرة", "بغداد", "الموصل", "أربيل"], correct: 1 },
-        { q: "ما هو أكبر محيط في العالم؟", a: ["الأطلسي", "الهندي", "الهادي", "المتجمد"], correct: 2 },
-        { q: "من هو مخترع الهاتف؟", a: ["إديسون", "نيوتن", "جراهام بيل", "أينشتاين"], correct: 2 },
-        { q: "ما هو الكوكب الأحمر؟", a: ["الزهرة", "المريخ", "زحل", "عطارد"], correct: 1 },
-        { q: "كم عدد ألوان قوس قزح؟", a: ["5", "6", "7", "8"], correct: 2 },
-        // ... أضف المزيد من الأسئلة هنا لتصل إلى 20
-    ];
+    <script>
+        // دالة جلب سعر الصرف اللحظي
+        async function fetchDollarPrice() {
+            const priceDisplay = document.getElementById('priceDisplay');
+            const lastUpdateTime = document.getElementById('lastUpdateTime');
+            const updateStatus = document.getElementById('updateStatus');
 
-    // تكملة تلقائية لـ 20 سؤالاً للغرض التجريبي
-    while(questions.length < 20) {
-        questions.push({ q: "سؤال تجريبي رقم " + (questions.length + 1), a: ["خيار صحيح", "خطأ", "خطأ", "خطأ"], correct: 0 });
-    }
+            updateStatus.innerText = "جاري التحديث...";
 
-    const moneySteps = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 125000, 250000, 500000, 1000000, 2000000, 5000000, 10000000, 50000000, 100000000];
-    
-    let currentStep = 0;
-    let score = 0;
+            try {
+                // استخدام واجهة برمجة تطبيقات مجانية وموثوقة لجلب الأسعار العالمية
+                const response = await fetch('https://open.er-api.com/v6/latest/USD');
+                const data = await response.json();
 
-    function loadQuestion() {
-        const qData = questions[currentStep];
-        document.getElementById("level-info").innerText = `السؤال: ${currentStep + 1} / 20 | الجائزة: ${moneySteps[currentStep]} ريال`;
-        document.getElementById("question").innerText = qData.q;
-        const optionsDiv = document.getElementById("options");
-        optionsDiv.innerHTML = "";
-        
-        qData.a.forEach((opt, index) => {
-            const btn = document.createElement("button");
-            btn.innerText = opt;
-            btn.onclick = () => checkAnswer(index);
-            optionsDiv.appendChild(btn);
-        });
-        document.getElementById("status").innerText = "";
-    }
-
-    function checkAnswer(index) {
-        if (index === questions[currentStep].correct) {
-            score = moneySteps[currentStep];
-            currentStep++;
-            if (currentStep < 20) {
-                document.getElementById("status").innerText = "إجابة صحيحة! ننتقل للسؤال التالي...";
-                setTimeout(loadQuestion, 1000);
-            } else {
-                alert("مبروك! لقد فزت بالمليار!");
-                location.reload();
-            }
-        } else {
-            alert("للأسف إجابة خاطئة. انتهت اللعبة!");
-            location.reload();
-        }
-    }
-
-    function use5050() {
-        const correct = questions[currentStep].correct;
-        const buttons = document.getElementById("options").children;
-        let removed = 0;
-        for (let i = 0; i < buttons.length; i++) {
-            if (i !== correct && removed < 2) {
-                buttons[i].style.visibility = "hidden";
-                removed++;
+                if (data && data.rates && data.rates.IQD) {
+                    const iqdRate = data.rates.IQD;
+                    // تنسيق الرقم ليظهر بشكل جميل مع فاصلة الآلاف وفتحة عشرية محددة
+                    priceDisplay.innerHTML = `${iqdRate.toFixed(2)} <span>دينار عراقي</span>`;
+                    
+                    // تحديث الوقت الحالي
+                    const now = new Date();
+                    lastUpdateTime.innerText = `آخر تحديث: ${now.toLocaleTimeString('en-US')}`;
+                    updateStatus.innerText = "متصل بالسوق المباشر";
+                } else {
+                    throw new Error('بيانات غير صالحة');
+                }
+            } catch (error) {
+                console.error("خطأ في جلب البيانات:", error);
+                priceDisplay.innerHTML = `1,310.50 <span>دينار عراقي</span>`; // سعر احتياطي افتراضي
+                updateStatus.innerText = "تعذر الاتصال (عرض سعر احتياطي)";
             }
         }
-        document.getElementById("btn-50").disabled = true;
-        document.getElementById("btn-50").style.opacity = "0.5";
-    }
 
-    function withdraw() {
-        alert("انسحبت بمبلغ: " + score + " ريال.");
-        location.reload();
-    }
+        // جلب السعر فور فتح الموقع
+        fetchDollarPrice();
 
-    loadQuestion();
-</script>
+        // تحديث السعر تلقائياً كل 60 ثانية
+        setInterval(fetchDollarPrice, 60000);
+    </script>
 
 </body>
 </html>
