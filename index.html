@@ -3,273 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تكتك بغداد - مع الخرائط</title>
+    <title>تكتك بغداد - النظام المتكامل</title>
     
-    <!-- استدعاء ملفات مكتبة الخرائط Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+        
         body { 
             font-family: 'Tajawal', sans-serif; 
-            background-color: #e9ecef; 
             margin: 0; 
             padding: 0; 
+            background-color: #f0f0f0; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
         }
+        
         .app-container { 
             background-color: white; 
             width: 100%; 
             max-width: 400px; 
             height: 100vh; 
             max-height: 800px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
             position: relative; 
-        }
-        .header { 
-            background-color: #ffcc00; 
-            padding: 15px; 
-            text-align: center; 
-            font-size: 22px; 
-            font-weight: bold; 
-            color: #212529; 
-            border-bottom: 3px solid #212529;
-            z-index: 1000;
-        }
-        .content { 
-            padding: 20px; 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            overflow-y: auto;
-        }
-        .btn { 
-            background-color: #212529; 
-            color: #ffcc00; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            cursor: pointer; 
-            text-align: center; 
-            font-weight: bold; 
-            width: 100%; 
-            transition: 0.3s;
-        }
-        .btn:hover { background-color: #343a40; }
-        .btn-yellow { background-color: #ffcc00; color: #212529; }
-        .btn-yellow:hover { background-color: #e0b400; }
-        input { 
-            padding: 12px; 
-            border: 1px solid #ced4da; 
-            border-radius: 8px; 
-            font-size: 14px; 
-            width: 100%; 
-            box-sizing: border-box; 
-            font-family: 'Tajawal', sans-serif;
-        }
-        .hidden { display: none !important; }
-        .status { text-align: center; padding: 10px; font-weight: bold; font-size: 14px;}
-        .request-card {
-            border: 2px dashed #d9534f; 
-            padding: 15px; 
-            border-radius: 8px; 
-            background-color: #fffdf0;
-            animation: pulse 1.5s infinite;
-        }
-        
-        /* تأثير النبض للطلب الجديد */
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(217, 83, 79, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); }
+            overflow: hidden; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        /* تنسيق الخريطة */
-        .map-container {
-            height: 250px;
+        .screen {
             width: 100%;
-            border-radius: 8px;
-            border: 2px solid #ced4da;
-            z-index: 1; /* حتى لا تغطي القوائم المنبثقة */
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            z-index: 1;
+        }
+
+        .hidden { display: none !important; }
+
+        /* شاشة البداية */
+        .role-content {
+            padding: 40px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            justify-content: center;
+            height: 100%;
+            background-color: #f8f9fa;
+        }
+        .logo-text { font-size: 28px; font-weight: bold; color: #212529; margin-bottom: 20px; }
+        
+        .btn { 
+            padding: 15px; border: none; border-radius: 12px; font-size: 18px; 
+            cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; 
+        }
+        .btn-dark { background-color: #212529; color: white; }
+        .btn-yellow { background-color: #ffcc00; color: #212529; }
+        .btn-blue { background-color: #2b3990; color: white; }
+        
+        /* الخرائط */
+        .map-container { width: 100%; height: 100%; z-index: 1; }
+
+        /* الأزرار العائمة */
+        .floating-btn {
+            position: absolute; background: white; border-radius: 50%; width: 45px; height: 45px;
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 1000; cursor: pointer; font-size: 20px; color: #555;
+        }
+        .back-btn { top: 20px; right: 20px; }
+        .profile-btn { top: 20px; left: 20px; }
+        .gps-btn { bottom: 180px; right: 20px; }
+
+        /* دبوس المنتصف (الراكب) */
+        .center-pin {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%);
+            z-index: 10; display: flex; flex-direction: column; align-items: center;
+            pointer-events: none; transition: transform 0.2s;
+        }
+        .center-pin .box { background-color: #2b3990; color: white; padding: 5px 12px; border-radius: 8px; font-size: 14px; font-weight: bold; }
+        .center-pin .stick { width: 2px; height: 25px; background-color: #333; }
+        .center-pin .dot { width: 8px; height: 8px; background-color: #333; border-radius: 50%; border: 2px solid white; }
+        .center-pin.lifting { transform: translate(-50%, -120%); }
+
+        /* نقطة الموقع الحالي */
+        .current-location-marker {
+            width: 16px; height: 16px; background-color: #4285F4; border: 3px solid white;
+            border-radius: 50%; box-shadow: 0 0 0 8px rgba(66, 133, 244, 0.3);
+        }
+
+        /* القوائم السفلية (Bottom Sheets) */
+        .bottom-sheet {
+            position: absolute; bottom: 0; width: 100%; background: white;
+            border-radius: 20px 20px 0 0; box-shadow: 0 -2px 15px rgba(0,0,0,0.1); z-index: 1000;
+            display: flex; flex-direction: column;
+        }
+        .sheet-handle { width: 40px; height: 4px; background-color: #ddd; border-radius: 2px; margin: 10px auto; }
+
+        /* بحث الراكب */
+        .search-container { padding: 10px 20px 20px; }
+        .search-box { background-color: #f1f3f4; border-radius: 12px; padding: 15px; display: flex; gap: 15px; font-size: 16px; font-weight: 500; cursor: pointer; }
+        
+        /* خيارات الرحلة */
+        .ride-options-container { display: none; flex-direction: column; height: 350px; }
+        .tabs { display: flex; border-bottom: 1px solid #eee; padding: 0 20px; }
+        .tab { flex: 1; text-align: center; padding: 15px 0; font-weight: bold; color: #888; cursor: pointer; }
+        .tab.active { color: #333; border-bottom: 3px solid #2b3990; }
+        .ride-list { flex: 1; overflow-y: auto; padding: 10px 20px; }
+        .ride-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
+        .ride-info { display: flex; gap: 15px; align-items: center; }
+        .ride-info img { width: 50px; }
+        .ride-name { font-weight: bold; font-size: 16px; margin: 0; }
+        .ride-desc { font-size: 12px; color: #777; margin: 3px 0 0; }
+        .ride-price { font-weight: bold; font-size: 16px; }
+
+        /* كارت طلب السائق */
+        .request-card {
+            position: absolute; top: 15%; left: 5%; right: 5%; background: white;
+            border: 2px solid #d9534f; padding: 15px; border-radius: 12px; z-index: 2000;
+            animation: pulse 1.5s infinite; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(217, 83, 79, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">🛺 تكتك بغداد</div>
-        
-        <!-- شاشة اختيار الدور -->
-        <div id="roleSelection" class="content">
-            <h3 style="text-align: center; color: #333;">أهلاً بك!</h3>
-            <p style="text-align: center; color: #666; margin-bottom: 20px;">حدد طريقة استخدامك للتطبيق:</p>
-            <button class="btn" onclick="showScreen('passengerScreen')">🙋‍♂️ أريد تكتك (راكب)</button>
-            <button class="btn btn-yellow" onclick="showScreen('driverScreen')">🛺 أنا سائق تكتك</button>
-        </div>
 
-        <!-- شاشة الراكب -->
-        <div id="passengerScreen" class="content hidden">
-            <div id="passengerMap" class="map-container"></div>
-            <input type="text" id="pickup" placeholder="نقطة الانطلاق (مثال: الكرادة)" value="الكرادة داخل">
-            <input type="text" id="dropoff" placeholder="الوجهة (مثال: مول منصور)" value="مول منصور">
-            <button class="btn btn-yellow" onclick="requestRide()">اطلب الآن</button>
-            <div id="passengerStatus" class="status"></div>
-            <button class="btn" style="background-color: #e9ecef; color: #333;" onclick="showScreen('roleSelection')">رجوع</button>
-        </div>
-
-        <!-- شاشة السائق -->
-        <div id="driverScreen" class="content hidden">
-            <button class="btn btn-yellow" id="onlineBtn" onclick="toggleOnline()">🔴 غير متاح (مطفأ)</button>
-            <div id="driverMap" class="map-container"></div>
-            
-            <div id="driverRequests" class="request-card hidden">
-                <h4 style="margin-top: 0; color: #d9534f;">🚨 طلب جديد!</h4>
-                <p><strong>من:</strong> الكرادة داخل</p>
-                <p><strong>إلى:</strong> مول منصور</p>
-                <button class="btn btn-yellow" onclick="acceptRide()">قبول الطلب</button>
-            </div>
-            
-            <div id="driverStatus" class="status"></div>
-            <button class="btn" style="background-color: #e9ecef; color: #333;" onclick="showScreen('roleSelection')">تسجيل خروج</button>
+<div class="app-container">
+    
+    <div id="roleSelection" class="screen">
+        <div class="role-content">
+            <div class="logo-text">🛺 تكتك بغداد</div>
+            <p style="color: #666; margin-bottom: 20px;">الرجاء اختيار طريقة الدخول:</p>
+            <button class="btn btn-blue" onclick="showScreen('passengerScreen')">🙋‍♂️ أريد تكتك (حساب راكب)</button>
+            <button class="btn btn-yellow" onclick="showScreen('driverScreen')">🛺 أنا كابتن (حساب سائق)</button>
         </div>
     </div>
 
-    <script>
-        // متغيرات الخرائط
-        let passengerMapInstance = null;
-        let driverMapInstance = null;
-        let driverMarker = null;
+    <div id="passengerScreen" class="screen hidden">
+        <div class="floating-btn back-btn" onclick="goHome()">🔙</div>
+        <div class="floating-btn profile-btn">👤</div>
+        <div class="floating-btn gps-btn" onclick="centerPassengerMap()">🎯</div>
 
-        // إحداثيات مركز بغداد
-        const baghdadCenter = [33.3128, 44.3615];
+        <div id="passengerMap" class="map-container"></div>
 
-        // دالة لتهيئة الخرائط
-        function initMaps() {
-            // خريطة الراكب
-            if (!passengerMapInstance) {
-                passengerMapInstance = L.map('passengerMap').setView(baghdadCenter, 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(passengerMapInstance);
-                // وضع علامة لموقع الراكب
-                L.marker(baghdadCenter).addTo(passengerMapInstance).bindPopup('موقعك الحالي').openPopup();
-            }
+        <div class="center-pin" id="centerPin">
+            <div class="box">■ الوصول</div>
+            <div class="stick"></div>
+            <div class="dot"></div>
+        </div>
 
-            // خريطة السائق
-            if (!driverMapInstance) {
-                driverMapInstance = L.map('driverMap').setView(baghdadCenter, 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(driverMapInstance);
-                // وضع علامة لتكتك السائق (أيقونة مخصصة كدائرة صفراء)
-                driverMarker = L.circleMarker(baghdadCenter, {color: '#ffcc00', radius: 10, fillOpacity: 1}).addTo(driverMapInstance).bindPopup('مكانك (التكتك)');
-            }
-        }
-
-        // دالة التنقل بين الشاشات
-        function showScreen(screenId) {
-            document.getElementById('roleSelection').classList.add('hidden');
-            document.getElementById('passengerScreen').classList.add('hidden');
-            document.getElementById('driverScreen').classList.add('hidden');
-            document.getElementById(screenId).classList.remove('hidden');
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
             
-            // تهيئة الخرائط وتحديث حجمها لتظهر بشكل صحيح عند إزالة الإخفاء
-            initMaps();
-            setTimeout(() => {
-                if(passengerMapInstance) passengerMapInstance.invalidateSize();
-                if(driverMapInstance) driverMapInstance.invalidateSize();
-            }, 200);
+            <div class="search-container" id="searchContainer">
+                <div class="search-box" onclick="showRideOptions()">
+                    <span>🔍</span>
+                    <span id="addressText">بغداد، شارع الجهاد...</span>
+                </div>
+            </div>
 
-            // إعادة ضبط الحالات
-            document.getElementById('passengerStatus').innerHTML = '';
-            document.getElementById('driverRequests').classList.add('hidden');
-            isOnline = false;
-            document.getElementById('onlineBtn').innerHTML = "🔴 غير متاح (مطفأ)";
-            document.getElementById('onlineBtn').style.backgroundColor = "#ffcc00";
-            document.getElementById('onlineBtn').style.color = "#212529";
-        }
+            <div class="ride-options-container" id="rideOptionsContainer">
+                <div class="tabs">
+                    <div class="tab active">تكسي / تكتك</div>
+                    <div class="tab">توصيل</div>
+                </div>
+                <div class="ride-list">
+                    <div class="ride-item">
+                        <div class="ride-info">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3204/3204043.png" alt="سوبر">
+                            <div><p class="ride-name">تكتك سوبر</p><p class="ride-desc">الخيار الأفضل</p></div>
+                        </div>
+                        <div class="ride-price">٣,٠٠٠ دينار</div>
+                    </div>
+                    <div class="ride-item">
+                        <div class="ride-info">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3204/3204043.png" alt="توفير">
+                            <div><p class="ride-name">تكتك توفير</p><p class="ride-desc">توفير أكثر</p></div>
+                        </div>
+                        <div class="ride-price">٢,٥٠٠ دينار</div>
+                    </div>
+                </div>
+                <div style="padding: 15px 20px;">
+                    <button class="btn btn-blue" onclick="confirmRide()">تأكيد الرحلة</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // دالة تشغيل صوت التنبيه للسائق (Beep Sound)
-        function playNotificationSound() {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = context.createOscillator();
-            const gainNode = context.createGain();
-            
-            oscillator.type = 'sine'; // نوع الموجة الصوتية
-            oscillator.frequency.setValueAtTime(800, context.currentTime); // التردد
-            oscillator.frequency.exponentialRampToValueAtTime(1200, context.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(1, context.currentTime); // مستوى الصوت
-            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(context.destination);
-            
-            oscillator.start();
-            oscillator.stop(context.currentTime + 0.5); // مدة الصوت نصف ثانية
-        }
-
-        // دالة محاكاة طلب التكتك (الراكب)
-        function requestRide() {
-            const statusDiv = document.getElementById('passengerStatus');
-            statusDiv.innerHTML = "جاري البحث عن أقرب تكتك على الخريطة... ⏳";
-            
-            setTimeout(() => {
-                statusDiv.innerHTML = "<span style='color: #28a745;'>✅ تم العثور على كابتن! التكتك في طريقه إليك.</span>";
-            }, 3000);
-        }
-
-        // دالة تغيير حالة السائق (متاح/غير متاح)
-        let isOnline = false;
-        let requestTimeout;
+    <div id="driverScreen" class="screen hidden">
+        <div class="floating-btn back-btn" onclick="goHome()">🔙</div>
         
-        function toggleOnline() {
-            isOnline = !isOnline;
-            const btn = document.getElementById('onlineBtn');
-            const requestsDiv = document.getElementById('driverRequests');
-            const statusDiv = document.getElementById('driverStatus');
+        <div id="driverMap" class="map-container"></div>
 
-            if(isOnline) {
-                btn.innerHTML = "🟢 متاح (جاري البحث عن ركاب...)";
-                btn.style.backgroundColor = "#28a745";
-                btn.style.color = "white";
-                statusDiv.innerHTML = "";
-                
-                // محاكاة وصول طلب للسائق بعد 4 ثوانٍ
-                requestTimeout = setTimeout(() => {
-                    if(isOnline) {
-                        requestsDiv.classList.remove('hidden');
-                        playNotificationSound(); // 🔔 تشغيل الصوت هنا
-                        
-                        // رسم خط وهمي للطلب على خريطة السائق
-                        L.polyline([baghdadCenter, [33.32, 44.35]], {color: 'red'}).addTo(driverMapInstance);
-                        L.marker([33.32, 44.35]).addTo(driverMapInstance).bindPopup('موقع الراكب').openPopup();
-                        driverMapInstance.setView([33.316, 44.355], 13);
-                    }
-                }, 4000);
-            } else {
-                btn.innerHTML = "🔴 غير متاح (مطفأ)";
-                btn.style.backgroundColor = "#ffcc00";
-                btn.style.color = "#212529";
-                requestsDiv.classList.add('hidden');
-                statusDiv.innerHTML = "";
-                clearTimeout(requestTimeout); // إلغاء الطلب الوهمي إذا أطفأ التطبيق
-            }
-        }
+        <div id="driverRequests" class="request-card hidden">
+            <h3 style="margin-top: 0; color: #d9534f;">🚨 طلب جديد!</h3>
+            <p><strong>من:</strong> الكرادة داخل</p>
+            <p><strong>إلى:</strong> مول منصور</p>
+            <p><strong>الأجرة المتوقعة:</strong> ٣,٠٠٠ دينار</p>
+            <button class="btn btn-yellow" style="margin-top: 10px;" onclick="acceptRide()">قبول الطلب</button>
+        </div>
 
-        // دالة قبول الطلب (السائق)
-        function acceptRide() {
-            document.getElementById('driverRequests').classList.add('hidden');
-            document.getElementById('driverStatus').innerHTML = "<span style='color: #28a745;'>✅ تم قبول الطلب! توجه نحو النقطة الحمراء على الخريطة.</span>";
+        <div class="bottom-sheet" style="padding: 20px;">
+            <div id="driverStatusText" style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #d9534f;">أنت الآن غير متاح (مطفأ)</div>
+            <button class="btn btn-dark" id="onlineBtn" onclick="toggleOnline()">تشغيل التطبيق (استقبال الطلبات)</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- المتغيرات العامة ---
+    let passengerMap, driverMap;
+    const baghdadCenter = [33.3150, 44.3600];
+    let passengerLine, driverLine, destinationMarker;
+    let requestTimeout;
+    let isOnline = false;
+
+    // --- نظام التنقل بين الشاشات ---
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(screenId).classList.remove('hidden');
+
+        if(screenId === 'passengerScreen') initPassengerMap();
+        if(screenId === 'driverScreen') initDriverMap();
+    }
+
+    function goHome() {
+        showScreen('roleSelection');
+        resetPassengerUI();
+        if(isOnline) toggleOnline(); // إطفاء السائق عند الرجوع
+    }
+
+    // --- إعداد خريطة الراكب (نسخة بلي) ---
+    function initPassengerMap() {
+        if (!passengerMap) {
+            passengerMap = L.map('passengerMap', { zoomControl: false }).setView(baghdadCenter, 16);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(passengerMap);
+            
+            // النقطة الزرقاء
+            const currentIcon = L.divIcon({ className: 'current-location-marker', iconSize: [16,16], iconAnchor: [8,8] });
+            L.marker([33.3130, 44.3620], {icon: currentIcon}).addTo(passengerMap);
+
+            // حركة الدبوس وتغيير العناوين
+            const centerPin = document.getElementById('centerPin');
+            const addressText = document.getElementById('addressText');
+            const addresses = ["بغداد، شارع الجهاد", "طريق بغداد - بعقوبة", "بغداد، الكرادة", "المنصور، بغداد"];
+            
+            passengerMap.on('movestart', () => { centerPin.classList.add('lifting'); addressText.innerText = "جاري التحديد..."; });
+            passengerMap.on('moveend', () => { 
+                centerPin.classList.remove('lifting'); 
+                addressText.innerText = addresses[Math.floor(Math.random() * addresses.length)];
+            });
         }
-    </script>
+        setTimeout(() => passengerMap.invalidateSize(), 200);
+    }
+
+    function centerPassengerMap() {
+        if(passengerMap) passengerMap.flyTo([33.3130, 44.3620], 16, { animate: true, duration: 1 });
+    }
+
+    function showRideOptions() {
+        document.getElementById('searchContainer').style.display = 'none';
+        document.getElementById('rideOptionsContainer').style.display = 'flex';
+        document.getElementById('centerPin').style.display = 'none';
+        
+        const destIcon = L.divIcon({
+            html: '<div style="background-color: #2b3990; color: white; padding: 2px 5px; border-radius: 5px; font-size: 10px; font-weight: bold;">■ الوصول</div>',
+            iconSize: [50, 20], iconAnchor: [25, 10]
+        });
+        
+        destinationMarker = L.marker(passengerMap.getCenter(), {icon: destIcon}).addTo(passengerMap);
+        passengerLine = L.polyline([[33.3130, 44.3620], passengerMap.getCenter()], {color: '#2b3990', weight: 3, dashArray: '5, 10'}).addTo(passengerMap);
+        passengerMap.fitBounds(passengerLine.getBounds(), {padding: [50, 50]});
+    }
+
+    function resetPassengerUI() {
+        document.getElementById('searchContainer').style.display = 'block';
+        document.getElementById('rideOptionsContainer').style.display = 'none';
+        document.getElementById('centerPin').style.display = 'flex';
+        if(passengerLine) passengerMap.removeLayer(passengerLine);
+        if(destinationMarker) passengerMap.removeLayer(destinationMarker);
+        centerPassengerMap();
+    }
+
+    function confirmRide() {
+        alert("✅ تم طلب التكتك بنجاح! السائق في طريقه إليك.");
+        goHome();
+    }
+
+    // --- إعداد خريطة السائق ---
+    function initDriverMap() {
+        if (!driverMap) {
+            driverMap = L.map('driverMap', { zoomControl: false }).setView(baghdadCenter, 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(driverMap);
+            
+            // موقع السائق (تكتك أصفر)
+            L.circleMarker(baghdadCenter, {color: '#ffcc00', radius: 10, fillOpacity: 1}).addTo(driverMap).bindPopup('مكانك').openPopup();
+        }
+        setTimeout(() => driverMap.invalidateSize(), 200);
+    }
+
+    // --- نظام تنبيه السائق (الصوت) ---
+    function playBeep() {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.6);
+    }
+
+    function toggleOnline() {
+        isOnline = !isOnline;
+        const btn = document.getElementById('onlineBtn');
+        const status = document.getElementById('driverStatusText');
+        const reqCard = document.getElementById('driverRequests');
+
+        if(isOnline) {
+            btn.innerHTML = "🔴 إيقاف التطبيق (مطفأ)";
+            btn.classList.replace('btn-dark', 'btn-yellow');
+            status.innerHTML = "🟢 أنت متاح - جاري البحث عن طلبات...";
+            status.style.color = "#28a745";
+            
+            // محاكاة طلب بعد 4 ثوانٍ
+            requestTimeout = setTimeout(() => {
+                if(isOnline) {
+                    reqCard.classList.remove('hidden');
+                    playBeep(); // تشغيل الصوت
+                }
+            }, 4000);
+        } else {
+            btn.innerHTML = "تشغيل التطبيق (استقبال الطلبات)";
+            btn.classList.replace('btn-yellow', 'btn-dark');
+            status.innerHTML = "أنت الآن غير متاح (مطفأ)";
+            status.style.color = "#d9534f";
+            reqCard.classList.add('hidden');
+            clearTimeout(requestTimeout);
+            if(driverLine) driverMap.removeLayer(driverLine);
+        }
+    }
+
+    function acceptRide() {
+        document.getElementById('driverRequests').classList.add('hidden');
+        document.getElementById('driverStatusText').innerHTML = "✅ توجه نحو النقطة الزرقاء لإركاب العميل";
+        document.getElementById('driverStatusText').style.color = "#2b3990";
+        
+        // رسم مسار للراكب
+        const passengerLoc = [33.3200, 44.3650];
+        L.marker(passengerLoc).addTo(driverMap).bindPopup('الراكب').openPopup();
+        driverLine = L.polyline([baghdadCenter, passengerLoc], {color: 'red', weight: 4}).addTo(driverMap);
+        driverMap.fitBounds(driverLine.getBounds(), {padding: [30, 30]});
+    }
+</script>
+
 </body>
 </html>
