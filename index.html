@@ -3,317 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مرصد سعر الدولار - IRAQ EXCHANGE MONITOR</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>تكتك بغداد</title>
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #0b1120; color: #f8fafc; }
-        .glass-card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: 20px; }
-        .badge-pulse { width: 8px; height: 8px; background-color: #38bdf8; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); } 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background-color: #e9ecef; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        .app-container { 
+            background-color: white; 
+            width: 100%; 
+            max-width: 400px; 
+            height: 100vh; 
+            max-height: 700px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            position: relative; 
+        }
+        .header { 
+            background-color: #ffcc00; 
+            padding: 20px; 
+            text-align: center; 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #212529; 
+            border-bottom: 3px solid #212529;
+        }
+        .content { 
+            padding: 25px 20px; 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+        .btn { 
+            background-color: #212529; 
+            color: #ffcc00; 
+            padding: 15px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            cursor: pointer; 
+            text-align: center; 
+            font-weight: bold; 
+            width: 100%; 
+            transition: 0.3s;
+        }
+        .btn:hover { background-color: #343a40; }
+        .btn-yellow { background-color: #ffcc00; color: #212529; }
+        .btn-yellow:hover { background-color: #e0b400; }
+        input { 
+            padding: 15px; 
+            border: 1px solid #ced4da; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            font-family: 'Tajawal', sans-serif;
+        }
+        input:focus { outline: none; border-color: #ffcc00; box-shadow: 0 0 5px rgba(255, 204, 0, 0.5); }
+        .hidden { display: none !important; }
+        .status { text-align: center; padding: 10px; font-weight: bold; margin-top: 10px; }
+        .request-card {
+            border: 2px dashed #ffcc00; 
+            padding: 15px; 
+            border-radius: 8px; 
+            background-color: #fffdf0;
+        }
     </style>
 </head>
-<body class="p-4 md:p-6 max-w-2xl mx-auto space-y-5">
-
-    <header class="glass-card p-4 flex items-center justify-between shadow-lg">
-        <div class="flex items-center space-x-2 space-x-reverse">
-            <div class="flex items-center space-x-1 space-x-reverse bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700 text-xs">
-                <span class="badge-pulse"></span>
-                <span id="headerStatus" class="text-cyan-400 font-bold">ONLINE</span>
-            </div>
-            <span class="text-xs text-slate-400">متصل بـ (البنك المركزي وشفق نيوز)</span>
-        </div>
-        <div class="flex items-center space-x-2 space-x-reverse">
-            <div class="text-right">
-                <div class="text-[10px] text-slate-400">مرصد محدث</div>
-                <div class="text-xs font-bold text-slate-200" id="topTime">تحديث مباشر</div>
-            </div>
-            <div class="bg-cyan-950 border border-cyan-500/30 px-3 py-1.5 rounded-xl text-cyan-400 font-black text-sm flex items-center gap-1">
-                <span>IQD</span>
-            </div>
-        </div>
-    </header>
-
-    <section class="glass-card p-6 relative overflow-hidden shadow-xl border-t-2 border-cyan-500">
-        <div class="flex justify-between items-start text-xs text-slate-400 mb-2">
-            <span>BGD — SELL / USD (السوق المحلي)</span>
-            <span class="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">↗ صعود حي</span>
-        </div>
-        <div class="flex items-baseline gap-2">
-            <h1 class="text-4xl md:text-5xl font-black text-white tracking-tight" id="mainBaghdadPrice">١,٥٣٠,٠</h1>
-            <span class="text-sm font-bold text-slate-300">دينار عراقي</span>
-        </div>
-        <p class="text-xs text-slate-400 mt-2">سعر بيع الدولار الواحد لدى مكاتب الصيرفة في بغداد</p>
-        <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
-            <span>المصدر الرئيسي: <strong class="text-cyan-400">وكالة شفق نيوز</strong> — مسح سوق العملات</span>
-            <span class="text-cyan-400 cursor-pointer" onclick="fetchLiveData()">تحديث الآن</span>
-        </div>
-    </section>
-
-    <section class="glass-card p-5 relative">
-        <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-bold text-slate-300">السعر المرجعي الرسمي</span>
-            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
-                🏛️
-            </div>
-        </div>
-        <div class="text-2xl md:text-3xl font-black text-white" id="cbiReferencePrice">١,٣١٠</div>
-        <p class="text-xs text-slate-400 mt-2 leading-relaxed">دينار عراقي لكل دولار بحسب القراءة المنشورة للـ <strong class="text-slate-200">البنك المركزي العراقي (CBI)</strong>.</p>
-        <div class="mt-3 pt-3 border-t border-slate-800 text-left flex justify-between items-center">
-            <span class="text-[11px] text-slate-500">النشرة الرسمية للبنك المركزي</span>
-            <a href="https://cbi.iq" target="_blank" class="text-cyan-400 text-xs inline-flex items-center gap-1 hover:underline">
-                عرض المصدر الرسمي ↗
-            </a>
-        </div>
-    </section>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section class="glass-card p-5">
-            <div class="flex justify-between items-center mb-3">
-                <div>
-                    <h3 class="font-bold text-sm text-white">بغداد</h3>
-                    <p class="text-[10px] text-slate-400">سوق الصيرفة المحلي (شفق نيوز)</p>
-                </div>
-                <span class="text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold">↗ نشط</span>
-            </div>
-            <div class="text-xs text-slate-400 mb-2">د.ع / 1 USD</div>
-            <div class="grid grid-cols-2 gap-2 text-center">
-                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[10px] text-slate-400 mb-1">الشراء</div>
-                    <div class="font-black text-white text-sm" id="bgdBuy">١,٥٢٠,٠</div>
-                </div>
-                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[10px] text-slate-400 mb-1">البيع</div>
-                    <div class="font-black text-white text-sm" id="bgdSell">١,٥٣٠,٠</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="glass-card p-5">
-            <div class="flex justify-between items-center mb-3">
-                <div>
-                    <h3 class="font-bold text-sm text-white">أربيل</h3>
-                    <p class="text-[10px] text-slate-400">سوق الصيرفة المحلي (شفق نيوز)</p>
-                </div>
-                <span class="text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold">↗ نشط</span>
-            </div>
-            <div class="text-xs text-slate-400 mb-2">د.ع / 1 USD</div>
-            <div class="grid grid-cols-2 gap-2 text-center">
-                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[10px] text-slate-400 mb-1">الشراء</div>
-                    <div class="font-black text-white text-sm" id="erbilBuy">١,٥٢٥,٠</div>
-                </div>
-                <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                    <div class="text-[10px] text-slate-400 mb-1">البيع</div>
-                    <div class="font-black text-white text-sm" id="erbilSell">١,٥٣٥,٠</div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <section class="glass-card p-5">
-        <div class="flex justify-between items-center mb-4">
-            <div>
-                <h3 class="font-bold text-sm text-white">المسار التاريخي للسوق</h3>
-                <p class="text-[10px] text-slate-400">استناداً إلى سجلات التداول المسجلة من تقارير الوكالات</p>
-            </div>
-            <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px]">
-                <button onclick="updateChart('24h')" id="btn24h" class="px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition">24 ساعة</button>
-                <button onclick="updateChart('7d')" id="btn7d" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">7 أيام</button>
-                <button onclick="updateChart('30d')" id="btn30d" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">30 يوماً</button>
-            </div>
-        </div>
-        <div class="h-44 w-full">
-            <canvas id="marketChart"></canvas>
-        </div>
-        <div class="flex items-center justify-center gap-4 mt-3 text-[11px] text-slate-300">
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-cyan-400 rounded-full inline-block"></span> بغداد (شفق نيوز)</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-purple-400 rounded-full inline-block"></span> أربيل (شفق نيوز)</span>
-        </div>
-    </section>
-
-    <section class="glass-card p-5 space-y-4">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="text-cyan-400">💱</div>
-                <h3 class="font-bold text-sm text-white">آلة التحويل الفوري</h3>
-            </div>
-            <span class="text-[10px] text-slate-400">USD ⇄ IQD</span>
-        </div>
-        <p class="text-xs text-slate-400">تحويل فوري باستخدام سعر بيع بغداد الموثق من مسح شفق نيوز.</p>
+<body>
+    <div class="app-container">
+        <div class="header">🛺 تكتك بغداد</div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                <div class="text-[10px] text-slate-400 mb-1">الدولار الأمريكي (USD)</div>
-                <input type="number" id="usdAmount" value="100" oninput="convert()" class="w-full bg-transparent text-white font-black text-lg focus:outline-none">
-            </div>
-            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                <div class="text-[10px] text-slate-400 mb-1">الدينار العراقي (IQD)</div>
-                <div id="iqdResult" class="text-cyan-400 font-black text-lg">١٥٣,٠٠٠</div>
-            </div>
+        <div id="roleSelection" class="content">
+            <h3 style="text-align: center; color: #333;">أهلاً بك!</h3>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">حدد طريقة استخدامك للتطبيق:</p>
+            <button class="btn" onclick="showScreen('passengerScreen')">🙋‍♂️ أريد تكتك (راكب)</button>
+            <button class="btn btn-yellow" onclick="showScreen('driverScreen')">🛺 أنا سائق تكتك</button>
         </div>
-        <div class="text-[10px] text-slate-500">
-            أساس التحويل: يعتمد على السعر الحي المعلن من السوق المحلي.
+
+        <div id="passengerScreen" class="content hidden">
+            <h3 style="color: #333;">طلب رحلة جديدة</h3>
+            <input type="text" id="pickup" placeholder="نقطة الانطلاق (مثال: الكرادة داخل)">
+            <input type="text" id="dropoff" placeholder="الوجهة (مثال: مول منصور)">
+            <button class="btn btn-yellow" onclick="requestRide()">اطلب الآن</button>
+            <div id="passengerStatus" class="status"></div>
+            <button class="btn" style="margin-top: auto; background-color: #e9ecef; color: #333;" onclick="showScreen('roleSelection')">رجوع</button>
         </div>
-    </section>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section class="glass-card p-4 text-xs space-y-2">
-            <div class="font-bold text-slate-200">مراجع البيانات الرسمية</div>
-            <p class="text-[11px] text-slate-400">المصادر المعتمدة المباشرة:</p>
-            <div class="flex gap-2 pt-1">
-                <a href="https://cbi.iq" target="_blank" class="bg-slate-800 px-2.5 py-1 rounded-lg text-cyan-400 hover:bg-slate-700">البنك المركزي العراقي</a>
-                <a href="https://shafaq.com" target="_blank" class="bg-slate-800 px-2.5 py-1 rounded-lg text-cyan-400 hover:bg-slate-700">شفق نيوز</a>
+        <div id="driverScreen" class="content hidden">
+            <h3 style="color: #333;">لوحة الكابتن</h3>
+            <button class="btn btn-yellow" id="onlineBtn" onclick="toggleOnline()">🔴 غير متاح (مطفأ)</button>
+            
+            <div id="driverRequests" class="request-card hidden">
+                <h4 style="margin-top: 0; color: #d9534f;">🚨 طلب جديد!</h4>
+                <p><strong>من:</strong> <span id="req-pickup">الكرادة داخل</span></p>
+                <p><strong>إلى:</strong> <span id="req-dropoff">مول منصور</span></p>
+                <p><strong>المسافة:</strong> 4 كم (تقريباً 3000 دينار)</p>
+                <button class="btn btn-yellow" onclick="acceptRide()">قبول الطلب</button>
             </div>
-        </section>
-
-        <section class="glass-card p-4 text-xs space-y-2">
-            <div class="font-bold text-slate-200">حالة الاتصال والمزامنة</div>
-            <p class="text-[11px] text-slate-400">فحص التحديث التلقائي للمصادر كل 30 ثانية.</p>
-            <button onclick="fetchLiveData()" class="w-full bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-400 border border-cyan-500/30 py-2 rounded-xl font-bold flex items-center justify-center gap-2 transition">
-                <span>🔄</span> التحقق وتحديث البيانات الآن
-            </button>
-        </section>
+            
+            <div id="driverStatus" class="status"></div>
+            <button class="btn" style="margin-top: auto; background-color: #e9ecef; color: #333;" onclick="showScreen('roleSelection')">تسجيل خروج</button>
+        </div>
     </div>
-
-    <footer class="glass-card p-4 text-[11px] text-slate-400 space-y-3">
-        <div class="font-bold text-slate-200">بروتوكول العرض</div>
-        <div class="grid grid-cols-2 gap-2 text-[10px]">
-            <div>⏱️ تحديث البيانات: كل 30 ثانية تلقائياً</div>
-            <div>📊 المصدر: ربط حي مع CBI وشفق نيوز</div>
-        </div>
-        <div class="border-t border-slate-800 pt-3 text-[10px] text-amber-500/90 leading-relaxed">
-            <strong>تنبيه قانوني:</strong> الأسعار المعروضة مرجعية ومستمدة مباشرة من نشرات البنك المركزي العراقي وتقارير مسح سوق العملات لوكالة شفق نيوز، ولا تشكل توصية مالية ملزمة.
-        </div>
-    </footer>
 
     <script>
-        let chartInstance = null;
-
-        // دالة جلب وتحديث البيانات الحية من المصادر
-        async function fetchLiveData() {
-            const statusEl = document.getElementById('headerStatus');
-            statusEl.innerText = "CHECKING";
-            statusEl.className = "text-amber-400 font-bold";
-
-            try {
-                // جلب مؤشرات الصرف كمؤشر أساسي لربط البيانات
-                const response = await fetch('https://open.er-api.com/v6/latest/USD');
-                const data = await response.json();
-
-                if (data && data.rates && data.rates.IQD) {
-                    let base = data.rates.IQD;
-                    // مطابقة النشرات الرسمية للبنك المركزي ومسح شفق نيوز لسوق بغداد وأربيل
-                    let baghdadSell = Math.round(base * 100);
-                    let baghdadBuy = baghdadSell - 1000;
-                    let erbilSell = baghdadSell + 250;
-                    let erbilBuy = baghdadBuy + 250;
-
-                    document.getElementById('mainBaghdadPrice').innerText = baghdadSell.toLocaleString('en-US');
-                    document.getElementById('bgdSell').innerText = baghdadSell.toLocaleString('en-US');
-                    document.getElementById('bgdBuy').innerText = baghdadBuy.toLocaleString('en-US');
-                    
-                    document.getElementById('erbilSell').innerText = erbilSell.toLocaleString('en-US');
-                    document.getElementById('erbilBuy').innerText = erbilBuy.toLocaleString('en-US');
-
-                    // تحديث السعر المرجعي للبنك المركزي الثابت نسبياً
-                    document.getElementById('cbiReferencePrice').innerText = "١,٣١٠";
-
-                    const now = new Date();
-                    document.getElementById('topTime').innerText = `تحديث ${now.toLocaleTimeString('en-US')}`;
-                    
-                    statusEl.innerText = "ONLINE";
-                    statusEl.className = "text-emerald-400 font-bold";
-                    convert();
-                }
-            } catch (error) {
-                console.error("فشل جلب التحديث الحي، الاستعانة بالقيم الاحتياطية الرسمية:", error);
-                statusEl.innerText = "OFFLINE";
-                statusEl.className = "text-rose-400 font-bold";
-            }
-        }
-
-        // إعداد الرسم البياني التاريخي
-        function initChart(period) {
-            const ctx = document.getElementById('marketChart').getContext('2d');
+        // دالة التنقل بين الشاشات
+        function showScreen(screenId) {
+            document.getElementById('roleSelection').classList.add('hidden');
+            document.getElementById('passengerScreen').classList.add('hidden');
+            document.getElementById('driverScreen').classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
             
-            let labels = ['١٦:٠٠', '١٦:١٠', '١٦:٢٠', '١٦:٣٠', 'الآن'];
-            let baghdadData = [1510, 1515, 1520, 1525, 1530];
-            let erbilData = [1515, 1518, 1522, 1528, 1535];
+            // إعادة ضبط الحالات عند التنقل
+            document.getElementById('passengerStatus').innerHTML = '';
+            document.getElementById('pickup').value = '';
+            document.getElementById('dropoff').value = '';
+        }
 
-            if(period === '7d') {
-                labels = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
-                baghdadData = [1500, 1505, 1510, 1512, 1520, 1525, 1530];
-                erbilData = [1505, 1510, 1512, 1518, 1522, 1529, 1535];
-            } else if(period === '30d') {
-                labels = ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3', 'الأسبوع 4'];
-                baghdadData = [1490, 1505, 1515, 1530];
-                erbilData = [1495, 1510, 1520, 1535];
+        // دالة محاكاة طلب التكتك (الراكب)
+        function requestRide() {
+            const pickup = document.getElementById('pickup').value;
+            const dropoff = document.getElementById('dropoff').value;
+            const statusDiv = document.getElementById('passengerStatus');
+
+            if(!pickup || !dropoff) {
+                statusDiv.innerHTML = "<span style='color: #d9534f;'>يرجى تحديد الانطلاق والوجهة!</span>";
+                return;
             }
 
-            if(chartInstance) {
-                chartInstance.destroy();
-            }
+            statusDiv.innerHTML = "جاري البحث عن أقرب تكتك... ⏳";
+            
+            // محاكاة تأخير الشبكة ثم العثور على سائق
+            setTimeout(() => {
+                statusDiv.innerHTML = "<span style='color: #28a745;'>✅ تم العثور على كابتن! (أبو كرار) في طريقه إليك. التكتك رقم: 1234 بغداد</span>";
+            }, 3000);
+        }
 
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'بغداد (شفق نيوز)',
-                            data: baghdadData,
-                            borderColor: '#38bdf8',
-                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'أربيل (شفق نيوز)',
-                            data: erbilData,
-                            borderColor: '#c084fc',
-                            backgroundColor: 'rgba(192, 132, 252, 0.05)',
-                            fill: true,
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+        // دالة تغيير حالة السائق (متاح/غير متاح)
+        let isOnline = false;
+        function toggleOnline() {
+            isOnline = !isOnline;
+            const btn = document.getElementById('onlineBtn');
+            const requestsDiv = document.getElementById('driverRequests');
+            const statusDiv = document.getElementById('driverStatus');
+
+            if(isOnline) {
+                btn.innerHTML = "🟢 متاح (جاري البحث عن ركاب...)";
+                btn.style.backgroundColor = "#28a745";
+                btn.style.color = "white";
+                statusDiv.innerHTML = "";
+                
+                // محاكاة وصول طلب للسائق بعد 4 ثوانٍ
+                setTimeout(() => {
+                    if(isOnline) {
+                        requestsDiv.classList.remove('hidden');
                     }
-                }
-            });
+                }, 4000);
+            } else {
+                btn.innerHTML = "🔴 غير متاح (مطفأ)";
+                btn.style.backgroundColor = "#ffcc00";
+                btn.style.color = "#212529";
+                requestsDiv.classList.add('hidden');
+                statusDiv.innerHTML = "";
+            }
         }
 
-        function updateChart(p) {
-            document.querySelectorAll('button[id^="btn"]').forEach(btn => {
-                btn.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition";
-            });
-            document.getElementById('btn' + p).className = "px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition";
-            initChart(p);
+        // دالة قبول الطلب (السائق)
+        function acceptRide() {
+            document.getElementById('driverRequests').classList.add('hidden');
+            document.getElementById('driverStatus').innerHTML = "<span style='color: #28a745;'>✅ تم قبول الطلب! اتبع الخريطة للوصول إلى الراكب.</span>";
         }
-
-        // آلة التحويل الفوري
-        function convert() {
-            const usd = document.getElementById('usdAmount').value;
-            const rateText = document.getElementById('mainBaghdadPrice').innerText.replace(/,/g, '');
-            const rate = parseFloat(rateText) || 1530;
-            const total = usd * rate;
-            document.getElementById('iqdResult').innerText = total.toLocaleString('en-US') + " د.ع";
-        }
-
-        // تشغيل التحديث التلقائي كل 30 ثانية
-        setInterval(fetchLiveData, 30000);
-
-        // التشغيل الأولي
-        initChart('24h');
-        fetchLiveData();
     </script>
 </body>
 </html>
