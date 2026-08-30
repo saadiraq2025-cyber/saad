@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تكتك بغداد - النظام المتكامل المتقدم</title>
+    <title>تكتك بغداد - مع لوحة الإدارة</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,14 +13,14 @@
         
         body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; background-color: #e9ecef; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .app-container { background-color: white; width: 100%; max-width: 400px; height: 100vh; max-height: 850px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
-        .screen { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; background: white; z-index: 1; }
+        .screen { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; background: white; z-index: 1; overflow-y: auto;}
         .hidden { display: none !important; }
 
         .role-content { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; gap: 15px; justify-content: center; height: 100%; background-color: #f8f9fa; }
         .logo-text { font-size: 28px; font-weight: bold; color: #212529; margin-bottom: 10px; }
         
-        input.form-input { padding: 15px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; font-family: 'Tajawal'; text-align: center; }
-        .btn { padding: 15px; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input.form-input { padding: 15px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; font-family: 'Tajawal'; text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 10px;}
+        .btn { padding: 15px; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 10px;}
         .btn-dark { background-color: #212529; color: white; }
         .btn-yellow { background-color: #ffcc00; color: #212529; }
         .btn-blue { background-color: #2b3990; color: white; }
@@ -28,7 +28,7 @@
         .btn-green { background-color: #28a745; color: white; }
         .btn-waze { background-color: #33ccff; color: #000; display: flex; align-items: center; justify-content: center; gap: 5px; }
         
-        .map-container { width: 100%; height: 100%; z-index: 1; }
+        .map-container { width: 100%; height: 100%; z-index: 1; position: absolute;}
         .floating-btn { position: absolute; background: white; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 1000; cursor: pointer; font-size: 20px; color: #555; }
         .back-btn { top: 20px; right: 20px; } .profile-btn { top: 20px; left: 20px; } .gps-btn { bottom: 250px; right: 20px; }
 
@@ -57,6 +57,14 @@
         
         .action-btns { display: flex; gap: 10px; margin-top: 15px; }
         .padding-20 { padding: 20px; }
+
+        /* تنسيقات لوحة الإدارة */
+        .admin-header { background: #212529; color: #ffcc00; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 10;}
+        .admin-card { background: white; border-radius: 12px; padding: 15px; margin: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #eee;}
+        .admin-card h3 { margin-top: 0; color: #2b3990; font-size: 16px;}
+        .stat-box { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;}
+        .stat-box span { color: #d9534f; }
+        .ride-options-container { max-height: 200px; overflow-y: auto;}
     </style>
 </head>
 <body>
@@ -70,9 +78,45 @@
             <input type="text" id="userName" class="form-input" placeholder="الاسم الكامل">
             <input type="tel" id="userPhone" class="form-input" placeholder="رقم الهاتف (مثال: 07700000000)">
             
-            <p style="margin-top: 20px; font-weight: bold;">الدخول كـ:</p>
+            <p style="margin-top: 10px; font-weight: bold;">الدخول كـ:</p>
             <button class="btn btn-blue" onclick="login('passenger')">🙋‍♂️ راكب</button>
             <button class="btn btn-yellow" onclick="login('driver')">🛺 كابتن</button>
+            
+            <button class="btn btn-dark" style="margin-top: 20px;" onclick="adminLogin()">⚙️ الإدارة</button>
+        </div>
+    </div>
+
+    <div id="adminScreen" class="screen hidden" style="background-color: #f8f9fa;">
+        <div class="admin-header">
+            <span style="float: right; cursor: pointer;" onclick="goHome()">🔙</span>
+            لوحة تحكم الإدارة
+        </div>
+        
+        <div class="admin-card">
+            <h3>📊 الإحصائيات</h3>
+            <div class="stat-box">إجمالي الركاب: <span id="statPassengers">0</span></div>
+            <div class="stat-box">إجمالي السائقين: <span id="statDrivers">0</span></div>
+            <div class="stat-box">الطلبات الحالية: <span id="statRides">0</span></div>
+        </div>
+
+        <div class="admin-card">
+            <h3>💰 تسعيرة الكيلومتر</h3>
+            <p style="font-size: 12px; color: gray;">حدد سعر الكيلومتر الواحد بالدينار العراقي:</p>
+            <input type="number" id="pricePerKm" class="form-input" placeholder="مثال: 1000">
+            <button class="btn btn-green" onclick="saveAdminSettings()">حفظ التسعيرة</button>
+        </div>
+
+        <div class="admin-card">
+            <h3>🚘 إضافة فئة سيارة</h3>
+            <input type="text" id="newCarType" class="form-input" placeholder="اسم السيارة (مثال: تكتك VIP)">
+            <button class="btn btn-blue" onclick="addCarType()">إضافة</button>
+            <ul id="carList" style="text-align: right; font-size: 14px; color: #555;"></ul>
+        </div>
+
+        <div class="admin-card">
+            <h3>🔔 إرسال إشعار عام</h3>
+            <input type="text" id="adminNotif" class="form-input" placeholder="اكتب رسالتك هنا...">
+            <button class="btn btn-yellow" onclick="sendNotification()">إرسال للجميع</button>
         </div>
     </div>
 
@@ -97,9 +141,11 @@
             </div>
 
             <div id="passengerStage2" class="hidden padding-20">
-                <h3 style="margin-top:0">تكتك سريع</h3>
-                <p style="color: #2b3990; font-weight: bold; font-size: 18px;">٣,٠٠٠ د.ع</p>
-                <button class="btn btn-blue" onclick="requestRide()">اطلب تكتك الآن</button>
+                <div class="ride-options-container" id="passengerCarsList">
+                    </div>
+                <h3 style="margin-top:10px; border-top: 1px solid #eee; padding-top: 10px;">الأجرة المقدرة:</h3>
+                <p id="calculatedPrice" style="color: #2b3990; font-weight: bold; font-size: 22px; margin-top: 0;">-- د.ع</p>
+                <button class="btn btn-blue" onclick="requestRide()">اطلب الآن</button>
             </div>
 
             <div id="passengerStage3" class="hidden padding-20" style="text-align: center;">
@@ -108,7 +154,7 @@
                 <div id="driverInfoForPass" class="contact-card hidden">
                     <div class="contact-info">
                         <h4 id="displayDriverName">اسم الكابتن</h4>
-                        <p>تكتك أصفر</p>
+                        <p>كابتن تكتك بغداد</p>
                     </div>
                     <a href="#" id="callDriverBtn" class="call-btn">📞</a>
                 </div>
@@ -127,6 +173,7 @@
             <h3 style="margin-top: 0; color: #d9534f;">🚨 طلب جديد!</h3>
             <p style="font-size: 14px;"><strong>من:</strong> <span id="req-pickup-address">--</span></p>
             <p style="font-size: 14px;"><strong>إلى:</strong> <span id="req-dropoff-address">--</span></p>
+            <p style="font-size: 16px; font-weight: bold; color: #2b3990;">الأجرة: <span id="req-price">--</span></p>
             <div class="action-btns">
                 <button class="btn btn-green" onclick="acceptRide()">قبول</button>
                 <button class="btn btn-red" onclick="rejectRide()">رفض</button>
@@ -165,44 +212,132 @@
 </div>
 
 <script>
-    // --- المتغيرات الأساسية ---
+    // --- المتغيرات الأساسية وقاعدة البيانات المصغرة ---
     let currentUser = { role: '', name: '', phone: '' };
     let passengerMap, driverMap;
     let userCoords = [33.3150, 44.3600]; 
-    let isOnline = false, syncInterval, requestBeepInterval;
+    let isOnline = false, syncInterval, requestBeepInterval, notifInterval;
     
     // متغيرات الراكب
     let p_pickupCoords, p_dropoffCoords, p_address = "", p_phase = 'pickup';
     let mapLayers = []; 
+    let finalCalculatedPrice = 0;
 
-    // --- نظام تسجيل الدخول والمزامنة (LocalStorage) ---
+    // تهيئة إعدادات الإدارة الافتراضية إذا لم تكن موجودة
+    if(!localStorage.getItem('admin_settings')) {
+        localStorage.setItem('admin_settings', JSON.stringify({
+            pricePerKm: 1000,
+            cars: ['تكتك سريع']
+        }));
+    }
+    if(!localStorage.getItem('app_users')) {
+        localStorage.setItem('app_users', JSON.stringify([]));
+    }
+
+    // ==========================================
+    // نظام تسجيل الدخول
+    // ==========================================
     function login(role) {
         let name = document.getElementById('userName').value.trim();
         let phone = document.getElementById('userPhone').value.trim();
-        
         if(!name || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف!"); return; }
         
         currentUser = { role, name, phone };
         localStorage.setItem(`tuktuk_user`, JSON.stringify(currentUser));
         
-        if(role === 'passenger') localStorage.removeItem('tuktuk_ride'); 
-
-        showScreen(role === 'passenger' ? 'passengerScreen' : 'driverScreen');
-    }
-
-    window.onload = () => {
-        let saved = localStorage.getItem('tuktuk_user');
-        if(saved) {
-            currentUser = JSON.parse(saved);
-            document.getElementById('userName').value = currentUser.name;
-            document.getElementById('userPhone').value = currentUser.phone;
+        // تسجيل المستخدم في الإحصائيات العامة
+        let allUsers = JSON.parse(localStorage.getItem('app_users'));
+        if(!allUsers.find(u => u.phone === phone)) {
+            allUsers.push(currentUser);
+            localStorage.setItem('app_users', JSON.stringify(allUsers));
         }
-    };
+
+        if(role === 'passenger') localStorage.removeItem('tuktuk_ride'); 
+        showScreen(role === 'passenger' ? 'passengerScreen' : 'driverScreen');
+        startNotificationListener();
+    }
 
     function showProfile() {
         alert(`الملف الشخصي:\nالاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\nالدور: ${currentUser.role === 'passenger' ? 'راكب' : 'كابتن'}`);
     }
 
+    // ==========================================
+    // لوحة الإدارة (Admin Functions)
+    // ==========================================
+    function adminLogin() {
+        let pass = prompt("الرجاء إدخال الرقم السري للإدارة:");
+        if(pass === "12312344") {
+            showScreen('adminScreen');
+            loadAdminData();
+        } else if (pass !== null) {
+            alert("الرقم السري خاطئ!");
+        }
+    }
+
+    function loadAdminData() {
+        let settings = JSON.parse(localStorage.getItem('admin_settings'));
+        let allUsers = JSON.parse(localStorage.getItem('app_users'));
+        let ride = JSON.parse(localStorage.getItem('tuktuk_ride'));
+
+        // الإحصائيات
+        document.getElementById('statPassengers').innerText = allUsers.filter(u => u.role === 'passenger').length;
+        document.getElementById('statDrivers').innerText = allUsers.filter(u => u.role === 'driver').length;
+        document.getElementById('statRides').innerText = (ride && ride.status !== 'completed' && ride.status !== 'rejected') ? "1" : "0";
+
+        // الإعدادات
+        document.getElementById('pricePerKm').value = settings.pricePerKm;
+        
+        // عرض السيارات
+        let carList = document.getElementById('carList');
+        carList.innerHTML = "";
+        settings.cars.forEach(car => {
+            carList.innerHTML += `<li>${car}</li>`;
+        });
+    }
+
+    function saveAdminSettings() {
+        let settings = JSON.parse(localStorage.getItem('admin_settings'));
+        settings.pricePerKm = parseInt(document.getElementById('pricePerKm').value) || 1000;
+        localStorage.setItem('admin_settings', JSON.stringify(settings));
+        alert("تم تحديث تسعيرة الكيلومتر بنجاح!");
+    }
+
+    function addCarType() {
+        let newCar = document.getElementById('newCarType').value.trim();
+        if(newCar) {
+            let settings = JSON.parse(localStorage.getItem('admin_settings'));
+            settings.cars.push(newCar);
+            localStorage.setItem('admin_settings', JSON.stringify(settings));
+            document.getElementById('newCarType').value = "";
+            loadAdminData();
+            alert("تم إضافة السيارة بنجاح!");
+        }
+    }
+
+    function sendNotification() {
+        let msg = document.getElementById('adminNotif').value.trim();
+        if(msg) {
+            localStorage.setItem('admin_notification', JSON.stringify({ text: msg, time: Date.now() }));
+            document.getElementById('adminNotif').value = "";
+            alert("تم إرسال الإشعار للجميع!");
+        }
+    }
+
+    // استماع المستخدمين للإشعارات
+    function startNotificationListener() {
+        let lastNotifTime = Date.now();
+        notifInterval = setInterval(() => {
+            let notif = JSON.parse(localStorage.getItem('admin_notification'));
+            if(notif && notif.time > lastNotifTime) {
+                lastNotifTime = notif.time;
+                alert("🔔 إشعار من الإدارة:\n" + notif.text);
+            }
+        }, 3000);
+    }
+
+    // ==========================================
+    // الخرائط والنظام المشترك
+    // ==========================================
     function fetchRealLocation(callback) {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -212,7 +347,6 @@
         } else callback(userCoords);
     }
 
-    // --- تحديث: جلب تفاصيل العنوان بالكامل (المنطقة، الشارع، النقطة الدالة) ---
     async function getAddress(lat, lng) {
         try {
             let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`);
@@ -221,19 +355,11 @@
                 let gov = data.address.state || data.address.city || "بغداد";
                 let area = data.address.suburb || data.address.neighbourhood || data.address.town || "";
                 let road = data.address.road || "";
-                let landmark = data.address.amenity || data.address.building || data.address.shop || data.address.leisure || "";
-                
+                let landmark = data.address.amenity || data.address.building || data.address.shop || "";
                 let parts = [];
-                if(gov) parts.push(gov);
-                if(area) parts.push(area);
-                if(road) parts.push(road);
-                
+                if(gov) parts.push(gov); if(area) parts.push(area); if(road) parts.push(road);
                 let finalAddress = parts.join('، ');
-                // إضافة أقرب نقطة دالة إن وجدت
-                if(landmark) {
-                    finalAddress += ` (قرب ${landmark})`;
-                }
-                
+                if(landmark) finalAddress += ` (قرب ${landmark})`;
                 return finalAddress;
             }
             return "موقع محدد";
@@ -249,6 +375,7 @@
     
     function goHome() { 
         clearInterval(syncInterval);
+        clearInterval(notifInterval);
         location.reload(); 
     }
     function centerMap(map) { if(map) map.flyTo(userCoords, 16); }
@@ -298,6 +425,7 @@
             document.getElementById('passengerStage2').classList.remove('hidden');
             pin.style.display = 'none';
 
+            // رسم النقاط
             let pIcon = L.divIcon({ html: '<div style="background:#212529;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
             let dIcon = L.divIcon({ html: '<div style="background:#2b3990;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
             mapLayers.push(L.marker(p_pickupCoords, {icon: pIcon}).addTo(passengerMap));
@@ -305,16 +433,55 @@
             let line = L.polyline([p_pickupCoords, p_dropoffCoords], {color: '#2b3990', weight: 3}).addTo(passengerMap);
             mapLayers.push(line);
             passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
+
+            // حساب المسافة والسعر بناءً على لوحة الإدارة
+            calculateDynamicPrice();
+            
+            // جلب قائمة السيارات
+            loadAvailableCars();
         }
     }
 
+    function calculateDynamicPrice() {
+        let settings = JSON.parse(localStorage.getItem('admin_settings'));
+        let latlng1 = L.latLng(p_pickupCoords.lat, p_pickupCoords.lng);
+        let latlng2 = L.latLng(p_dropoffCoords.lat, p_dropoffCoords.lng);
+        let distanceMeters = passengerMap.distance(latlng1, latlng2);
+        let distanceKm = distanceMeters / 1000;
+        
+        // حساب السعر (أقل مبلغ 1000 دينار)
+        finalCalculatedPrice = Math.round(distanceKm * settings.pricePerKm);
+        if(finalCalculatedPrice < 1000) finalCalculatedPrice = 1000;
+        
+        // تنسيق الرقم مثل: 3,500
+        let formattedPrice = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice);
+        document.getElementById('calculatedPrice').innerText = formattedPrice + " د.ع";
+    }
+
+    function loadAvailableCars() {
+        let settings = JSON.parse(localStorage.getItem('admin_settings'));
+        let carContainer = document.getElementById('passengerCarsList');
+        carContainer.innerHTML = "";
+        
+        settings.cars.forEach((car, index) => {
+            let isSelected = index === 0 ? 'background: #e9ecef; border: 2px solid #2b3990;' : 'border: 1px solid #ccc;';
+            carContainer.innerHTML += `
+                <div style="padding: 10px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; ${isSelected}">
+                    <strong>${car}</strong>
+                </div>
+            `;
+        });
+    }
+
     function requestRide() {
+        let formattedPrice = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice) + " د.ع";
         let rideData = {
             status: 'pending',
             passengerName: currentUser.name,
             passengerPhone: currentUser.phone,
             pickup: p_pickupCoords,
-            dropoff: p_dropoffCoords
+            dropoff: p_dropoffCoords,
+            price: formattedPrice
         };
         localStorage.setItem('tuktuk_ride', JSON.stringify(rideData));
 
@@ -331,7 +498,9 @@
             if(ride.status === 'accepted') {
                 title.innerHTML = "✅ الكابتن في الطريق!"; title.style.color = "#28a745";
                 desc.innerText = "الرجاء الاستعداد للركوب";
-                showDriverInfo(ride);
+                document.getElementById('driverInfoForPass').classList.remove('hidden');
+                document.getElementById('displayDriverName').innerText = ride.driverName || "كابتن";
+                document.getElementById('callDriverBtn').href = `tel:${ride.driverPhone}`;
             } else if(ride.status === 'arrived') {
                 title.innerHTML = "🛺 الكابتن بالباب!";
                 desc.innerText = "الكابتن وصل إلى نقطة الانطلاق";
@@ -340,7 +509,7 @@
                 desc.innerText = "أنتم الآن في الطريق للوجهة";
             } else if(ride.status === 'completed') {
                 clearInterval(syncInterval);
-                alert("تم إنهاء الرحلة. شكراً لاستخدامك التطبيق!");
+                alert("تم إنهاء الرحلة. الأجرة المطلوبة: " + ride.price);
                 goHome();
             } else if(ride.status === 'rejected') {
                 clearInterval(syncInterval);
@@ -348,12 +517,6 @@
                 goHome();
             }
         }, 1000);
-    }
-
-    function showDriverInfo(ride) {
-        document.getElementById('driverInfoForPass').classList.remove('hidden');
-        document.getElementById('displayDriverName').innerText = ride.driverName || "كابتن";
-        document.getElementById('callDriverBtn').href = `tel:${ride.driverPhone}`;
     }
 
     // ==========================================
@@ -370,15 +533,13 @@
         }
     }
 
-    // --- تحديث: رفع وتغيير نغمة التنبيه لتكون عالية جداً ---
     function playBeep() {
         try {
             let ctx = new (window.AudioContext || window.webkitAudioContext)();
             let osc = ctx.createOscillator(); 
             let gain = ctx.createGain();
-            osc.type = 'square'; // الموجة المربعة صوتها أعلى وأكثر حدة (كأجهزة الإنذار)
+            osc.type = 'square'; 
             osc.frequency.setValueAtTime(900, ctx.currentTime);
-            // زيادة الـ gain ليكون الصوت عاليا جداً
             gain.gain.setValueAtTime(2, ctx.currentTime); 
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
             osc.connect(gain); gain.connect(ctx.destination); 
@@ -400,10 +561,11 @@
                 if(ride && ride.status === 'pending' && document.getElementById('driverRequests').classList.contains('hidden')) {
                     document.getElementById('req-pickup-address').innerText = ride.pickup.address;
                     document.getElementById('req-dropoff-address').innerText = ride.dropoff.address;
+                    document.getElementById('req-price').innerText = ride.price;
                     document.getElementById('driverRequests').classList.remove('hidden');
                     
                     playBeep();
-                    requestBeepInterval = setInterval(playBeep, 1500); // تسريع رتم الرنة
+                    requestBeepInterval = setInterval(playBeep, 1500);
                 }
             }, 1000);
         } else {
@@ -420,7 +582,6 @@
         document.getElementById('driverActiveRidePanel').classList.remove('hidden');
 
         let ride = JSON.parse(localStorage.getItem('tuktuk_ride'));
-        
         ride.status = 'accepted';
         ride.driverName = currentUser.name;
         ride.driverPhone = currentUser.phone;
@@ -464,7 +625,7 @@
             
         } else if(ride.status === 'in_trip') {
             ride.status = 'completed';
-            alert("تم إنهاء الرحلة، الأجرة: ٣,٠٠٠ د.ع");
+            alert("تم إنهاء الرحلة بنجاح!\nاستلم الأجرة من العميل: " + ride.price);
             goHome();
         }
         localStorage.setItem('tuktuk_ride', JSON.stringify(ride));
@@ -480,9 +641,7 @@
         driverMap.fitBounds(line.getBounds(), {padding: [30, 30]});
     }
 
-    // --- تحديث: إصلاح فتح تطبيق Waze ---
     function openWaze(lat, lng) {
-        // استخدام location.href يضمن تحويل المستخدم فوراً للتطبيق على أجهزة الآيفون والأندرويد
         window.location.href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
     }
 </script>
