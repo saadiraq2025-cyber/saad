@@ -168,12 +168,12 @@
     // --- المتغيرات الأساسية ---
     let currentUser = { role: '', name: '', phone: '' };
     let passengerMap, driverMap;
-    let userCoords = [33.3150, 44.3600]; // بغداد
+    let userCoords = [33.3150, 44.3600]; 
     let isOnline = false, syncInterval, requestBeepInterval;
     
     // متغيرات الراكب
     let p_pickupCoords, p_dropoffCoords, p_address = "", p_phase = 'pickup';
-    let mapLayers = []; // لتنظيف الخريطة
+    let mapLayers = []; 
 
     // --- نظام تسجيل الدخول والمزامنة (LocalStorage) ---
     function login(role) {
@@ -185,13 +185,11 @@
         currentUser = { role, name, phone };
         localStorage.setItem(`tuktuk_user`, JSON.stringify(currentUser));
         
-        // إذا كان هناك طلب قديم معلق، نقوم بتنظيفه عند تسجيل الدخول من جديد
         if(role === 'passenger') localStorage.removeItem('tuktuk_ride'); 
 
         showScreen(role === 'passenger' ? 'passengerScreen' : 'driverScreen');
     }
 
-    // استرجاع الدخول إذا تم تحديث الصفحة
     window.onload = () => {
         let saved = localStorage.getItem('tuktuk_user');
         if(saved) {
@@ -205,7 +203,6 @@
         alert(`الملف الشخصي:\nالاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\nالدور: ${currentUser.role === 'passenger' ? 'راكب' : 'كابتن'}`);
     }
 
-    // --- إعداد الخرائط المشتركة ---
     function fetchRealLocation(callback) {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -215,11 +212,31 @@
         } else callback(userCoords);
     }
 
+    // --- تحديث: جلب تفاصيل العنوان بالكامل (المنطقة، الشارع، النقطة الدالة) ---
     async function getAddress(lat, lng) {
         try {
             let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`);
             let data = await res.json();
-            return data.address ? ((data.address.suburb || data.address.town || data.address.city || "بغداد") + " - " + (data.address.road || "")) : "موقع محدد";
+            if(data && data.address) {
+                let gov = data.address.state || data.address.city || "بغداد";
+                let area = data.address.suburb || data.address.neighbourhood || data.address.town || "";
+                let road = data.address.road || "";
+                let landmark = data.address.amenity || data.address.building || data.address.shop || data.address.leisure || "";
+                
+                let parts = [];
+                if(gov) parts.push(gov);
+                if(area) parts.push(area);
+                if(road) parts.push(road);
+                
+                let finalAddress = parts.join('، ');
+                // إضافة أقرب نقطة دالة إن وجدت
+                if(landmark) {
+                    finalAddress += ` (قرب ${landmark})`;
+                }
+                
+                return finalAddress;
+            }
+            return "موقع محدد";
         } catch(e) { return "بغداد"; }
     }
 
@@ -263,7 +280,7 @@
 
         if(p_phase === 'pickup') {
             p_pickupCoords = passengerMap.getCenter();
-            let savedAddress = p_address; // حفظ عنوان الانطلاق
+            let savedAddress = p_address; 
             
             p_phase = 'dropoff';
             pin.classList.add('dropoff');
@@ -272,7 +289,6 @@
             btn.classList.replace('btn-dark', 'btn-blue');
             passengerMap.flyTo([p_pickupCoords.lat + 0.005, p_pickupCoords.lng], 15);
             
-            // حفظ مؤقت لتمريره للطلب
             p_pickupCoords.address = savedAddress; 
         } else {
             p_dropoffCoords = passengerMap.getCenter();
@@ -282,7 +298,6 @@
             document.getElementById('passengerStage2').classList.remove('hidden');
             pin.style.display = 'none';
 
-            // رسم النقاط
             let pIcon = L.divIcon({ html: '<div style="background:#212529;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
             let dIcon = L.divIcon({ html: '<div style="background:#2b3990;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
             mapLayers.push(L.marker(p_pickupCoords, {icon: pIcon}).addTo(passengerMap));
@@ -306,7 +321,6 @@
         document.getElementById('passengerStage2').classList.add('hidden');
         document.getElementById('passengerStage3').classList.remove('hidden');
 
-        // مراقبة حالة الطلب
         syncInterval = setInterval(() => {
             let ride = JSON.parse(localStorage.getItem('tuktuk_ride'));
             if(!ride) return;
@@ -356,13 +370,19 @@
         }
     }
 
+    // --- تحديث: رفع وتغيير نغمة التنبيه لتكون عالية جداً ---
     function playBeep() {
         try {
             let ctx = new (window.AudioContext || window.webkitAudioContext)();
-            let osc = ctx.createOscillator(); let gain = ctx.createGain();
-            osc.frequency.setValueAtTime(800, ctx.currentTime);
-            gain.gain.setValueAtTime(1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-            osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.5);
+            let osc = ctx.createOscillator(); 
+            let gain = ctx.createGain();
+            osc.type = 'square'; // الموجة المربعة صوتها أعلى وأكثر حدة (كأجهزة الإنذار)
+            osc.frequency.setValueAtTime(900, ctx.currentTime);
+            // زيادة الـ gain ليكون الصوت عاليا جداً
+            gain.gain.setValueAtTime(2, ctx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+            osc.connect(gain); gain.connect(ctx.destination); 
+            osc.start(); osc.stop(ctx.currentTime + 0.8);
         } catch(e) {}
     }
 
@@ -375,7 +395,6 @@
             btn.innerHTML = "🔴 إيقاف التطبيق (مطفأ)"; btn.classList.replace('btn-dark', 'btn-yellow');
             status.innerHTML = "🟢 أنت متاح - جاري البحث عن طلبات..."; status.style.color = "#28a745";
             
-            // مراقبة LocalStorage للطلبات الجديدة
             syncInterval = setInterval(() => {
                 let ride = JSON.parse(localStorage.getItem('tuktuk_ride'));
                 if(ride && ride.status === 'pending' && document.getElementById('driverRequests').classList.contains('hidden')) {
@@ -384,7 +403,7 @@
                     document.getElementById('driverRequests').classList.remove('hidden');
                     
                     playBeep();
-                    requestBeepInterval = setInterval(playBeep, 2000);
+                    requestBeepInterval = setInterval(playBeep, 1500); // تسريع رتم الرنة
                 }
             }, 1000);
         } else {
@@ -402,20 +421,15 @@
 
         let ride = JSON.parse(localStorage.getItem('tuktuk_ride'));
         
-        // إدخال بيانات السائق في الطلب
         ride.status = 'accepted';
         ride.driverName = currentUser.name;
         ride.driverPhone = currentUser.phone;
         localStorage.setItem('tuktuk_ride', JSON.stringify(ride));
 
-        // عرض بيانات الراكب
         document.getElementById('displayPassName').innerText = ride.passengerName;
         document.getElementById('callPassBtn').href = `tel:${ride.passengerPhone}`;
 
-        // زر وايز يفتح مسار الانطلاق
         document.getElementById('wazeBtn').setAttribute('onclick', `openWaze(${ride.pickup.lat}, ${ride.pickup.lng})`);
-
-        // رسم مسار للانطلاق
         drawDriverRoute(userCoords, ride.pickup, 'الانطلاق');
     }
 
@@ -427,7 +441,6 @@
         localStorage.setItem('tuktuk_ride', JSON.stringify(ride));
     }
 
-    // إدارة حالات أزرار السائق
     function driverNextStep() {
         let ride = JSON.parse(localStorage.getItem('tuktuk_ride'));
         let btn = document.getElementById('driverActionBtn');
@@ -435,25 +448,21 @@
         let wazeBtn = document.getElementById('wazeBtn');
 
         if(ride.status === 'accepted') {
-            // السائق ضغط "وصلت للراكب" -> يتحول إلى "بدء الرحلة"
             ride.status = 'arrived';
             title.innerText = "الراكب معك؟ انطلق للوجهة";
             btn.innerText = "بدء الرحلة";
             btn.classList.replace('btn-blue', 'btn-green');
             
         } else if(ride.status === 'arrived') {
-            // السائق ضغط "بدء الرحلة" -> يتحول إلى "إنهاء الرحلة"
             ride.status = 'in_trip';
             title.innerText = "توجه نحو نقطة الوصول";
             btn.innerText = "إنهاء الرحلة";
             btn.classList.replace('btn-green', 'btn-red');
             
-            // تغيير وايز لموقع الوصول ورسم المسار الجديد
             wazeBtn.setAttribute('onclick', `openWaze(${ride.dropoff.lat}, ${ride.dropoff.lng})`);
             drawDriverRoute(ride.pickup, ride.dropoff, 'الوصول');
             
         } else if(ride.status === 'in_trip') {
-            // السائق ضغط "إنهاء"
             ride.status = 'completed';
             alert("تم إنهاء الرحلة، الأجرة: ٣,٠٠٠ د.ع");
             goHome();
@@ -462,7 +471,6 @@
     }
 
     function drawDriverRoute(start, end, popupText) {
-        // تنظيف المسار القديم
         mapLayers.forEach(l => driverMap.removeLayer(l));
         mapLayers = [];
 
@@ -472,9 +480,10 @@
         driverMap.fitBounds(line.getBounds(), {padding: [30, 30]});
     }
 
+    // --- تحديث: إصلاح فتح تطبيق Waze ---
     function openWaze(lat, lng) {
-        // فتح تطبيق Waze بناءً على الإحداثيات
-        window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+        // استخدام location.href يضمن تحويل المستخدم فوراً للتطبيق على أجهزة الآيفون والأندرويد
+        window.location.href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
     }
 </script>
 
