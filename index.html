@@ -65,6 +65,9 @@
         .stat-box { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;}
         .stat-box span { color: #d9534f; }
         .ride-options-container { max-height: 200px; overflow-y: auto;}
+        
+        /* إخفاء شعار Leaflet الافتراضي */
+        .leaflet-control-attribution a { display: none !important; }
     </style>
 </head>
 <body>
@@ -386,7 +389,12 @@
     function initPassenger() {
         if(!passengerMap) {
             passengerMap = L.map('passengerMap', { zoomControl: false }).setView(userCoords, 16);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(passengerMap);
+            
+            // استخدام نمط Carto Light (اللون الرمادي الهادئ) مع تغيير حقوق النشر لتطابق بلي
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© Baly © OpenStreetMap'
+            }).addTo(passengerMap);
+            
             fetchRealLocation(c => { userCoords = c; passengerMap.setView(c, 16); updatePassAddress(); });
             
             passengerMap.on('movestart', () => document.getElementById('passAddressText').innerText = "جاري التحديد...");
@@ -525,7 +533,12 @@
     function initDriver() {
         if(!driverMap) {
             driverMap = L.map('driverMap', { zoomControl: false }).setView(userCoords, 15);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(driverMap);
+            
+            // استخدام نمط Carto Light للسائق أيضاً مع حقوق بلي
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© Baly © OpenStreetMap'
+            }).addTo(driverMap);
+            
             fetchRealLocation(c => { 
                 userCoords = c; driverMap.setView(c, 15); 
                 L.circleMarker(c, {color: '#ffcc00', radius: 10, fillOpacity: 1}).addTo(driverMap);
