@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تكتك بغداد - النظام السحابي الشامل</title>
+    <title>تكتك بغداد - النظام الشامل والدردشة</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -32,7 +32,8 @@
         
         .map-container { width: 100%; height: 100%; z-index: 1; position: absolute;}
         .floating-btn { position: absolute; background: white; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 1000; cursor: pointer; font-size: 20px; color: #555; }
-        .back-btn { top: 20px; right: 20px; } .profile-btn { top: 20px; left: 20px; } .gps-btn { bottom: 250px; right: 20px; }
+        /* تمت إزالة back-btn من هنا */
+        .profile-btn { top: 20px; left: 20px; } .gps-btn { bottom: 350px; right: 20px; }
 
         .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
         .center-pin .box { background-color: #212529; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; white-space: nowrap; }
@@ -43,8 +44,8 @@
 
         .current-location-marker { width: 16px; height: 16px; background-color: #4285F4; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 8px rgba(66, 133, 244, 0.3); }
 
-        .bottom-sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; max-height: 60%; overflow-y: auto;}
-        .sheet-handle { width: 40px; height: 4px; background-color: #ccc; border-radius: 2px; margin: 10px auto; }
+        .bottom-sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; max-height: 70%; overflow-y: auto;}
+        .sheet-handle { width: 40px; height: 4px; background-color: #ccc; border-radius: 2px; margin: 10px auto; min-height: 4px; }
 
         .search-box { background-color: #f1f3f4; border-radius: 12px; padding: 15px; display: flex; gap: 10px; font-size: 14px; font-weight: bold; color:#333; margin: 10px 20px; align-items: center;}
         .search-box input { border: none; background: transparent; width: 100%; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: bold; color: #333; outline: none; }
@@ -61,13 +62,21 @@
         .action-btns { display: flex; gap: 10px; margin-top: 15px; }
         .padding-20 { padding: 20px; }
 
-        /* تنسيقات لوحة الإدارة */
+        /* تنسيقات الإدارة */
         .admin-header { background: #212529; color: #ffcc00; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 10;}
         .admin-card { background: white; border-radius: 12px; padding: 15px; margin: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #eee;}
         .admin-card h3 { margin-top: 0; color: #2b3990; font-size: 16px;}
         .stat-box { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;}
         .stat-box span { color: #d9534f; }
-        .ride-options-container { max-height: 200px; overflow-y: auto;}
+        
+        /* تنسيقات الدردشة */
+        .chat-container { border-top: 1px solid #eee; padding-top: 15px; margin-top: 15px; }
+        .chat-box { height: 120px; overflow-y: auto; background: #f8f9fa; border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 8px;}
+        .chat-msg { background: white; padding: 8px 12px; border-radius: 15px; font-size: 13px; max-width: 80%; box-shadow: 0 1px 3px rgba(0,0,0,0.1); word-wrap: break-word;}
+        .chat-msg.me { align-self: flex-start; background: #e3f2fd; border: 1px solid #bbdefb; }
+        .chat-msg.other { align-self: flex-end; background: #fff; border: 1px solid #eee;}
+        .quick-replies { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; scrollbar-width: none;}
+        .quick-btn { background: #212529; color: #ffcc00; border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: bold;}
         
         .leaflet-control-attribution a { display: none !important; }
     </style>
@@ -79,44 +88,29 @@
     <div id="roleSelection" class="screen">
         <div class="role-content" id="loginFormContainer">
             <div class="logo-text">🛺 تكتك بغداد</div>
-            <p style="color: #666;">سجل بياناتك للدخول</p>
+            <p style="color: #666;">سجل بياناتك للدخول (تفعيل الإشعارات مطلوب)</p>
             <input type="text" id="userName" class="form-input" placeholder="الاسم الكامل">
             <input type="tel" id="userPhone" class="form-input" placeholder="رقم الهاتف (مثال: 07700000000)">
             
             <p style="margin-top: 10px; font-weight: bold;">الدخول كـ:</p>
             <button class="btn btn-blue" onclick="login('passenger')">🙋‍♂️ راكب</button>
             <button class="btn btn-yellow" onclick="login('driver')">🛺 كابتن</button>
-            
             <button class="btn btn-dark" style="margin-top: 20px;" onclick="adminLogin()">⚙️ الإدارة</button>
         </div>
     </div>
 
     <div id="adminScreen" class="screen hidden" style="background-color: #f8f9fa;">
-        <div class="admin-header">
-            <span style="float: right; cursor: pointer;" onclick="goHome()">🔙</span>
-            لوحة تحكم الإدارة
-        </div>
-        
+        <div class="admin-header">لوحة تحكم الإدارة</div>
         <div class="admin-card">
             <h3>📊 الإحصائيات</h3>
             <div class="stat-box">إجمالي الركاب: <span id="statPassengers">0</span></div>
             <div class="stat-box">إجمالي السائقين: <span id="statDrivers">0</span></div>
         </div>
-
         <div class="admin-card">
             <h3>💰 تسعيرة الكيلومتر</h3>
-            <p style="font-size: 12px; color: gray;">حدد سعر الكيلومتر الواحد بالدينار العراقي:</p>
             <input type="number" id="pricePerKm" class="form-input" placeholder="مثال: 1000">
             <button class="btn btn-green" onclick="saveAdminSettings()">حفظ التسعيرة</button>
         </div>
-
-        <div class="admin-card">
-            <h3>🚘 إضافة فئة سيارة</h3>
-            <input type="text" id="newCarType" class="form-input" placeholder="اسم السيارة (مثال: تكتك VIP)">
-            <button class="btn btn-blue" onclick="addCarType()">إضافة</button>
-            <ul id="carList" style="text-align: right; font-size: 14px; color: #555;"></ul>
-        </div>
-
         <div class="admin-card">
             <h3>🔔 إرسال إشعار عام</h3>
             <input type="text" id="adminNotif" class="form-input" placeholder="اكتب رسالتك هنا...">
@@ -125,7 +119,6 @@
     </div>
 
     <div id="passengerScreen" class="screen hidden">
-        <div class="floating-btn back-btn" onclick="goHome()">🔙</div>
         <div class="floating-btn profile-btn" onclick="showProfile()">👤</div>
         <div class="floating-btn gps-btn" onclick="centerMap(passengerMap)">🎯</div>
 
@@ -157,6 +150,7 @@
             <div id="passengerStage3" class="hidden padding-20" style="text-align: center;">
                 <h3 id="passStatusTitle">جاري البحث عن كابتن... ⏳</h3>
                 <p id="passStatusDesc">الرجاء الانتظار</p>
+                
                 <div id="driverInfoForPass" class="contact-card hidden">
                     <div class="contact-info">
                         <h4 id="displayDriverName">اسم الكابتن</h4>
@@ -164,13 +158,23 @@
                     </div>
                     <a href="#" id="callDriverBtn" class="call-btn">📞</a>
                 </div>
+                
+                <div id="passChatContainer" class="chat-container hidden">
+                    <h4 style="margin: 0 0 10px 0; text-align: right; font-size: 14px;">💬 رسائل سريعة:</h4>
+                    <div id="passChatBox" class="chat-box"></div>
+                    <div class="quick-replies">
+                        <button class="quick-btn" onclick="sendChat('متى تصل')">متى تصل</button>
+                        <button class="quick-btn" onclick="sendChat('اين انت')">اين انت</button>
+                        <button class="quick-btn" onclick="sendChat('أنا قادم')">أنا قادم</button>
+                    </div>
+                </div>
+
                 <button class="btn btn-red" id="passCancelBtn" onclick="cancelRidePassenger()" style="margin-top: 15px;">إلغاء الطلب</button>
             </div>
         </div>
     </div>
 
     <div id="driverScreen" class="screen hidden">
-        <div class="floating-btn back-btn" onclick="goHome()">🔙</div>
         <div class="floating-btn profile-btn" onclick="showProfile()">👤</div>
         <div class="floating-btn gps-btn" onclick="centerMap(driverMap)">🎯</div>
         
@@ -206,6 +210,17 @@
                     <a href="#" id="callPassBtn" class="call-btn">📞</a>
                 </div>
 
+                <div id="driverChatContainer" class="chat-container">
+                    <h4 style="margin: 0 0 10px 0; text-align: right; font-size: 14px;">💬 رسائل سريعة:</h4>
+                    <div id="driverChatBox" class="chat-box"></div>
+                    <div class="quick-replies">
+                        <button class="quick-btn" onclick="sendChat('أنا قادم')">أنا قادم</button>
+                        <button class="quick-btn" onclick="sendChat('الطريق مزدحم')">الطريق مزدحم</button>
+                        <button class="quick-btn" onclick="sendChat('اين انت')">اين انت</button>
+                        <button class="quick-btn" onclick="sendChat('لقد وصلت')">لقد وصلت</button>
+                    </div>
+                </div>
+
                 <div class="action-btns">
                     <button class="btn btn-waze" id="wazeBtn" onclick="openWaze('pickup')">
                         <img src="https://cdn-icons-png.flaticon.com/512/732/732258.png" width="20"> Waze
@@ -220,28 +235,51 @@
 
 <script>
     // ==========================================
+    // طلب صلاحية إشعارات النظام (Push Notifications)
+    // ==========================================
+    function requestNotificationPermission() {
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
+    }
+    function showNotification(title, body) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(title, { body: body, icon: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' });
+        }
+    }
+
+    // ==========================================
     // الاتصال السحابي العالمي المباشر (MQTT)
     // ==========================================
     const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026_v2'; 
-    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026_v2';
+    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026_v4'; 
+    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026_v4';
     
     let globalRide = null;
     let requestBeepInterval = null;
 
     mqttClient.on('connect', () => {
-        console.log("تم الاتصال بالخادم السحابي بنجاح! 🌍");
         mqttClient.subscribe(RIDE_TOPIC);
         mqttClient.subscribe(NOTIF_TOPIC);
     });
 
     mqttClient.on('message', (topic, message) => {
+        let payload = JSON.parse(message.toString());
         if (topic === RIDE_TOPIC) {
-            let ride = JSON.parse(message.toString());
-            handleRideSync(ride);
+            if (payload.type === 'chat') {
+                if (globalRide && payload.rideId === globalRide.id) {
+                    let senderRole = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
+                    if (payload.sender !== senderRole) {
+                        appendChatMessage(payload.sender, payload.text);
+                        showNotification("رسالة جديدة من " + payload.sender, payload.text);
+                    }
+                }
+            } else {
+                handleRideSync(payload);
+            }
         } else if (topic === NOTIF_TOPIC) {
-            let notif = JSON.parse(message.toString());
-            alert("🔔 إشعار من الإدارة:\n" + notif.text);
+            showNotification("إشعار من الإدارة", payload.text);
+            alert("🔔 إشعار من الإدارة:\n" + payload.text);
         }
     });
 
@@ -265,18 +303,26 @@
     }
 
     // ==========================================
-    // نظام تسجيل الدخول الدائم (Auto-Login)
+    // نظام تسجيل الدخول والاستعادة التلقائية (Persistent State)
     // ==========================================
     window.onload = () => {
         let savedUser = localStorage.getItem('tuktuk_user');
         if(savedUser) {
             currentUser = JSON.parse(savedUser);
-            // تعبئة الحقول كإجراء احتياطي
-            document.getElementById('userName').value = currentUser.name;
-            document.getElementById('userPhone').value = currentUser.phone;
-            
-            // الدخول المباشر متجاوزاً شاشة التسجيل
             showScreen(currentUser.role === 'passenger' ? 'passengerScreen' : 'driverScreen');
+            
+            // استعادة حالة الرحلة المحفوظة حتى بعد الإغلاق
+            let savedRide = localStorage.getItem('tuktuk_ride');
+            if (savedRide) {
+                globalRide = JSON.parse(savedRide);
+                
+                if (currentUser.role === 'passenger' && ['pending', 'accepted', 'arrived', 'in_trip'].includes(globalRide.status)) {
+                    restorePassengerRideState();
+                } else if (currentUser.role === 'driver' && ['accepted', 'arrived', 'in_trip'].includes(globalRide.status) && globalRide.driverPhone === currentUser.phone) {
+                    toggleOnline(); // تشغيل التطبيق تلقائياً
+                    restoreDriverRideState();
+                }
+            }
         }
     };
 
@@ -285,6 +331,8 @@
         let phone = document.getElementById('userPhone').value.trim();
         if(!name || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف!"); return; }
         
+        requestNotificationPermission(); // طلب الإشعارات
+
         currentUser = { role, name, phone };
         localStorage.setItem(`tuktuk_user`, JSON.stringify(currentUser));
         
@@ -297,71 +345,92 @@
         showScreen(role === 'passenger' ? 'passengerScreen' : 'driverScreen');
     }
 
-    // لا يمكن الخروج إلا بحذف الحساب من هنا
     function showProfile() {
         let roleAr = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
         if (confirm(`الملف الشخصي:\nالاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\nالدور: ${roleAr}\n\nهل تريد حذف حسابك وتسجيل الخروج؟`)) {
             localStorage.removeItem('tuktuk_user');
             localStorage.removeItem('tuktuk_ride');
-            location.reload(); // إعادة تحميل الصفحة ستعيدنا لشاشة الدخول
+            location.reload(); 
         }
     }
 
     // ==========================================
-    // لوحة الإدارة
+    // دوال الاستعادة (لإرجاع المستخدم لنفس الشاشة عند فتح التطبيق)
     // ==========================================
-    function adminLogin() {
-        let pass = prompt("الرجاء إدخال الرقم السري للإدارة:");
-        if(pass === "12312344") {
-            showScreen('adminScreen');
-            loadAdminData();
-        } else if (pass !== null) {
-            alert("الرقم السري خاطئ!");
-        }
-    }
-
-    function loadAdminData() {
-        let settings = JSON.parse(localStorage.getItem('admin_settings'));
-        let allUsers = JSON.parse(localStorage.getItem('app_users'));
-        document.getElementById('statPassengers').innerText = allUsers.filter(u => u.role === 'passenger').length;
-        document.getElementById('statDrivers').innerText = allUsers.filter(u => u.role === 'driver').length;
-        document.getElementById('pricePerKm').value = settings.pricePerKm;
+    function restorePassengerRideState() {
+        document.getElementById('passengerStage1').classList.add('hidden');
+        document.getElementById('passengerStage2').classList.add('hidden');
+        document.getElementById('passengerStage3').classList.remove('hidden');
+        document.getElementById('centerPin').style.display = 'none';
         
-        let carList = document.getElementById('carList');
-        carList.innerHTML = "";
-        settings.cars.forEach(car => { carList.innerHTML += `<li>${car}</li>`; });
+        // رسم الخريطة بناء على البيانات المحفوظة
+        setTimeout(() => {
+            let pIcon = L.divIcon({ html: '<div style="background:#212529;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
+            let dIcon = L.divIcon({ html: '<div style="background:#2b3990;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
+            mapLayers.push(L.marker(globalRide.pickup, {icon: pIcon}).addTo(passengerMap));
+            mapLayers.push(L.marker(globalRide.dropoff, {icon: dIcon}).addTo(passengerMap));
+            let line = L.polyline([globalRide.pickup, globalRide.dropoff], {color: '#2b3990', weight: 3}).addTo(passengerMap);
+            mapLayers.push(line);
+            passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
+            
+            // تحديث الواجهة
+            handleRideSync(globalRide); 
+            if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
+        }, 1000);
     }
 
-    function saveAdminSettings() {
-        let settings = JSON.parse(localStorage.getItem('admin_settings'));
-        settings.pricePerKm = parseInt(document.getElementById('pricePerKm').value) || 1000;
-        localStorage.setItem('admin_settings', JSON.stringify(settings));
-        alert("تم تحديث تسعيرة الكيلومتر بنجاح!");
-    }
-
-    function addCarType() {
-        let newCar = document.getElementById('newCarType').value.trim();
-        if(newCar) {
-            let settings = JSON.parse(localStorage.getItem('admin_settings'));
-            settings.cars.push(newCar);
-            localStorage.setItem('admin_settings', JSON.stringify(settings));
-            document.getElementById('newCarType').value = "";
-            loadAdminData();
-            alert("تم إضافة السيارة بنجاح!");
-        }
-    }
-
-    function sendNotification() {
-        let msg = document.getElementById('adminNotif').value.trim();
-        if(msg) {
-            mqttClient.publish(NOTIF_TOPIC, JSON.stringify({ text: msg }));
-            document.getElementById('adminNotif').value = "";
-            alert("تم إرسال الإشعار لجميع المستخدمين بنجاح!");
-        }
+    function restoreDriverRideState() {
+        document.getElementById('driverRequests').classList.add('hidden');
+        document.getElementById('driverOfflinePanel').classList.add('hidden');
+        document.getElementById('driverActiveRidePanel').classList.remove('hidden');
+        
+        setTimeout(() => {
+            handleRideSync(globalRide);
+            if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
+        }, 1000);
     }
 
     // ==========================================
-    // الخرائط
+    // نظام الدردشة
+    // ==========================================
+    function sendChat(msgText) {
+        if(!globalRide) return;
+        let sender = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
+        
+        let chatPayload = {
+            type: 'chat',
+            rideId: globalRide.id,
+            sender: sender,
+            text: msgText
+        };
+        
+        mqttClient.publish(RIDE_TOPIC, JSON.stringify(chatPayload));
+        appendChatMessage(sender, msgText);
+        saveChatToLocal(sender, msgText);
+    }
+
+    function appendChatMessage(sender, text, isRestore = false) {
+        let isMe = (sender === 'راكب' && currentUser.role === 'passenger') || (sender === 'كابتن' && currentUser.role === 'driver');
+        let boxId = currentUser.role === 'passenger' ? 'passChatBox' : 'driverChatBox';
+        let box = document.getElementById(boxId);
+        
+        let div = document.createElement('div');
+        div.className = `chat-msg ${isMe ? 'me' : 'other'}`;
+        div.innerText = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+
+        if(!isMe && !isRestore) saveChatToLocal(sender, text);
+    }
+
+    function saveChatToLocal(sender, text) {
+        if(!globalRide.chat) globalRide.chat = [];
+        globalRide.chat.push({sender, text});
+        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
+    }
+
+    // ==========================================
+    // الخرائط والبحث
     // ==========================================
     function fetchRealLocation(callback) {
         if (navigator.geolocation) {
@@ -391,7 +460,6 @@
         } catch(e) { return "بغداد"; }
     }
 
-    // ميزة البحث عن الأماكن للراكب (من خلال شريط البحث)
     async function searchLocation(query) {
         if(!query) return;
         document.getElementById('passAddressInput').value = "جاري البحث...";
@@ -402,7 +470,7 @@
                 passengerMap.flyTo([data[0].lat, data[0].lon], 16);
             } else {
                 alert("لم يتم العثور على المكان.");
-                updatePassAddress(); // إرجاع العنوان الأصلي
+                updatePassAddress(); 
             }
         } catch(e) { updatePassAddress(); }
     }
@@ -414,10 +482,6 @@
         if(id === 'driverScreen') initDriver();
     }
     
-    // الرجوع يعني إعادة ضبط حالة الرحلة وليس تسجيل الخروج
-    function goHome() { 
-        location.reload(); 
-    }
     function centerMap(map) { if(map) map.flyTo(userCoords, 16); }
 
     // ==========================================
@@ -474,7 +538,6 @@
             passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
 
             calculateDynamicPrice();
-            loadAvailableCars();
         }
     }
 
@@ -489,26 +552,18 @@
         document.getElementById('calculatedPrice').innerText = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice) + " د.ع";
     }
 
-    function loadAvailableCars() {
-        let settings = JSON.parse(localStorage.getItem('admin_settings'));
-        let carContainer = document.getElementById('passengerCarsList');
-        carContainer.innerHTML = "";
-        settings.cars.forEach((car, index) => {
-            let isSelected = index === 0 ? 'background: #e9ecef; border: 2px solid #2b3990;' : 'border: 1px solid #ccc;';
-            carContainer.innerHTML += `<div style="padding: 10px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; ${isSelected}"><strong>${car}</strong></div>`;
-        });
-    }
-
     function requestRide() {
         let formattedPrice = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice) + " د.ع";
         globalRide = {
+            type: 'ride_status',
             id: Date.now().toString(),
             status: 'pending',
             passengerName: currentUser.name,
             passengerPhone: currentUser.phone,
             pickup: p_pickupCoords,
             dropoff: p_dropoffCoords,
-            price: formattedPrice
+            price: formattedPrice,
+            chat: []
         };
         
         localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
@@ -519,7 +574,6 @@
         document.getElementById('passCancelBtn').innerText = "إلغاء الطلب";
     }
 
-    // زر إنهاء الطلب أو الرحلة للراكب
     function cancelRidePassenger() {
         let confirmMsg = (globalRide && globalRide.status === 'pending') ? "هل أنت متأكد من إلغاء الطلب؟" : "هل أنت متأكد من إنهاء الرحلة؟";
         if (confirm(confirmMsg)) {
@@ -528,7 +582,7 @@
                 mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
             }
             localStorage.removeItem('tuktuk_ride');
-            location.reload(); // إعادة التحميل ستعيد الراكب للخريطة الرئيسية
+            location.reload(); 
         }
     }
 
@@ -585,6 +639,7 @@
         globalRide.driverName = currentUser.name;
         globalRide.driverPhone = currentUser.phone;
         
+        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
         mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
 
         document.getElementById('displayPassName').innerText = globalRide.passengerName;
@@ -596,8 +651,6 @@
     function rejectRide() {
         clearInterval(requestBeepInterval);
         document.getElementById('driverRequests').classList.add('hidden');
-        globalRide.status = 'rejected';
-        mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
     }
 
     function driverNextStep() {
@@ -624,10 +677,12 @@
             globalRide.status = 'completed';
             alert("تم إنهاء الرحلة بنجاح!\nاستلم الأجرة من العميل: " + globalRide.price);
             mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
-            goHome();
+            localStorage.removeItem('tuktuk_ride');
+            location.reload();
             return;
         }
         
+        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
         mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
     }
 
@@ -645,21 +700,22 @@
     }
 
     // ==========================================
-    // معالج المزامنة اللحظية الشامل (Sync Handler)
+    // معالج المزامنة اللحظية الشامل والإشعارات (Sync Handler)
     // ==========================================
     function handleRideSync(ride) {
         if (!ride || !ride.status) return;
         
-        // منع السائقين الآخرين من رؤية طلب تم قبوله بواسطة سائق آخر
         if (currentUser.role === 'driver' && ride.status !== 'pending' && ride.driverPhone !== currentUser.phone && ride.status !== 'cancelled') {
             return;
         }
 
         globalRide = ride;
+        if(globalRide.status !== 'completed' && globalRide.status !== 'cancelled' && globalRide.status !== 'rejected'){
+            localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
+        }
 
-        // --- مزامنة الراكب ---
+        // --- الراكب ---
         if (currentUser.role === 'passenger' && !document.getElementById('passengerStage3').classList.contains('hidden')) {
-            // التحقق من أن هذا الطلب يعود لهذا الراكب
             if (ride.passengerPhone !== currentUser.phone) return;
 
             let title = document.getElementById('passStatusTitle');
@@ -670,54 +726,79 @@
                 title.innerHTML = "✅ الكابتن في الطريق!"; title.style.color = "#28a745";
                 desc.innerText = "الرجاء الاستعداد للركوب";
                 document.getElementById('driverInfoForPass').classList.remove('hidden');
+                document.getElementById('passChatContainer').classList.remove('hidden');
                 document.getElementById('displayDriverName').innerText = ride.driverName || "كابتن";
                 document.getElementById('callDriverBtn').href = `tel:${ride.driverPhone}`;
                 cancelBtn.innerText = "إنهاء الرحلة";
+                showNotification("تم قبول الطلب!", "الكابتن في الطريق إليك الآن.");
             } else if(ride.status === 'arrived') {
                 title.innerHTML = "🛺 الكابتن بالباب!"; desc.innerText = "الكابتن وصل إلى نقطة الانطلاق";
+                showNotification("الكابتن بالباب!", "يرجى التوجه إلى الكابتن فوراً.");
             } else if(ride.status === 'in_trip') {
                 title.innerHTML = "🗺️ رحلة سعيدة"; desc.innerText = "أنتم الآن في الطريق للوجهة";
                 cancelBtn.innerText = "إنهاء الرحلة";
+                showNotification("بدأت الرحلة", "نتمنى لك رحلة آمنة وسعيدة.");
             } else if(ride.status === 'completed') {
                 alert("تم إنهاء الرحلة من قبل السائق. الأجرة المطلوبة: " + ride.price);
-                goHome();
+                showNotification("انتهت الرحلة", "تم الوصول. شكراً لاستخدامك تكتك بغداد.");
+                localStorage.removeItem('tuktuk_ride');
+                location.reload();
             } else if(ride.status === 'rejected') {
                 alert("نعتذر، لم يتم قبول الطلب. حاول مجدداً.");
-                goHome();
+                localStorage.removeItem('tuktuk_ride');
+                location.reload();
             }
         }
 
-        // --- مزامنة السائق ---
+        // --- السائق ---
         if (currentUser.role === 'driver' && isOnline) {
+            let btn = document.getElementById('driverActionBtn');
+            let title = document.getElementById('driverActionTitle');
+            let wazeBtn = document.getElementById('wazeBtn');
+
             if (ride.status === 'pending' && document.getElementById('driverRequests').classList.contains('hidden') && document.getElementById('driverActiveRidePanel').classList.contains('hidden')) {
                 document.getElementById('req-pickup-address').innerText = ride.pickup.address;
                 document.getElementById('req-dropoff-address').innerText = ride.dropoff.address;
                 document.getElementById('req-price').innerText = ride.price;
                 document.getElementById('driverRequests').classList.remove('hidden');
                 
+                showNotification("🚨 طلب جديد!", "لديك طلب رحلة جديد بالقرب منك.");
                 playBeep();
                 clearInterval(requestBeepInterval);
                 requestBeepInterval = setInterval(playBeep, 1500);
             } 
+            else if (ride.status === 'accepted') {
+                document.getElementById('displayPassName').innerText = ride.passengerName;
+                document.getElementById('callPassBtn').href = `tel:${ride.passengerPhone}`;
+                title.innerText = "توجه نحو الراكب";
+                btn.innerText = "وصلت للراكب";
+                btn.classList.replace('btn-green', 'btn-blue');
+                wazeBtn.setAttribute('onclick', `openWaze(${ride.pickup.lat}, ${ride.pickup.lng})`);
+                drawDriverRoute(userCoords, ride.pickup, 'الانطلاق');
+            }
+            else if (ride.status === 'arrived') {
+                title.innerText = "الراكب معك؟ انطلق للوجهة";
+                btn.innerText = "بدء الرحلة";
+                btn.classList.replace('btn-blue', 'btn-green');
+            }
+            else if (ride.status === 'in_trip') {
+                title.innerText = "توجه نحو نقطة الوصول";
+                btn.innerText = "إنهاء الرحلة";
+                btn.classList.replace('btn-green', 'btn-red');
+                wazeBtn.setAttribute('onclick', `openWaze(${ride.dropoff.lat}, ${ride.dropoff.lng})`);
+                drawDriverRoute(ride.pickup, ride.dropoff, 'الوصول');
+            }
             else if (ride.status === 'cancelled') {
                 alert("قام الراكب بإلغاء الرحلة.");
+                showNotification("تم الإلغاء", "قام الراكب بإلغاء الطلب.");
                 clearInterval(requestBeepInterval);
                 document.getElementById('driverRequests').classList.add('hidden');
                 document.getElementById('driverActiveRidePanel').classList.add('hidden');
                 document.getElementById('driverOfflinePanel').classList.remove('hidden');
-                
-                // تنظيف خريطة السائق
                 mapLayers.forEach(l => driverMap.removeLayer(l));
                 mapLayers = [];
                 centerMap(driverMap);
-            }
-            else if (ride.status !== 'pending') {
-                clearInterval(requestBeepInterval);
-                if (ride.status === 'rejected' || ride.status === 'completed') {
-                    document.getElementById('driverRequests').classList.add('hidden');
-                    document.getElementById('driverActiveRidePanel').classList.add('hidden');
-                    document.getElementById('driverOfflinePanel').classList.remove('hidden');
-                }
+                localStorage.removeItem('tuktuk_ride');
             }
         }
     }
