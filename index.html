@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تكتك بغداد - النظام السحابي العالمي</title>
+    <title>تكتك بغداد - النظام السحابي الشامل</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -46,7 +46,8 @@
         .bottom-sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; max-height: 60%; overflow-y: auto;}
         .sheet-handle { width: 40px; height: 4px; background-color: #ccc; border-radius: 2px; margin: 10px auto; }
 
-        .search-box { background-color: #f1f3f4; border-radius: 12px; padding: 15px; display: flex; gap: 10px; font-size: 14px; font-weight: bold; color:#333; margin: 10px 20px;}
+        .search-box { background-color: #f1f3f4; border-radius: 12px; padding: 15px; display: flex; gap: 10px; font-size: 14px; font-weight: bold; color:#333; margin: 10px 20px; align-items: center;}
+        .search-box input { border: none; background: transparent; width: 100%; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: bold; color: #333; outline: none; }
         
         .contact-card { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 10px; border-radius: 12px; margin: 15px 0; border: 1px solid #eee;}
         .contact-info { text-align: right; }
@@ -68,7 +69,6 @@
         .stat-box span { color: #d9534f; }
         .ride-options-container { max-height: 200px; overflow-y: auto;}
         
-        /* إخفاء شعار Leaflet الافتراضي */
         .leaflet-control-attribution a { display: none !important; }
     </style>
 </head>
@@ -140,7 +140,10 @@
             <div class="sheet-handle"></div>
             
             <div id="passengerStage1">
-                <div class="search-box"><span>📍</span><span id="passAddressText">جاري التحديد...</span></div>
+                <div class="search-box">
+                    <span>📍</span>
+                    <input type="text" id="passAddressInput" placeholder="جاري التحديد... ابحث هنا" onchange="searchLocation(this.value)">
+                </div>
                 <div class="padding-20"><button class="btn btn-dark" id="passConfirmBtn" onclick="passConfirmLocation()">تأكيد الانطلاق</button></div>
             </div>
 
@@ -161,6 +164,7 @@
                     </div>
                     <a href="#" id="callDriverBtn" class="call-btn">📞</a>
                 </div>
+                <button class="btn btn-red" id="passCancelBtn" onclick="cancelRidePassenger()" style="margin-top: 15px;">إلغاء الطلب</button>
             </div>
         </div>
     </div>
@@ -219,8 +223,8 @@
     // الاتصال السحابي العالمي المباشر (MQTT)
     // ==========================================
     const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026'; 
-    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026';
+    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026_v2'; 
+    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026_v2';
     
     let globalRide = null;
     let requestBeepInterval = null;
@@ -261,8 +265,21 @@
     }
 
     // ==========================================
-    // نظام تسجيل الدخول
+    // نظام تسجيل الدخول الدائم (Auto-Login)
     // ==========================================
+    window.onload = () => {
+        let savedUser = localStorage.getItem('tuktuk_user');
+        if(savedUser) {
+            currentUser = JSON.parse(savedUser);
+            // تعبئة الحقول كإجراء احتياطي
+            document.getElementById('userName').value = currentUser.name;
+            document.getElementById('userPhone').value = currentUser.phone;
+            
+            // الدخول المباشر متجاوزاً شاشة التسجيل
+            showScreen(currentUser.role === 'passenger' ? 'passengerScreen' : 'driverScreen');
+        }
+    };
+
     function login(role) {
         let name = document.getElementById('userName').value.trim();
         let phone = document.getElementById('userPhone').value.trim();
@@ -280,8 +297,14 @@
         showScreen(role === 'passenger' ? 'passengerScreen' : 'driverScreen');
     }
 
+    // لا يمكن الخروج إلا بحذف الحساب من هنا
     function showProfile() {
-        alert(`الملف الشخصي:\nالاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\nالدور: ${currentUser.role === 'passenger' ? 'راكب' : 'كابتن'}`);
+        let roleAr = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
+        if (confirm(`الملف الشخصي:\nالاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\nالدور: ${roleAr}\n\nهل تريد حذف حسابك وتسجيل الخروج؟`)) {
+            localStorage.removeItem('tuktuk_user');
+            localStorage.removeItem('tuktuk_ride');
+            location.reload(); // إعادة تحميل الصفحة ستعيدنا لشاشة الدخول
+        }
     }
 
     // ==========================================
@@ -368,6 +391,22 @@
         } catch(e) { return "بغداد"; }
     }
 
+    // ميزة البحث عن الأماكن للراكب (من خلال شريط البحث)
+    async function searchLocation(query) {
+        if(!query) return;
+        document.getElementById('passAddressInput').value = "جاري البحث...";
+        try {
+            let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' بغداد العراق')}&limit=1`);
+            let data = await res.json();
+            if(data && data.length > 0) {
+                passengerMap.flyTo([data[0].lat, data[0].lon], 16);
+            } else {
+                alert("لم يتم العثور على المكان.");
+                updatePassAddress(); // إرجاع العنوان الأصلي
+            }
+        } catch(e) { updatePassAddress(); }
+    }
+
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
@@ -375,7 +414,10 @@
         if(id === 'driverScreen') initDriver();
     }
     
-    function goHome() { location.reload(); }
+    // الرجوع يعني إعادة ضبط حالة الرحلة وليس تسجيل الخروج
+    function goHome() { 
+        location.reload(); 
+    }
     function centerMap(map) { if(map) map.flyTo(userCoords, 16); }
 
     // ==========================================
@@ -386,7 +428,7 @@
             passengerMap = L.map('passengerMap', { zoomControl: false }).setView(userCoords, 16);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly © OpenStreetMap' }).addTo(passengerMap);
             fetchRealLocation(c => { userCoords = c; passengerMap.setView(c, 16); updatePassAddress(); });
-            passengerMap.on('movestart', () => document.getElementById('passAddressText').innerText = "جاري التحديد...");
+            passengerMap.on('movestart', () => document.getElementById('passAddressInput').value = "جاري التحديد...");
             passengerMap.on('moveend', updatePassAddress);
         }
     }
@@ -394,7 +436,7 @@
     async function updatePassAddress() {
         let c = passengerMap.getCenter();
         p_address = await getAddress(c.lat, c.lng);
-        document.getElementById('passAddressText').innerText = p_address;
+        document.getElementById('passAddressInput').value = p_address;
     }
 
     function passConfirmLocation() {
@@ -411,12 +453,13 @@
             pinBox.innerText = "الوصول";
             btn.innerText = "تأكيد الوصول";
             btn.classList.replace('btn-dark', 'btn-blue');
+            document.getElementById('passAddressInput').value = "جاري تحديد الوصول...";
             passengerMap.flyTo([p_pickupCoords.lat + 0.005, p_pickupCoords.lng], 15);
             
             p_pickupCoords.address = savedAddress; 
         } else {
             p_dropoffCoords = passengerMap.getCenter();
-            p_dropoffCoords.address = p_address;
+            p_dropoffCoords.address = document.getElementById('passAddressInput').value;
             
             document.getElementById('passengerStage1').classList.add('hidden');
             document.getElementById('passengerStage2').classList.remove('hidden');
@@ -459,6 +502,7 @@
     function requestRide() {
         let formattedPrice = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice) + " د.ع";
         globalRide = {
+            id: Date.now().toString(),
             status: 'pending',
             passengerName: currentUser.name,
             passengerPhone: currentUser.phone,
@@ -467,11 +511,25 @@
             price: formattedPrice
         };
         
-        // إرسال الطلب للخادم السحابي
+        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
         mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
 
         document.getElementById('passengerStage2').classList.add('hidden');
         document.getElementById('passengerStage3').classList.remove('hidden');
+        document.getElementById('passCancelBtn').innerText = "إلغاء الطلب";
+    }
+
+    // زر إنهاء الطلب أو الرحلة للراكب
+    function cancelRidePassenger() {
+        let confirmMsg = (globalRide && globalRide.status === 'pending') ? "هل أنت متأكد من إلغاء الطلب؟" : "هل أنت متأكد من إنهاء الرحلة؟";
+        if (confirm(confirmMsg)) {
+            if (globalRide) {
+                globalRide.status = 'cancelled';
+                mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
+            }
+            localStorage.removeItem('tuktuk_ride');
+            location.reload(); // إعادة التحميل ستعيد الراكب للخريطة الرئيسية
+        }
     }
 
     // ==========================================
@@ -507,7 +565,6 @@
             btn.innerHTML = "🔴 إيقاف التطبيق (مطفأ)"; btn.classList.replace('btn-dark', 'btn-yellow');
             status.innerHTML = "🟢 أنت متاح - جاري البحث عن طلبات..."; status.style.color = "#28a745";
             
-            // عند تشغيل التطبيق، إذا كان هناك طلب معلق سيظهر فوراً
             if(globalRide && globalRide.status === 'pending') {
                 handleRideSync(globalRide);
             }
@@ -528,7 +585,6 @@
         globalRide.driverName = currentUser.name;
         globalRide.driverPhone = currentUser.phone;
         
-        // إرسال القبول للراكب عبر الخادم
         mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
 
         document.getElementById('displayPassName').innerText = globalRide.passengerName;
@@ -593,12 +649,22 @@
     // ==========================================
     function handleRideSync(ride) {
         if (!ride || !ride.status) return;
+        
+        // منع السائقين الآخرين من رؤية طلب تم قبوله بواسطة سائق آخر
+        if (currentUser.role === 'driver' && ride.status !== 'pending' && ride.driverPhone !== currentUser.phone && ride.status !== 'cancelled') {
+            return;
+        }
+
         globalRide = ride;
 
         // --- مزامنة الراكب ---
         if (currentUser.role === 'passenger' && !document.getElementById('passengerStage3').classList.contains('hidden')) {
+            // التحقق من أن هذا الطلب يعود لهذا الراكب
+            if (ride.passengerPhone !== currentUser.phone) return;
+
             let title = document.getElementById('passStatusTitle');
             let desc = document.getElementById('passStatusDesc');
+            let cancelBtn = document.getElementById('passCancelBtn');
 
             if(ride.status === 'accepted') {
                 title.innerHTML = "✅ الكابتن في الطريق!"; title.style.color = "#28a745";
@@ -606,12 +672,14 @@
                 document.getElementById('driverInfoForPass').classList.remove('hidden');
                 document.getElementById('displayDriverName').innerText = ride.driverName || "كابتن";
                 document.getElementById('callDriverBtn').href = `tel:${ride.driverPhone}`;
+                cancelBtn.innerText = "إنهاء الرحلة";
             } else if(ride.status === 'arrived') {
                 title.innerHTML = "🛺 الكابتن بالباب!"; desc.innerText = "الكابتن وصل إلى نقطة الانطلاق";
             } else if(ride.status === 'in_trip') {
                 title.innerHTML = "🗺️ رحلة سعيدة"; desc.innerText = "أنتم الآن في الطريق للوجهة";
+                cancelBtn.innerText = "إنهاء الرحلة";
             } else if(ride.status === 'completed') {
-                alert("تم إنهاء الرحلة. الأجرة المطلوبة: " + ride.price);
+                alert("تم إنهاء الرحلة من قبل السائق. الأجرة المطلوبة: " + ride.price);
                 goHome();
             } else if(ride.status === 'rejected') {
                 alert("نعتذر، لم يتم قبول الطلب. حاول مجدداً.");
@@ -631,6 +699,18 @@
                 clearInterval(requestBeepInterval);
                 requestBeepInterval = setInterval(playBeep, 1500);
             } 
+            else if (ride.status === 'cancelled') {
+                alert("قام الراكب بإلغاء الرحلة.");
+                clearInterval(requestBeepInterval);
+                document.getElementById('driverRequests').classList.add('hidden');
+                document.getElementById('driverActiveRidePanel').classList.add('hidden');
+                document.getElementById('driverOfflinePanel').classList.remove('hidden');
+                
+                // تنظيف خريطة السائق
+                mapLayers.forEach(l => driverMap.removeLayer(l));
+                mapLayers = [];
+                centerMap(driverMap);
+            }
             else if (ride.status !== 'pending') {
                 clearInterval(requestBeepInterval);
                 if (ride.status === 'rejected' || ride.status === 'completed') {
