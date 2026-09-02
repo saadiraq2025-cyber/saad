@@ -2,8 +2,14 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تكتك بغداد - النظام الشامل والدردشة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>تكتك بغداد</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="تكتك بغداد">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛺</text></svg>">
+    <link rel="manifest" id="manifestLink">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,7 +19,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
         
-        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; background-color: #e9ecef; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; background-color: #e9ecef; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         .app-container { background-color: white; width: 100%; max-width: 400px; height: 100vh; max-height: 850px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
         .screen { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; background: white; z-index: 1; overflow-y: auto;}
         .hidden { display: none !important; }
@@ -32,8 +38,11 @@
         
         .map-container { width: 100%; height: 100%; z-index: 1; position: absolute;}
         .floating-btn { position: absolute; background: white; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 1000; cursor: pointer; font-size: 20px; color: #555; }
-        /* تمت إزالة back-btn من هنا */
-        .profile-btn { top: 20px; left: 20px; } .gps-btn { bottom: 350px; right: 20px; }
+        
+        /* أزرار الخريطة العائمة */
+        .profile-btn { top: 20px; left: 20px; } 
+        .admin-btn { top: 75px; left: 20px; } /* زر الإدارة الجديد على الخريطة */
+        .gps-btn { bottom: 350px; right: 20px; }
 
         .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
         .center-pin .box { background-color: #212529; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; white-space: nowrap; }
@@ -88,7 +97,7 @@
     <div id="roleSelection" class="screen">
         <div class="role-content" id="loginFormContainer">
             <div class="logo-text">🛺 تكتك بغداد</div>
-            <p style="color: #666;">سجل بياناتك للدخول (تفعيل الإشعارات مطلوب)</p>
+            <p style="color: #666;">سجل بياناتك للدخول</p>
             <input type="text" id="userName" class="form-input" placeholder="الاسم الكامل">
             <input type="tel" id="userPhone" class="form-input" placeholder="رقم الهاتف (مثال: 07700000000)">
             
@@ -116,11 +125,12 @@
             <input type="text" id="adminNotif" class="form-input" placeholder="اكتب رسالتك هنا...">
             <button class="btn btn-yellow" onclick="sendNotification()">إرسال للجميع</button>
         </div>
+        <button class="btn btn-dark" style="margin: 15px; width: calc(100% - 30px);" onclick="closeAdmin()">إغلاق الإدارة</button>
     </div>
 
     <div id="passengerScreen" class="screen hidden">
         <div class="floating-btn profile-btn" onclick="showProfile()">👤</div>
-        <div class="floating-btn gps-btn" onclick="centerMap(passengerMap)">🎯</div>
+        <div class="floating-btn admin-btn" onclick="adminLogin()">⚙️</div> <div class="floating-btn gps-btn" onclick="centerMap(passengerMap)">🎯</div>
 
         <div id="passengerMap" class="map-container"></div>
 
@@ -176,7 +186,7 @@
 
     <div id="driverScreen" class="screen hidden">
         <div class="floating-btn profile-btn" onclick="showProfile()">👤</div>
-        <div class="floating-btn gps-btn" onclick="centerMap(driverMap)">🎯</div>
+        <div class="floating-btn admin-btn" onclick="adminLogin()">⚙️</div> <div class="floating-btn gps-btn" onclick="centerMap(driverMap)">🎯</div>
         
         <div id="driverMap" class="map-container"></div>
 
@@ -235,16 +245,45 @@
 
 <script>
     // ==========================================
-    // طلب صلاحية إشعارات النظام (Push Notifications)
+    // إنشاء ملف PWA (تثبيت التطبيق على الأجهزة)
+    // ==========================================
+    const manifestJson = {
+        "name": "تكتك بغداد",
+        "short_name": "تكتك بغداد",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#212529",
+        "icons": [{
+            "src": "data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛺</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifestJson)], {type: 'application/manifest+json'});
+    document.getElementById('manifestLink').href = URL.createObjectURL(manifestBlob);
+
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+            self.addEventListener('fetch', (e) => {});
+        `;
+        const swBlob = new Blob([swCode], {type: 'application/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+    }
+
+    // ==========================================
+    // طلب صلاحية إشعارات النظام
     // ==========================================
     function requestNotificationPermission() {
-        if ("Notification" in window) {
+        if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
         }
     }
     function showNotification(title, body) {
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(title, { body: body, icon: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' });
+            new Notification(title, { body: body, icon: 'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🛺</text></svg>' });
         }
     }
 
@@ -252,8 +291,8 @@
     // الاتصال السحابي العالمي المباشر (MQTT)
     // ==========================================
     const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026_v4'; 
-    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026_v4';
+    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026_final'; 
+    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026_final';
     
     let globalRide = null;
     let requestBeepInterval = null;
@@ -303,15 +342,16 @@
     }
 
     // ==========================================
-    // نظام تسجيل الدخول والاستعادة التلقائية (Persistent State)
+    // نظام الدخول التلقائي والاستعادة
     // ==========================================
     window.onload = () => {
+        requestNotificationPermission();
         let savedUser = localStorage.getItem('tuktuk_user');
         if(savedUser) {
             currentUser = JSON.parse(savedUser);
             showScreen(currentUser.role === 'passenger' ? 'passengerScreen' : 'driverScreen');
             
-            // استعادة حالة الرحلة المحفوظة حتى بعد الإغلاق
+            // استعادة حالة الرحلة بعد الإغلاق
             let savedRide = localStorage.getItem('tuktuk_ride');
             if (savedRide) {
                 globalRide = JSON.parse(savedRide);
@@ -319,7 +359,7 @@
                 if (currentUser.role === 'passenger' && ['pending', 'accepted', 'arrived', 'in_trip'].includes(globalRide.status)) {
                     restorePassengerRideState();
                 } else if (currentUser.role === 'driver' && ['accepted', 'arrived', 'in_trip'].includes(globalRide.status) && globalRide.driverPhone === currentUser.phone) {
-                    toggleOnline(); // تشغيل التطبيق تلقائياً
+                    toggleOnline(); 
                     restoreDriverRideState();
                 }
             }
@@ -331,7 +371,7 @@
         let phone = document.getElementById('userPhone').value.trim();
         if(!name || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف!"); return; }
         
-        requestNotificationPermission(); // طلب الإشعارات
+        requestNotificationPermission(); 
 
         currentUser = { role, name, phone };
         localStorage.setItem(`tuktuk_user`, JSON.stringify(currentUser));
@@ -355,7 +395,7 @@
     }
 
     // ==========================================
-    // دوال الاستعادة (لإرجاع المستخدم لنفس الشاشة عند فتح التطبيق)
+    // دوال الاستعادة وإرجاع الواجهة
     // ==========================================
     function restorePassengerRideState() {
         document.getElementById('passengerStage1').classList.add('hidden');
@@ -363,7 +403,6 @@
         document.getElementById('passengerStage3').classList.remove('hidden');
         document.getElementById('centerPin').style.display = 'none';
         
-        // رسم الخريطة بناء على البيانات المحفوظة
         setTimeout(() => {
             let pIcon = L.divIcon({ html: '<div style="background:#212529;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
             let dIcon = L.divIcon({ html: '<div style="background:#2b3990;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
@@ -373,10 +412,9 @@
             mapLayers.push(line);
             passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
             
-            // تحديث الواجهة
             handleRideSync(globalRide); 
             if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
-        }, 1000);
+        }, 800);
     }
 
     function restoreDriverRideState() {
@@ -387,7 +425,48 @@
         setTimeout(() => {
             handleRideSync(globalRide);
             if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
-        }, 1000);
+        }, 800);
+    }
+
+    // ==========================================
+    // لوحة الإدارة
+    // ==========================================
+    function adminLogin() {
+        let pass = prompt("الرجاء إدخال الرقم السري للإدارة:");
+        if(pass === "12312344") {
+            document.getElementById('adminScreen').classList.remove('hidden');
+            loadAdminData();
+        } else if (pass !== null) {
+            alert("الرقم السري خاطئ!");
+        }
+    }
+    
+    function closeAdmin() {
+        document.getElementById('adminScreen').classList.add('hidden');
+    }
+
+    function loadAdminData() {
+        let settings = JSON.parse(localStorage.getItem('admin_settings'));
+        let allUsers = JSON.parse(localStorage.getItem('app_users'));
+        document.getElementById('statPassengers').innerText = allUsers.filter(u => u.role === 'passenger').length;
+        document.getElementById('statDrivers').innerText = allUsers.filter(u => u.role === 'driver').length;
+        document.getElementById('pricePerKm').value = settings.pricePerKm;
+    }
+
+    function saveAdminSettings() {
+        let settings = JSON.parse(localStorage.getItem('admin_settings'));
+        settings.pricePerKm = parseInt(document.getElementById('pricePerKm').value) || 1000;
+        localStorage.setItem('admin_settings', JSON.stringify(settings));
+        alert("تم تحديث التسعيرة بنجاح!");
+    }
+
+    function sendNotification() {
+        let msg = document.getElementById('adminNotif').value.trim();
+        if(msg) {
+            mqttClient.publish(NOTIF_TOPIC, JSON.stringify({ text: msg }));
+            document.getElementById('adminNotif').value = "";
+            alert("تم إرسال الإشعار للجميع!");
+        }
     }
 
     // ==========================================
@@ -397,14 +476,9 @@
         if(!globalRide) return;
         let sender = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
         
-        let chatPayload = {
-            type: 'chat',
-            rideId: globalRide.id,
-            sender: sender,
-            text: msgText
-        };
-        
+        let chatPayload = { type: 'chat', rideId: globalRide.id, sender: sender, text: msgText };
         mqttClient.publish(RIDE_TOPIC, JSON.stringify(chatPayload));
+        
         appendChatMessage(sender, msgText);
         saveChatToLocal(sender, msgText);
     }
@@ -430,7 +504,7 @@
     }
 
     // ==========================================
-    // الخرائط والبحث
+    // الخرائط
     // ==========================================
     function fetchRealLocation(callback) {
         if (navigator.geolocation) {
@@ -700,7 +774,7 @@
     }
 
     // ==========================================
-    // معالج المزامنة اللحظية الشامل والإشعارات (Sync Handler)
+    // معالج المزامنة اللحظية الشامل والإشعارات
     // ==========================================
     function handleRideSync(ride) {
         if (!ride || !ride.status) return;
@@ -741,10 +815,6 @@
             } else if(ride.status === 'completed') {
                 alert("تم إنهاء الرحلة من قبل السائق. الأجرة المطلوبة: " + ride.price);
                 showNotification("انتهت الرحلة", "تم الوصول. شكراً لاستخدامك تكتك بغداد.");
-                localStorage.removeItem('tuktuk_ride');
-                location.reload();
-            } else if(ride.status === 'rejected') {
-                alert("نعتذر، لم يتم قبول الطلب. حاول مجدداً.");
                 localStorage.removeItem('tuktuk_ride');
                 location.reload();
             }
