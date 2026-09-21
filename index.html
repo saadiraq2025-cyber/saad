@@ -17,161 +17,203 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
         
-        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; background-color: #e9ecef; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .app-container { background-color: white; width: 100%; max-width: 400px; height: 100vh; max-height: 850px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        :root {
+            --baly-blue: #2a3382;
+            --baly-yellow: #f8c325;
+            --baly-orange: #ef5a3d;
+            --baly-gray: #f2f3f5;
+        }
+
+        body { font-family: 'Tajawal', sans-serif; margin: 0; padding: 0; background-color: #f9f9f9; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .app-container { background-color: white; width: 100%; max-width: 400px; height: 100vh; max-height: 850px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
         .screen { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; background: white; z-index: 1; overflow-y: auto;}
         .hidden { display: none !important; }
 
-        .role-content { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; gap: 15px; justify-content: center; height: 100%; background-color: #f8f9fa; }
-        .logo-text { font-size: 28px; font-weight: bold; color: #212529; margin-bottom: 10px; }
+        /* شاشة الدخول - تطابق الصورة */
+        .login-screen { background-color: white; padding: 40px 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        .login-title { font-size: 32px; font-weight: 800; color: #1a1a1a; margin-bottom: 40px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .login-subtitle { color: #888; font-size: 15px; margin-bottom: 20px; }
+        .login-input { padding: 18px; border: 1px solid #e0e0e0; border-radius: 12px; font-size: 16px; font-family: 'Tajawal'; text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 15px; outline: none; background: white; }
+        .login-input:focus { border-color: var(--baly-blue); }
+        .login-label { font-weight: bold; margin: 15px 0; color: #1a1a1a; }
         
-        input.form-input { padding: 15px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; font-family: 'Tajawal'; text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 10px;}
-        .btn { padding: 15px; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 10px;}
-        .btn-dark { background-color: #212529; color: white; }
-        .btn-yellow { background-color: #ffcc00; color: #212529; }
-        .btn-blue { background-color: #2b3990; color: white; }
-        .btn-red { background-color: #d9534f; color: white; }
-        .btn-green { background-color: #28a745; color: white; }
-        .btn-waze { background-color: #33ccff; color: #000; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn { padding: 16px; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-bottom: 12px; display: flex; justify-content: center; align-items: center; gap: 8px;}
+        .btn-blue { background-color: var(--baly-blue); color: white; box-shadow: 0 4px 10px rgba(42, 51, 130, 0.2); }
+        .btn-yellow { background-color: var(--baly-yellow); color: #1a1a1a; box-shadow: 0 4px 10px rgba(248, 195, 37, 0.2); }
+        .btn-dark { background-color: #1a1a1a; color: white; }
         
+        /* الخريطة والأزرار العائمة */
         .map-container { width: 100%; height: 100%; z-index: 1; position: absolute;}
-        .floating-btn { position: absolute; background: white; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 1000; cursor: pointer; font-size: 20px; color: #555; }
-        
-        /* أزرار الخريطة العائمة */
-        .profile-btn { top: 20px; left: 20px; } 
-        .admin-btn { top: 75px; left: 20px; } 
-        .gps-btn { bottom: 350px; right: 20px; }
+        .floating-btn { position: absolute; background: white; border-radius: 50%; width: 48px; height: 48px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; cursor: pointer; font-size: 22px; color: #333; }
+        .profile-btn { top: 40px; left: 20px; } 
+        .admin-btn { top: 100px; left: 20px; font-size: 16px; width: 35px; height: 35px;} 
+        .home-btn { top: 40px; right: 20px; }
+        .gps-btn { bottom: 40%; right: 20px; width: 40px; height: 40px; font-size: 18px; }
 
+        /* الدبوس المطابق لبلي */
         .center-pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-        .center-pin .box { background-color: #212529; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; font-weight: bold; white-space: nowrap; }
-        .center-pin .stick { width: 2px; height: 25px; background-color: #212529; }
-        .center-pin .dot { width: 10px; height: 10px; background-color: #ffcc00; border-radius: 50%; border: 2px solid #212529; }
-        .center-pin.dropoff .box { background-color: #2b3990; }
-        .center-pin.dropoff .stick { background-color: #2b3990; }
-
-        .current-location-marker { width: 16px; height: 16px; background-color: #4285F4; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 8px rgba(66, 133, 244, 0.3); }
-
-        .bottom-sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; max-height: 70%; overflow-y: auto;}
-        .sheet-handle { width: 40px; height: 4px; background-color: #ccc; border-radius: 2px; margin: 10px auto; min-height: 4px; }
-
-        .search-box { background-color: #f1f3f4; border-radius: 12px; padding: 15px; display: flex; gap: 10px; font-size: 14px; font-weight: bold; color:#333; margin: 10px 20px; align-items: center;}
-        .search-box input { border: none; background: transparent; width: 100%; font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: bold; color: #333; outline: none; }
+        .center-pin .pin-label { background-color: white; color: #1a1a1a; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 5px;}
+        .center-pin .dot { width: 18px; height: 18px; background-color: var(--baly-orange); border: 4px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .center-pin .stick { width: 2px; height: 25px; background-color: #333; margin-top: -2px;}
         
-        .contact-card { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 10px; border-radius: 12px; margin: 15px 0; border: 1px solid #eee;}
+        /* شكل الدبوس عند الوصول */
+        .center-pin.dropoff .pin-label { background-color: var(--baly-gray); color: #1a1a1a; }
+        .center-pin.dropoff .dot { background-color: var(--baly-blue); border-radius: 4px; border: 3px solid white; width: 14px; height: 14px;}
+
+        /* اللوحة السفلية (Bottom Sheet) */
+        .bottom-sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.08); z-index: 1000; display: flex; flex-direction: column; max-height: 80%; overflow-y: auto; padding-bottom: 20px;}
+        .sheet-handle { width: 35px; height: 4px; background-color: #e0e0e0; border-radius: 2px; margin: 12px auto; }
+
+        /* شريط البحث */
+        .search-container { padding: 0 20px; margin-bottom: 10px;}
+        .search-box { background-color: var(--baly-gray); border-radius: 12px; padding: 15px; display: flex; gap: 12px; align-items: center; }
+        .search-icon { width: 10px; height: 10px; background-color: var(--baly-blue); border-radius: 2px; }
+        .search-box input { border: none; background: transparent; width: 100%; font-family: 'Tajawal', sans-serif; font-size: 15px; font-weight: 700; color: #1a1a1a; outline: none; }
+        .search-box input::placeholder { color: #888; font-weight: 500; }
+
+        /* التبويبات وقائمة السيارات */
+        .tabs { display: flex; border-bottom: 1px solid #eee; padding: 0 20px; margin-bottom: 10px;}
+        .tab { flex: 1; text-align: center; padding: 15px 0; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent;}
+        .tab.active { color: #1a1a1a; border-bottom: 3px solid var(--baly-blue); }
+
+        .car-list { padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
+        .car-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-radius: 12px; border: 1px solid transparent; cursor: pointer; transition: 0.2s;}
+        .car-item.selected { background-color: #f5f6ff; border: 1px solid #d0d4ff; }
+        .car-info-wrapper { display: flex; align-items: center; gap: 15px; }
+        .car-img { width: 50px; }
+        .car-details h4 { margin: 0 0 3px 0; font-size: 16px; color: #1a1a1a; }
+        .car-details p { margin: 0; font-size: 12px; color: #666; }
+        .car-price { font-weight: bold; font-size: 15px; color: #1a1a1a; }
+
+        .ride-options-bar { display: flex; justify-content: space-between; padding: 15px 20px; border-top: 1px solid #eee; margin-top: 10px; font-size: 14px; font-weight: bold; color: #444;}
+        .btn-confirm-ride { margin: 0 20px; width: calc(100% - 40px); background-color: var(--baly-blue); border-radius: 12px; padding: 16px; font-size: 18px;}
+
+        /* شاشة جاري البحث (الرادار) */
+        .searching-ui { text-align: center; padding: 30px 20px; }
+        .radar-container { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; }
+        .radar-pulse { position: absolute; width: 100%; height: 100%; background-color: rgba(248, 195, 37, 0.4); border-radius: 50%; animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        .radar-car { position: relative; z-index: 2; width: 80px; }
+        @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+
+        /* الدردشة وعناصر السائق */
+        .contact-card { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; padding: 15px; border-radius: 12px; margin: 15px 20px; border: 1px solid #eee;}
         .contact-info { text-align: right; }
         .contact-info h4 { margin: 0 0 5px 0; font-size: 16px; color: #333; }
         .contact-info p { margin: 0; font-size: 13px; color: #666; }
-        .call-btn { background-color: #28a745; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-decoration: none; font-size: 20px;}
+        .call-btn { background-color: #28a745; color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-decoration: none; font-size: 22px;}
 
-        .request-card { position: absolute; top: 10%; left: 5%; right: 5%; background: white; border: 2px solid #d9534f; padding: 20px; border-radius: 15px; z-index: 2000; animation: pulse 1s infinite; text-align: center; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(217, 83, 79, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); } }
-        
-        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
-        .padding-20 { padding: 20px; }
-
-        /* تنسيقات الإدارة */
-        .admin-header { background: #212529; color: #ffcc00; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 10;}
-        .admin-card { background: white; border-radius: 12px; padding: 15px; margin: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #eee;}
-        .admin-card h3 { margin-top: 0; color: #2b3990; font-size: 16px;}
-        .stat-box { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-weight: bold;}
-        .stat-box span { color: #d9534f; }
-        
-        /* تنسيقات الدردشة */
-        .chat-container { border-top: 1px solid #eee; padding-top: 15px; margin-top: 15px; }
-        .chat-box { height: 120px; overflow-y: auto; background: #f8f9fa; border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 8px;}
-        .chat-msg { background: white; padding: 8px 12px; border-radius: 15px; font-size: 13px; max-width: 80%; box-shadow: 0 1px 3px rgba(0,0,0,0.1); word-wrap: break-word;}
-        .chat-msg.me { align-self: flex-start; background: #e3f2fd; border: 1px solid #bbdefb; }
+        .chat-container { border-top: 1px solid #eee; padding: 15px 20px 0; margin-top: 5px; }
+        .chat-box { height: 120px; overflow-y: auto; background: #f9f9f9; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;}
+        .chat-msg { background: white; padding: 8px 12px; border-radius: 15px; font-size: 13px; max-width: 80%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .chat-msg.me { align-self: flex-start; background: #eef2ff; border: 1px solid #d0d4ff; }
         .chat-msg.other { align-self: flex-end; background: #fff; border: 1px solid #eee;}
-        .quick-replies { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; scrollbar-width: none;}
-        .quick-btn { background: #212529; color: #ffcc00; border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: bold;}
+        .quick-replies { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;}
+        .quick-btn { background: var(--baly-gray); color: #1a1a1a; border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: bold; white-space: nowrap;}
         
         .leaflet-control-attribution a { display: none !important; }
+        .action-btns { display: flex; gap: 10px; margin: 15px 20px; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     
-    <div id="roleSelection" class="screen">
-        <div class="role-content" id="loginFormContainer">
-            <div class="logo-text">🛺 تكتك بغداد</div>
-            <p style="color: #666;">سجل بياناتك للدخول</p>
-            <input type="text" id="userName" class="form-input" placeholder="الاسم الكامل">
-            <input type="tel" id="userPhone" class="form-input" placeholder="رقم الهاتف (مثال: 07700000000)">
-            
-            <p style="margin-top: 10px; font-weight: bold;">الدخول كـ:</p>
-            <button class="btn btn-blue" onclick="login('passenger')">🙋‍♂️ راكب</button>
-            <button class="btn btn-yellow" onclick="login('driver')">🛺 كابتن</button>
-            <button class="btn btn-dark" style="margin-top: 20px;" onclick="adminLogin()">⚙️ الإدارة</button>
-        </div>
+    <div id="roleSelection" class="screen login-screen">
+        <div class="login-title">تكتك بغداد 🛺</div>
+        <div class="login-subtitle">سجل بياناتك للدخول</div>
+        
+        <input type="text" id="userName" class="login-input" placeholder="الاسم الكامل">
+        <input type="tel" id="userPhone" class="login-input" placeholder="رقم الهاتف (مثال: 07700000000)">
+        
+        <div class="login-label">الدخول كـ:</div>
+        <button class="btn btn-blue" onclick="login('passenger')">راكب 🙋‍♂️</button>
+        <button class="btn btn-yellow" onclick="login('driver')">كابتن 🛺</button>
+        <button class="btn btn-dark" style="margin-top: 30px; font-size: 14px; padding: 10px;" onclick="adminLogin()">⚙️ لوحة الإدارة</button>
     </div>
 
     <div id="adminScreen" class="screen hidden" style="background-color: #f8f9fa;">
-        <div class="admin-header">لوحة تحكم الإدارة</div>
-        <div class="admin-card">
-            <h3>📊 الإحصائيات</h3>
-            <div class="stat-box">إجمالي الركاب: <span id="statPassengers">0</span></div>
-            <div class="stat-box">إجمالي السائقين: <span id="statDrivers">0</span></div>
+        <div class="admin-header" style="background: var(--baly-blue); color: white; padding: 20px; text-align: center; font-size: 20px; font-weight: bold;">لوحة الإدارة</div>
+        <div style="padding: 20px;">
+            <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                <h3>💰 السعر الأساسي (للسوبر)</h3>
+                <input type="number" id="pricePerKm" class="login-input" placeholder="مثال: 1000">
+                <button class="btn btn-blue" onclick="saveAdminSettings()">حفظ التسعيرة</button>
+            </div>
+            <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                <h3>🔔 إرسال إشعار عام</h3>
+                <input type="text" id="adminNotif" class="login-input" placeholder="اكتب رسالتك...">
+                <button class="btn btn-yellow" onclick="sendNotification()">إرسال للجميع</button>
+            </div>
+            <button class="btn btn-dark" onclick="closeAdmin()">إغلاق الإدارة</button>
         </div>
-        <div class="admin-card">
-            <h3>💰 تسعيرة الكيلومتر</h3>
-            <input type="number" id="pricePerKm" class="form-input" placeholder="مثال: 1000">
-            <button class="btn btn-green" onclick="saveAdminSettings()">حفظ التسعيرة</button>
-        </div>
-        <div class="admin-card">
-            <h3>🔔 إرسال إشعار عام</h3>
-            <input type="text" id="adminNotif" class="form-input" placeholder="اكتب رسالتك هنا...">
-            <button class="btn btn-yellow" onclick="sendNotification()">إرسال للجميع</button>
-        </div>
-        <button class="btn btn-dark" style="margin: 15px; width: calc(100% - 30px);" onclick="closeAdmin()">إغلاق الإدارة</button>
     </div>
 
     <div id="passengerScreen" class="screen hidden">
         <div class="floating-btn profile-btn" onclick="showProfile()">👤</div>
+        <div class="floating-btn home-btn" onclick="goHome()" id="passHomeBtn" class="hidden">🏠</div>
         <div class="floating-btn admin-btn" onclick="adminLogin()">⚙️</div>
         <div class="floating-btn gps-btn" onclick="centerMap(passengerMap)">🎯</div>
 
         <div id="passengerMap" class="map-container"></div>
 
         <div class="center-pin" id="centerPin">
-            <div class="box" id="pinBox">الانطلاق</div>
-            <div class="stick"></div><div class="dot"></div>
+            <div class="pin-label" id="pinBox">الانطلاق</div>
+            <div class="dot"></div><div class="stick"></div>
         </div>
 
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
             
             <div id="passengerStage1">
-                <div class="search-box">
-                    <span>📍</span>
-                    <input type="text" id="passAddressInput" placeholder="جاري التحديد... ابحث هنا" onchange="searchLocation(this.value)">
+                <div class="search-container">
+                    <div class="search-box">
+                        <div class="search-icon"></div>
+                        <input type="text" id="passAddressInput" placeholder="إلى أين تذهب" onchange="searchLocation(this.value)">
+                    </div>
                 </div>
-                <div class="padding-20"><button class="btn btn-dark" id="passConfirmBtn" onclick="passConfirmLocation()">تأكيد الانطلاق</button></div>
+                <div style="padding: 10px 20px;">
+                    <button class="btn btn-dark" id="passConfirmBtn" onclick="passConfirmLocation()">تأكيد الانطلاق</button>
+                </div>
             </div>
 
-            <div id="passengerStage2" class="hidden padding-20">
-                <div class="ride-options-container" id="passengerCarsList"></div>
-                <h3 style="margin-top:10px; border-top: 1px solid #eee; padding-top: 10px;">الأجرة المقدرة:</h3>
-                <p id="calculatedPrice" style="color: #2b3990; font-weight: bold; font-size: 22px; margin-top: 0;">-- د.ع</p>
-                <button class="btn btn-blue" onclick="requestRide()">اطلب الآن</button>
-            </div>
-
-            <div id="passengerStage3" class="hidden padding-20" style="text-align: center;">
-                <h3 id="passStatusTitle">جاري البحث عن كابتن... ⏳</h3>
-                <p id="passStatusDesc">الرجاء الانتظار</p>
+            <div id="passengerStage2" class="hidden">
+                <div class="tabs">
+                    <div class="tab active">تكسي</div>
+                    <div class="tab">بوكس</div>
+                </div>
                 
+                <div class="car-list" id="passengerCarsList">
+                    </div>
+
+                <div class="ride-options-bar">
+                    <span>💳 خيارات الرحلة</span>
+                    <span>🏷️ رمز الخصم</span>
+                </div>
+                
+                <button class="btn btn-confirm-ride" onclick="requestRide()">يتم البحث عن أقرب سائق سوبر...</button>
+            </div>
+
+            <div id="passengerStage3" class="hidden">
+                
+                <div id="radarUI" class="searching-ui">
+                    <div class="radar-container">
+                        <div class="radar-pulse"></div>
+                        <img src="https://cdn-icons-png.flaticon.com/512/3204/3204043.png" class="radar-car" alt="car">
+                    </div>
+                    <h3 style="color: #1a1a1a; margin-top: 10px;">يتم البحث عن أقرب سائق...</h3>
+                </div>
+
                 <div id="driverInfoForPass" class="contact-card hidden">
                     <div class="contact-info">
                         <h4 id="displayDriverName">اسم الكابتن</h4>
-                        <p>كابتن تكتك بغداد</p>
+                        <p id="passStatusDesc">في الطريق إليك</p>
                     </div>
                     <a href="#" id="callDriverBtn" class="call-btn">📞</a>
                 </div>
                 
                 <div id="passChatContainer" class="chat-container hidden">
-                    <h4 style="margin: 0 0 10px 0; text-align: right; font-size: 14px;">💬 رسائل سريعة:</h4>
                     <div id="passChatBox" class="chat-box"></div>
                     <div class="quick-replies">
                         <button class="quick-btn" onclick="sendChat('متى تصل')">متى تصل</button>
@@ -180,7 +222,9 @@
                     </div>
                 </div>
 
-                <button class="btn btn-red" id="passCancelBtn" onclick="cancelRidePassenger()" style="margin-top: 15px;">إلغاء الطلب</button>
+                <div style="padding: 10px 20px;">
+                    <button class="btn" style="background: #e0e0e0; color: #1a1a1a;" id="passCancelBtn" onclick="cancelRidePassenger()">إلغاء الرحلة</button>
+                </div>
             </div>
         </div>
     </div>
@@ -192,27 +236,27 @@
         
         <div id="driverMap" class="map-container"></div>
 
-        <div id="driverRequests" class="request-card hidden">
-            <h3 style="margin-top: 0; color: #d9534f;">🚨 طلب جديد!</h3>
+        <div id="driverRequests" class="request-card hidden" style="background: white; border-color: var(--baly-blue);">
+            <h3 style="margin-top: 0; color: var(--baly-blue);">🚨 طلب جديد!</h3>
             <p style="font-size: 14px;"><strong>من:</strong> <span id="req-pickup-address">--</span></p>
             <p style="font-size: 14px;"><strong>إلى:</strong> <span id="req-dropoff-address">--</span></p>
-            <p style="font-size: 16px; font-weight: bold; color: #2b3990;">الأجرة: <span id="req-price">--</span></p>
-            <div class="action-btns">
-                <button class="btn btn-green" onclick="acceptRide()">قبول</button>
-                <button class="btn btn-red" onclick="rejectRide()">رفض</button>
+            <p style="font-size: 18px; font-weight: bold; color: var(--baly-orange);">الأجرة: <span id="req-price">--</span></p>
+            <div class="action-btns" style="margin: 15px 0 0 0;">
+                <button class="btn btn-blue" onclick="acceptRide()">قبول</button>
+                <button class="btn" style="background: #e0e0e0; color: #333;" onclick="rejectRide()">رفض</button>
             </div>
         </div>
 
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
             
-            <div id="driverOfflinePanel" class="padding-20" style="text-align: center;">
-                <h3 id="driverStatusText" style="color: #d9534f;">مطفأ (لا تستقبل طلبات)</h3>
-                <button class="btn btn-dark" id="onlineBtn" onclick="toggleOnline()">تشغيل التطبيق</button>
+            <div id="driverOfflinePanel" style="padding: 30px 20px; text-align: center;">
+                <h3 id="driverStatusText" style="color: #666; margin-bottom: 20px;">مطفأ (لا تستقبل طلبات)</h3>
+                <button class="btn btn-blue" id="onlineBtn" onclick="toggleOnline()">تشغيل التطبيق</button>
             </div>
             
-            <div id="driverActiveRidePanel" class="hidden padding-20">
-                <h3 id="driverActionTitle" style="color: #2b3990; margin-top:0;">توجه نحو الراكب</h3>
+            <div id="driverActiveRidePanel" class="hidden">
+                <h3 id="driverActionTitle" style="color: var(--baly-blue); margin: 0 20px; text-align: center;">توجه نحو الراكب</h3>
                 
                 <div class="contact-card">
                     <div class="contact-info">
@@ -223,20 +267,17 @@
                 </div>
 
                 <div id="driverChatContainer" class="chat-container">
-                    <h4 style="margin: 0 0 10px 0; text-align: right; font-size: 14px;">💬 رسائل سريعة:</h4>
                     <div id="driverChatBox" class="chat-box"></div>
                     <div class="quick-replies">
                         <button class="quick-btn" onclick="sendChat('أنا قادم')">أنا قادم</button>
-                        <button class="quick-btn" onclick="sendChat('الطريق مزدحم')">الطريق مزدحم</button>
+                        <button class="quick-btn" onclick="sendChat('الطريق مزدحم')">مزدحم</button>
                         <button class="quick-btn" onclick="sendChat('اين انت')">اين انت</button>
-                        <button class="quick-btn" onclick="sendChat('لقد وصلت')">لقد وصلت</button>
+                        <button class="quick-btn" onclick="sendChat('لقد وصلت')">وصلت</button>
                     </div>
                 </div>
 
                 <div class="action-btns">
-                    <button class="btn btn-waze" id="wazeBtn" onclick="openWaze('pickup')">
-                        <img src="https://cdn-icons-png.flaticon.com/512/732/732258.png" width="20"> Waze
-                    </button>
+                    <button class="btn" style="background: #33ccff; color: black;" id="wazeBtn" onclick="openWaze('pickup')">Waze 🗺️</button>
                     <button class="btn btn-blue" id="driverActionBtn" onclick="driverNextStep()">وصلت للراكب</button>
                 </div>
             </div>
@@ -247,41 +288,26 @@
 
 <script>
     // ==========================================
-    // إنشاء ملف PWA 
+    // إعدادات PWA 
     // ==========================================
     const manifestJson = {
-        "name": "تكتك بغداد",
-        "short_name": "تكتك بغداد",
-        "start_url": ".",
-        "display": "standalone",
-        "background_color": "#ffffff",
-        "theme_color": "#212529",
-        "icons": [{
-            "src": "data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛺</text></svg>",
-            "sizes": "512x512",
-            "type": "image/svg+xml"
-        }]
+        "name": "تكتك بغداد", "short_name": "تكتك بغداد", "start_url": ".", "display": "standalone",
+        "background_color": "#ffffff", "theme_color": "#2a3382",
+        "icons": [{"src": "data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛺</text></svg>","sizes": "512x512","type": "image/svg+xml"}]
     };
     const manifestBlob = new Blob([JSON.stringify(manifestJson)], {type: 'application/manifest+json'});
     document.getElementById('manifestLink').href = URL.createObjectURL(manifestBlob);
-
     if ('serviceWorker' in navigator) {
-        const swCode = `
-            self.addEventListener('install', (e) => self.skipWaiting());
-            self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-            self.addEventListener('fetch', (e) => {});
-        `;
+        const swCode = `self.addEventListener('install', (e) => self.skipWaiting()); self.addEventListener('activate', (e) => e.waitUntil(clients.claim())); self.addEventListener('fetch', (e) => {});`;
         const swBlob = new Blob([swCode], {type: 'application/javascript'});
         navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
     }
 
     // ==========================================
-    // طلب صلاحية الإشعارات
+    // الإشعارات
     // ==========================================
     function requestNotificationPermission() {
-        if ("Notification" in window && Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
+        if ("Notification" in window && Notification.permission !== "granted") { Notification.requestPermission(); }
     }
     function showNotification(title, body) {
         if ("Notification" in window && Notification.permission === "granted") {
@@ -293,16 +319,13 @@
     // الاتصال السحابي (MQTT)
     // ==========================================
     const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_2026_final'; 
-    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_2026_final';
+    const RIDE_TOPIC = 'tuktuk_iraq_global_rides_baly_v1'; 
+    const NOTIF_TOPIC = 'tuktuk_iraq_global_notif_baly_v1';
     
     let globalRide = null;
     let requestBeepInterval = null;
 
-    mqttClient.on('connect', () => {
-        mqttClient.subscribe(RIDE_TOPIC);
-        mqttClient.subscribe(NOTIF_TOPIC);
-    });
+    mqttClient.on('connect', () => { mqttClient.subscribe(RIDE_TOPIC); mqttClient.subscribe(NOTIF_TOPIC); });
 
     mqttClient.on('message', (topic, message) => {
         let payload = JSON.parse(message.toString());
@@ -312,7 +335,7 @@
                     let senderRole = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
                     if (payload.sender !== senderRole) {
                         appendChatMessage(payload.sender, payload.text);
-                        showNotification("رسالة جديدة من " + payload.sender, payload.text);
+                        showNotification("رسالة من " + payload.sender, payload.text);
                     }
                 }
             } else {
@@ -325,26 +348,26 @@
     });
 
     // ==========================================
-    // المتغيرات الأساسية 
+    // المتغيرات 
     // ==========================================
     let currentUser = { role: '', name: '', phone: '' };
     let passengerMap, driverMap;
     let userCoords = [33.3150, 44.3600]; 
     let isOnline = false;
-    
     let p_pickupCoords, p_dropoffCoords, p_address = "", p_phase = 'pickup';
     let mapLayers = []; 
-    let finalCalculatedPrice = 0;
+    let selectedCarType = 'سوبر';
+    let carPrices = { 'سوبر': 0, 'توفير': 0, 'بلس': 0 };
 
     if(!localStorage.getItem('admin_settings')) {
-        localStorage.setItem('admin_settings', JSON.stringify({ pricePerKm: 1000, cars: ['تكتك سريع'] }));
+        localStorage.setItem('admin_settings', JSON.stringify({ pricePerKm: 1500 }));
     }
     if(!localStorage.getItem('app_users')) {
         localStorage.setItem('app_users', JSON.stringify([]));
     }
 
     // ==========================================
-    // تسجيل الدخول والاستعادة
+    // تسجيل الدخول
     // ==========================================
     window.onload = () => {
         requestNotificationPermission();
@@ -356,7 +379,6 @@
             let savedRide = localStorage.getItem('tuktuk_ride');
             if (savedRide) {
                 globalRide = JSON.parse(savedRide);
-                
                 if (currentUser.role === 'passenger' && ['pending', 'accepted', 'arrived', 'in_trip'].includes(globalRide.status)) {
                     restorePassengerRideState();
                 } else if (currentUser.role === 'driver' && ['accepted', 'arrived', 'in_trip'].includes(globalRide.status) && globalRide.driverPhone === currentUser.phone) {
@@ -364,15 +386,9 @@
                     restoreDriverRideState();
                 }
             }
-
-            // تشغيل السائق بشكل تلقائي ما لم يوقفه هو بنفسه
             if (currentUser.role === 'driver' && (!globalRide || !['accepted', 'arrived', 'in_trip'].includes(globalRide.status))) {
                 let savedStatus = localStorage.getItem('driver_status');
-                if (savedStatus !== 'offline') {
-                    toggleOnline(true);
-                } else {
-                    toggleOnline(false);
-                }
+                if (savedStatus !== 'offline') toggleOnline(true); else toggleOnline(false);
             }
         }
     };
@@ -380,208 +396,113 @@
     function login(role) {
         let name = document.getElementById('userName').value.trim();
         let phone = document.getElementById('userPhone').value.trim();
-        if(!name || !phone) { alert("يرجى إدخال الاسم ورقم الهاتف!"); return; }
-        
+        if(!name || !phone) { alert("يرجى إدخال البيانات!"); return; }
         requestNotificationPermission(); 
-
         currentUser = { role, name, phone };
         localStorage.setItem(`tuktuk_user`, JSON.stringify(currentUser));
         
         let allUsers = JSON.parse(localStorage.getItem('app_users'));
-        if(!allUsers.find(u => u.phone === phone)) {
-            allUsers.push(currentUser);
-            localStorage.setItem('app_users', JSON.stringify(allUsers));
-        }
+        if(!allUsers.find(u => u.phone === phone)) { allUsers.push(currentUser); localStorage.setItem('app_users', JSON.stringify(allUsers)); }
 
         showScreen(role === 'passenger' ? 'passengerScreen' : 'driverScreen');
-        
-        // التفعيل التلقائي للسائق عند الدخول لأول مرة
-        if (role === 'driver') {
-            toggleOnline(true);
-        }
+        if (role === 'driver') toggleOnline(true);
     }
 
     function showProfile() {
-        let roleAr = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
-        if (confirm(`الملف الشخصي:\nالاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\nالدور: ${roleAr}\n\nهل تريد حذف حسابك وتسجيل الخروج؟`)) {
-            localStorage.removeItem('tuktuk_user');
-            localStorage.removeItem('tuktuk_ride');
-            localStorage.removeItem('driver_status');
-            location.reload(); 
-        }
-    }
-
-    // ==========================================
-    // الاستعادة للواجهة
-    // ==========================================
-    function restorePassengerRideState() {
-        document.getElementById('passengerStage1').classList.add('hidden');
-        document.getElementById('passengerStage2').classList.add('hidden');
-        document.getElementById('passengerStage3').classList.remove('hidden');
-        document.getElementById('centerPin').style.display = 'none';
-        
-        setTimeout(() => {
-            let pIcon = L.divIcon({ html: '<div style="background:#212529;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
-            let dIcon = L.divIcon({ html: '<div style="background:#2b3990;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
-            mapLayers.push(L.marker(globalRide.pickup, {icon: pIcon}).addTo(passengerMap));
-            mapLayers.push(L.marker(globalRide.dropoff, {icon: dIcon}).addTo(passengerMap));
-            let line = L.polyline([globalRide.pickup, globalRide.dropoff], {color: '#2b3990', weight: 3}).addTo(passengerMap);
-            mapLayers.push(line);
-            passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
-            
-            handleRideSync(globalRide); 
-            if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
-        }, 800);
-    }
-
-    function restoreDriverRideState() {
-        document.getElementById('driverRequests').classList.add('hidden');
-        document.getElementById('driverOfflinePanel').classList.add('hidden');
-        document.getElementById('driverActiveRidePanel').classList.remove('hidden');
-        
-        setTimeout(() => {
-            handleRideSync(globalRide);
-            if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
-        }, 800);
-    }
-
-    // ==========================================
-    // إدارة التطبيق
-    // ==========================================
-    function adminLogin() {
-        let pass = prompt("الرجاء إدخال الرقم السري للإدارة:");
-        if(pass === "12312344") {
-            document.getElementById('adminScreen').classList.remove('hidden');
-            loadAdminData();
-        } else if (pass !== null) {
-            alert("الرقم السري خاطئ!");
+        if (confirm(`الاسم: ${currentUser.name}\nالهاتف: ${currentUser.phone}\n\nهل تريد تسجيل الخروج؟`)) {
+            localStorage.removeItem('tuktuk_user'); localStorage.removeItem('tuktuk_ride'); localStorage.removeItem('driver_status'); location.reload(); 
         }
     }
     
-    function closeAdmin() {
-        document.getElementById('adminScreen').classList.add('hidden');
-    }
+    function goHome() { location.reload(); }
 
+    // ==========================================
+    // الإدارة
+    // ==========================================
+    function adminLogin() {
+        let pass = prompt("الرقم السري للإدارة:");
+        if(pass === "12312344") { document.getElementById('adminScreen').classList.remove('hidden'); loadAdminData(); } 
+        else if (pass !== null) alert("خاطئ!");
+    }
+    function closeAdmin() { document.getElementById('adminScreen').classList.add('hidden'); }
     function loadAdminData() {
         let settings = JSON.parse(localStorage.getItem('admin_settings'));
-        let allUsers = JSON.parse(localStorage.getItem('app_users'));
-        document.getElementById('statPassengers').innerText = allUsers.filter(u => u.role === 'passenger').length;
-        document.getElementById('statDrivers').innerText = allUsers.filter(u => u.role === 'driver').length;
         document.getElementById('pricePerKm').value = settings.pricePerKm;
     }
-
     function saveAdminSettings() {
         let settings = JSON.parse(localStorage.getItem('admin_settings'));
-        settings.pricePerKm = parseInt(document.getElementById('pricePerKm').value) || 1000;
+        settings.pricePerKm = parseInt(document.getElementById('pricePerKm').value) || 1500;
         localStorage.setItem('admin_settings', JSON.stringify(settings));
-        alert("تم تحديث التسعيرة بنجاح!");
+        alert("تم الحفظ!");
     }
-
     function sendNotification() {
         let msg = document.getElementById('adminNotif').value.trim();
-        if(msg) {
-            mqttClient.publish(NOTIF_TOPIC, JSON.stringify({ text: msg }));
-            document.getElementById('adminNotif').value = "";
-            alert("تم إرسال الإشعار للجميع!");
-        }
+        if(msg) { mqttClient.publish(NOTIF_TOPIC, JSON.stringify({ text: msg })); document.getElementById('adminNotif').value = ""; alert("تم الإرسال!"); }
     }
 
     // ==========================================
-    // نظام الدردشة المباشرة
+    // الدردشة
     // ==========================================
     function sendChat(msgText) {
         if(!globalRide) return;
         let sender = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
-        
-        let chatPayload = { type: 'chat', rideId: globalRide.id, sender: sender, text: msgText };
-        mqttClient.publish(RIDE_TOPIC, JSON.stringify(chatPayload));
-        
+        mqttClient.publish(RIDE_TOPIC, JSON.stringify({ type: 'chat', rideId: globalRide.id, sender: sender, text: msgText }));
         appendChatMessage(sender, msgText);
         saveChatToLocal(sender, msgText);
     }
-
     function appendChatMessage(sender, text, isRestore = false) {
         let isMe = (sender === 'راكب' && currentUser.role === 'passenger') || (sender === 'كابتن' && currentUser.role === 'driver');
-        let boxId = currentUser.role === 'passenger' ? 'passChatBox' : 'driverChatBox';
-        let box = document.getElementById(boxId);
-        
+        let box = document.getElementById(currentUser.role === 'passenger' ? 'passChatBox' : 'driverChatBox');
         let div = document.createElement('div');
         div.className = `chat-msg ${isMe ? 'me' : 'other'}`;
-        div.innerText = text;
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-
+        div.innerText = text; box.appendChild(div); box.scrollTop = box.scrollHeight;
         if(!isMe && !isRestore) saveChatToLocal(sender, text);
     }
-
     function saveChatToLocal(sender, text) {
         if(!globalRide.chat) globalRide.chat = [];
-        globalRide.chat.push({sender, text});
-        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
+        globalRide.chat.push({sender, text}); localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
     }
 
     // ==========================================
     // الخرائط والبحث
     // ==========================================
     function fetchRealLocation(callback) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                pos => callback([pos.coords.latitude, pos.coords.longitude]),
-                err => callback(userCoords)
-            );
-        } else callback(userCoords);
+        if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( pos => callback([pos.coords.latitude, pos.coords.longitude]), err => callback(userCoords) ); } 
+        else callback(userCoords);
     }
-
     async function getAddress(lat, lng) {
         try {
             let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`);
             let data = await res.json();
             if(data && data.address) {
-                let gov = data.address.state || data.address.city || "بغداد";
-                let area = data.address.suburb || data.address.neighbourhood || data.address.town || "";
-                let road = data.address.road || "";
-                let landmark = data.address.amenity || data.address.building || data.address.shop || "";
-                let parts = [];
-                if(gov) parts.push(gov); if(area) parts.push(area); if(road) parts.push(road);
-                let finalAddress = parts.join('، ');
-                if(landmark) finalAddress += ` (قرب ${landmark})`;
-                return finalAddress;
-            }
-            return "موقع محدد";
+                let p = []; if(data.address.city||data.address.state) p.push(data.address.city||data.address.state); if(data.address.suburb) p.push(data.address.suburb);
+                return p.join('، ') || "موقع محدد";
+            } return "موقع محدد";
         } catch(e) { return "بغداد"; }
     }
-
     async function searchLocation(query) {
-        if(!query) return;
-        document.getElementById('passAddressInput').value = "جاري البحث...";
+        if(!query) return; document.getElementById('passAddressInput').value = "جاري البحث...";
         try {
-            let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' بغداد العراق')}&limit=1`);
+            let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' بغداد')}&limit=1`);
             let data = await res.json();
-            if(data && data.length > 0) {
-                passengerMap.flyTo([data[0].lat, data[0].lon], 16);
-            } else {
-                alert("لم يتم العثور على المكان.");
-                updatePassAddress(); 
-            }
+            if(data && data.length > 0) passengerMap.flyTo([data[0].lat, data[0].lon], 16);
+            else { alert("لم يتم العثور على المكان."); updatePassAddress(); }
         } catch(e) { updatePassAddress(); }
     }
-
     function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
-        if(id === 'passengerScreen') initPassenger();
-        if(id === 'driverScreen') initDriver();
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden');
+        if(id === 'passengerScreen') initPassenger(); if(id === 'driverScreen') initDriver();
     }
-    
     function centerMap(map) { if(map) map.flyTo(userCoords, 16); }
 
     // ==========================================
-    // واجهة الراكب
+    // واجهة الراكب (المحدثة كلياً)
     // ==========================================
     function initPassenger() {
         if(!passengerMap) {
             passengerMap = L.map('passengerMap', { zoomControl: false }).setView(userCoords, 16);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly © OpenStreetMap' }).addTo(passengerMap);
+            // استخدام نمط الخريطة البسيط
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly' }).addTo(passengerMap);
             fetchRealLocation(c => { userCoords = c; passengerMap.setView(c, 16); updatePassAddress(); });
             passengerMap.on('movestart', () => document.getElementById('passAddressInput').value = "جاري التحديد...");
             passengerMap.on('moveend', updatePassAddress);
@@ -589,9 +510,7 @@
     }
 
     async function updatePassAddress() {
-        let c = passengerMap.getCenter();
-        p_address = await getAddress(c.lat, c.lng);
-        document.getElementById('passAddressInput').value = p_address;
+        let c = passengerMap.getCenter(); p_address = await getAddress(c.lat, c.lng); document.getElementById('passAddressInput').value = p_address;
     }
 
     function passConfirmLocation() {
@@ -600,61 +519,78 @@
         let pin = document.getElementById('centerPin');
 
         if(p_phase === 'pickup') {
-            p_pickupCoords = passengerMap.getCenter();
-            let savedAddress = p_address; 
-            
+            p_pickupCoords = passengerMap.getCenter(); p_pickupCoords.address = p_address; 
             p_phase = 'dropoff';
-            pin.classList.add('dropoff');
-            pinBox.innerText = "الوصول";
-            btn.innerText = "تأكيد الوصول";
-            btn.classList.replace('btn-dark', 'btn-blue');
-            document.getElementById('passAddressInput').value = "جاري تحديد الوصول...";
+            pin.classList.add('dropoff'); pinBox.innerText = "الوصول"; btn.innerText = "تأكيد الوصول";
+            document.getElementById('passAddressInput').value = ""; document.getElementById('passAddressInput').placeholder = "ابحث عن نقطة الوصول";
+            document.getElementById('passHomeBtn').classList.remove('hidden'); // إظهار زر الرجوع
             passengerMap.flyTo([p_pickupCoords.lat + 0.005, p_pickupCoords.lng], 15);
-            
-            p_pickupCoords.address = savedAddress; 
         } else {
-            p_dropoffCoords = passengerMap.getCenter();
-            p_dropoffCoords.address = document.getElementById('passAddressInput').value;
-            
-            document.getElementById('passengerStage1').classList.add('hidden');
-            document.getElementById('passengerStage2').classList.remove('hidden');
+            p_dropoffCoords = passengerMap.getCenter(); p_dropoffCoords.address = document.getElementById('passAddressInput').value;
+            document.getElementById('passengerStage1').classList.add('hidden'); document.getElementById('passengerStage2').classList.remove('hidden');
             pin.style.display = 'none';
 
-            let pIcon = L.divIcon({ html: '<div style="background:#212529;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
-            let dIcon = L.divIcon({ html: '<div style="background:#2b3990;color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
+            let pIcon = L.divIcon({ html: '<div style="background:var(--baly-orange);color:white;padding:2px 5px;border-radius:5px;font-size:10px;">انطلاق</div>' });
+            let dIcon = L.divIcon({ html: '<div style="background:var(--baly-blue);color:white;padding:2px 5px;border-radius:5px;font-size:10px;">وصول</div>' });
             mapLayers.push(L.marker(p_pickupCoords, {icon: pIcon}).addTo(passengerMap));
             mapLayers.push(L.marker(p_dropoffCoords, {icon: dIcon}).addTo(passengerMap));
-            let line = L.polyline([p_pickupCoords, p_dropoffCoords], {color: '#2b3990', weight: 3}).addTo(passengerMap);
-            mapLayers.push(line);
+            let line = L.polyline([p_pickupCoords, p_dropoffCoords], {color: 'var(--baly-blue)', weight: 3}).addTo(passengerMap); mapLayers.push(line);
             passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
 
-            calculateDynamicPrice();
+            calculatePrices(); renderCarList();
         }
     }
 
-    function calculateDynamicPrice() {
-        let settings = JSON.parse(localStorage.getItem('admin_settings'));
-        let latlng1 = L.latLng(p_pickupCoords.lat, p_pickupCoords.lng);
-        let latlng2 = L.latLng(p_dropoffCoords.lat, p_dropoffCoords.lng);
-        let distanceKm = passengerMap.distance(latlng1, latlng2) / 1000;
+    function calculatePrices() {
+        let base = JSON.parse(localStorage.getItem('admin_settings')).pricePerKm;
+        let km = passengerMap.distance(L.latLng(p_pickupCoords.lat, p_pickupCoords.lng), L.latLng(p_dropoffCoords.lat, p_dropoffCoords.lng)) / 1000;
+        let basePrice = Math.round(km * base);
+        if(basePrice < 1500) basePrice = 1500;
         
-        finalCalculatedPrice = Math.round(distanceKm * settings.pricePerKm);
-        if(finalCalculatedPrice < 1000) finalCalculatedPrice = 1000;
-        document.getElementById('calculatedPrice').innerText = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice) + " د.ع";
+        // حساب تسعيرة فئات بلي
+        carPrices['سوبر'] = basePrice;
+        carPrices['توفير'] = Math.round(basePrice * 0.85); // أرخص
+        carPrices['بلس'] = Math.round(basePrice * 1.3);    // أغلى
+    }
+
+    function formatPrice(num) {
+        return new Intl.NumberFormat('ar-IQ').format(num) + " دينار";
+    }
+
+    function renderCarList() {
+        let container = document.getElementById('passengerCarsList'); container.innerHTML = "";
+        let cars = [
+            { id: 'سوبر', name: 'سوبر', desc: 'الخيار الأفضل', img: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' },
+            { id: 'توفير', name: 'توفير', desc: 'التكسي الأوفر', img: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' },
+            { id: 'بلس', name: 'بلس', desc: 'راحة أكثر', img: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' }
+        ];
+
+        cars.forEach(car => {
+            let isSelected = selectedCarType === car.id;
+            let div = document.createElement('div');
+            div.className = `car-item ${isSelected ? 'selected' : ''}`;
+            div.onclick = () => { selectedCarType = car.id; renderCarList(); };
+            div.innerHTML = `
+                <div class="car-info-wrapper">
+                    <img src="${car.img}" class="car-img">
+                    <div class="car-details">
+                        <h4>${car.name}</h4>
+                        <p>${car.desc}</p>
+                    </div>
+                </div>
+                <div class="car-price">${formatPrice(carPrices[car.id])}</div>
+            `;
+            container.appendChild(div);
+        });
+        document.querySelector('.btn-confirm-ride').innerText = `اطلب ${selectedCarType} الآن`;
     }
 
     function requestRide() {
-        let formattedPrice = new Intl.NumberFormat('ar-IQ').format(finalCalculatedPrice) + " د.ع";
+        let finalPrice = formatPrice(carPrices[selectedCarType]);
         globalRide = {
-            type: 'ride_status',
-            id: Date.now().toString(),
-            status: 'pending',
-            passengerName: currentUser.name,
-            passengerPhone: currentUser.phone,
-            pickup: p_pickupCoords,
-            dropoff: p_dropoffCoords,
-            price: formattedPrice,
-            chat: []
+            type: 'ride_status', id: Date.now().toString(), status: 'pending', carType: selectedCarType,
+            passengerName: currentUser.name, passengerPhone: currentUser.phone,
+            pickup: p_pickupCoords, dropoff: p_dropoffCoords, price: finalPrice, chat: []
         };
         
         localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
@@ -662,32 +598,26 @@
 
         document.getElementById('passengerStage2').classList.add('hidden');
         document.getElementById('passengerStage3').classList.remove('hidden');
-        document.getElementById('passCancelBtn').innerText = "إلغاء الطلب";
+        document.getElementById('radarUI').classList.remove('hidden'); // إظهار الرادار
+        document.querySelector('#radarUI h3').innerText = `يتم البحث عن أقرب سائق ${selectedCarType}...`;
     }
 
     function cancelRidePassenger() {
-        let confirmMsg = (globalRide && globalRide.status === 'pending') ? "هل أنت متأكد من إلغاء الطلب؟" : "هل أنت متأكد من إنهاء الرحلة؟";
-        if (confirm(confirmMsg)) {
-            if (globalRide) {
-                globalRide.status = 'cancelled';
-                mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
-            }
-            localStorage.removeItem('tuktuk_ride');
-            location.reload(); 
+        let msg = (globalRide && globalRide.status === 'pending') ? "إلغاء الطلب؟" : "إنهاء الرحلة؟";
+        if (confirm(msg)) {
+            if (globalRide) { globalRide.status = 'cancelled'; mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true }); }
+            localStorage.removeItem('tuktuk_ride'); location.reload(); 
         }
     }
 
     // ==========================================
-    // واجهة السائق والتفعيل التلقائي (Auto-Online)
+    // واجهة السائق
     // ==========================================
     function initDriver() {
         if(!driverMap) {
             driverMap = L.map('driverMap', { zoomControl: false }).setView(userCoords, 15);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly © OpenStreetMap' }).addTo(driverMap);
-            fetchRealLocation(c => { 
-                userCoords = c; driverMap.setView(c, 15); 
-                L.circleMarker(c, {color: '#ffcc00', radius: 10, fillOpacity: 1}).addTo(driverMap);
-            });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly' }).addTo(driverMap);
+            fetchRealLocation(c => { userCoords = c; driverMap.setView(c, 15); L.circleMarker(c, {color: 'var(--baly-blue)', radius: 8, fillOpacity: 1, color:'white', weight:3}).addTo(driverMap); });
         }
     }
 
@@ -701,204 +631,112 @@
         } catch(e) {}
     }
 
-    // دالة لتغيير حالة السائق، مع إمكانية فرض حالة محددة (متاح دائماً)
     function toggleOnline(forceState) {
-        if (typeof forceState === 'boolean') {
-            if (isOnline === forceState) return; 
-            isOnline = forceState;
-        } else {
-            isOnline = !isOnline;
-        }
-        
-        let btn = document.getElementById('onlineBtn');
-        let status = document.getElementById('driverStatusText');
-
+        if (typeof forceState === 'boolean') { if (isOnline === forceState) return; isOnline = forceState; } else { isOnline = !isOnline; }
+        let btn = document.getElementById('onlineBtn'); let status = document.getElementById('driverStatusText');
         if(isOnline) {
-            localStorage.setItem('driver_status', 'online'); // الحفظ حتى بعد إغلاق التطبيق
-            btn.innerHTML = "🔴 إيقاف التطبيق (مطفأ)"; 
-            btn.classList.remove('btn-dark'); 
-            btn.classList.add('btn-yellow');
-            status.innerHTML = "🟢 أنت متاح - جاري البحث عن طلبات..."; 
-            status.style.color = "#28a745";
-            
-            if(globalRide && globalRide.status === 'pending') {
-                handleRideSync(globalRide);
-            }
+            localStorage.setItem('driver_status', 'online'); 
+            btn.innerHTML = "🔴 إيقاف (مطفأ)"; btn.classList.replace('btn-blue', 'btn-dark'); 
+            status.innerHTML = "🟢 أنت متاح - جاري البحث..."; status.style.color = "#28a745";
+            if(globalRide && globalRide.status === 'pending') handleRideSync(globalRide);
         } else {
             localStorage.setItem('driver_status', 'offline');
-            btn.innerHTML = "تشغيل التطبيق"; 
-            btn.classList.remove('btn-yellow'); 
-            btn.classList.add('btn-dark');
-            status.innerHTML = "مطفأ (لا تستقبل طلبات)"; 
-            status.style.color = "#d9534f";
-            clearInterval(requestBeepInterval);
+            btn.innerHTML = "تشغيل التطبيق"; btn.classList.replace('btn-dark', 'btn-blue'); 
+            status.innerHTML = "مطفأ (لا تستقبل طلبات)"; status.style.color = "#888";
+            clearInterval(requestBeepInterval); document.getElementById('driverRequests').classList.add('hidden');
         }
     }
 
     function acceptRide() {
         clearInterval(requestBeepInterval);
-        document.getElementById('driverRequests').classList.add('hidden');
-        document.getElementById('driverOfflinePanel').classList.add('hidden');
-        document.getElementById('driverActiveRidePanel').classList.remove('hidden');
-
-        globalRide.status = 'accepted';
-        globalRide.driverName = currentUser.name;
-        globalRide.driverPhone = currentUser.phone;
+        document.getElementById('driverRequests').classList.add('hidden'); document.getElementById('driverOfflinePanel').classList.add('hidden'); document.getElementById('driverActiveRidePanel').classList.remove('hidden');
+        globalRide.status = 'accepted'; globalRide.driverName = currentUser.name; globalRide.driverPhone = currentUser.phone;
+        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide)); mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
         
-        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
-        mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
-
-        document.getElementById('displayPassName').innerText = globalRide.passengerName;
-        document.getElementById('callPassBtn').href = `tel:${globalRide.passengerPhone}`;
+        document.getElementById('displayPassName').innerText = globalRide.passengerName; document.getElementById('callPassBtn').href = `tel:${globalRide.passengerPhone}`;
         document.getElementById('wazeBtn').setAttribute('onclick', `openWaze(${globalRide.pickup.lat}, ${globalRide.pickup.lng})`);
         drawDriverRoute(userCoords, globalRide.pickup, 'الانطلاق');
     }
 
-    function rejectRide() {
-        clearInterval(requestBeepInterval);
-        document.getElementById('driverRequests').classList.add('hidden');
-    }
+    function rejectRide() { clearInterval(requestBeepInterval); document.getElementById('driverRequests').classList.add('hidden'); }
 
     function driverNextStep() {
-        let btn = document.getElementById('driverActionBtn');
-        let title = document.getElementById('driverActionTitle');
-        let wazeBtn = document.getElementById('wazeBtn');
-
+        let btn = document.getElementById('driverActionBtn'); let title = document.getElementById('driverActionTitle'); let wazeBtn = document.getElementById('wazeBtn');
         if(globalRide.status === 'accepted') {
-            globalRide.status = 'arrived';
-            title.innerText = "الراكب معك؟ انطلق للوجهة";
-            btn.innerText = "بدء الرحلة";
-            btn.classList.replace('btn-blue', 'btn-green');
-            
+            globalRide.status = 'arrived'; title.innerText = "الراكب معك؟ انطلق للوجهة"; btn.innerText = "بدء الرحلة"; btn.style.background = "#28a745";
         } else if(globalRide.status === 'arrived') {
-            globalRide.status = 'in_trip';
-            title.innerText = "توجه نحو نقطة الوصول";
-            btn.innerText = "إنهاء الرحلة";
-            btn.classList.replace('btn-green', 'btn-red');
-            
-            wazeBtn.setAttribute('onclick', `openWaze(${globalRide.dropoff.lat}, ${globalRide.dropoff.lng})`);
-            drawDriverRoute(globalRide.pickup, globalRide.dropoff, 'الوصول');
-            
+            globalRide.status = 'in_trip'; title.innerText = "توجه نحو نقطة الوصول"; btn.innerText = "إنهاء الرحلة"; btn.style.background = "var(--baly-orange)";
+            wazeBtn.setAttribute('onclick', `openWaze(${globalRide.dropoff.lat}, ${globalRide.dropoff.lng})`); drawDriverRoute(globalRide.pickup, globalRide.dropoff, 'الوصول');
         } else if(globalRide.status === 'in_trip') {
-            globalRide.status = 'completed';
-            alert("تم إنهاء الرحلة بنجاح!\nاستلم الأجرة من العميل: " + globalRide.price);
-            mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
-            localStorage.removeItem('tuktuk_ride');
-            location.reload();
-            return;
+            globalRide.status = 'completed'; alert("تم بنجاح!\nاستلم: " + globalRide.price);
+            mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true }); localStorage.removeItem('tuktuk_ride'); location.reload(); return;
         }
-        
-        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
-        mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
+        localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide)); mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
     }
 
     function drawDriverRoute(start, end, popupText) {
-        mapLayers.forEach(l => driverMap.removeLayer(l));
-        mapLayers = [];
-        let m = L.marker(end).addTo(driverMap).bindPopup(popupText).openPopup();
-        let line = L.polyline([start, end], {color: 'red', weight: 4}).addTo(driverMap);
-        mapLayers.push(m, line);
-        driverMap.fitBounds(line.getBounds(), {padding: [30, 30]});
+        mapLayers.forEach(l => driverMap.removeLayer(l)); mapLayers = [];
+        let m = L.marker(end).addTo(driverMap).bindPopup(popupText).openPopup(); let line = L.polyline([start, end], {color: 'var(--baly-blue)', weight: 4}).addTo(driverMap);
+        mapLayers.push(m, line); driverMap.fitBounds(line.getBounds(), {padding: [30, 30]});
     }
-
-    function openWaze(lat, lng) {
-        window.location.href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-    }
+    function openWaze(lat, lng) { window.location.href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`; }
 
     // ==========================================
-    // معالج المزامنة اللحظية الشامل 
+    // المزامنة اللحظية الشاملة
     // ==========================================
     function handleRideSync(ride) {
         if (!ride || !ride.status) return;
-        
-        if (currentUser.role === 'driver' && ride.status !== 'pending' && ride.driverPhone !== currentUser.phone && ride.status !== 'cancelled') {
-            return;
-        }
+        if (currentUser.role === 'driver' && ride.status !== 'pending' && ride.driverPhone !== currentUser.phone && ride.status !== 'cancelled') return;
 
         globalRide = ride;
-        if(globalRide.status !== 'completed' && globalRide.status !== 'cancelled' && globalRide.status !== 'rejected'){
-            localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
-        }
+        if(!['completed', 'cancelled', 'rejected'].includes(globalRide.status)) localStorage.setItem('tuktuk_ride', JSON.stringify(globalRide));
 
+        // راكب
         if (currentUser.role === 'passenger' && !document.getElementById('passengerStage3').classList.contains('hidden')) {
             if (ride.passengerPhone !== currentUser.phone) return;
-
-            let title = document.getElementById('passStatusTitle');
-            let desc = document.getElementById('passStatusDesc');
-            let cancelBtn = document.getElementById('passCancelBtn');
+            let title = document.getElementById('passStatusTitle'); let desc = document.getElementById('passStatusDesc');
 
             if(ride.status === 'accepted') {
-                title.innerHTML = "✅ الكابتن في الطريق!"; title.style.color = "#28a745";
-                desc.innerText = "الرجاء الاستعداد للركوب";
+                document.getElementById('radarUI').classList.add('hidden'); // إخفاء الرادار
                 document.getElementById('driverInfoForPass').classList.remove('hidden');
                 document.getElementById('passChatContainer').classList.remove('hidden');
+                
+                title.innerHTML = "✅ الكابتن في الطريق!"; desc.innerText = "الرجاء الاستعداد للركوب";
                 document.getElementById('displayDriverName').innerText = ride.driverName || "كابتن";
                 document.getElementById('callDriverBtn').href = `tel:${ride.driverPhone}`;
-                cancelBtn.innerText = "إنهاء الرحلة";
-                showNotification("تم قبول الطلب!", "الكابتن في الطريق إليك الآن.");
+                showNotification("تم قبول الطلب!", "الكابتن في الطريق إليك.");
             } else if(ride.status === 'arrived') {
-                title.innerHTML = "🛺 الكابتن بالباب!"; desc.innerText = "الكابتن وصل إلى نقطة الانطلاق";
-                showNotification("الكابتن بالباب!", "يرجى التوجه إلى الكابتن فوراً.");
+                title.innerHTML = "🛺 الكابتن بالباب!"; desc.innerText = "توجه إلى الكابتن فوراً";
+                showNotification("الكابتن بالباب!", "يرجى التوجه إلى الكابتن.");
             } else if(ride.status === 'in_trip') {
-                title.innerHTML = "🗺️ رحلة سعيدة"; desc.innerText = "أنتم الآن في الطريق للوجهة";
-                cancelBtn.innerText = "إنهاء الرحلة";
-                showNotification("بدأت الرحلة", "نتمنى لك رحلة آمنة وسعيدة.");
+                title.innerHTML = "🗺️ رحلة سعيدة"; desc.innerText = "في الطريق للوجهة";
             } else if(ride.status === 'completed') {
-                alert("تم إنهاء الرحلة من قبل السائق. الأجرة المطلوبة: " + ride.price);
-                showNotification("انتهت الرحلة", "تم الوصول. شكراً لاستخدامك تكتك بغداد.");
-                localStorage.removeItem('tuktuk_ride');
-                location.reload();
+                alert("تم إنهاء الرحلة. الأجرة: " + ride.price); localStorage.removeItem('tuktuk_ride'); location.reload();
             }
         }
 
+        // سائق
         if (currentUser.role === 'driver' && isOnline) {
-            let btn = document.getElementById('driverActionBtn');
-            let title = document.getElementById('driverActionTitle');
-            let wazeBtn = document.getElementById('wazeBtn');
-
+            let btn = document.getElementById('driverActionBtn'); let title = document.getElementById('driverActionTitle'); let wazeBtn = document.getElementById('wazeBtn');
             if (ride.status === 'pending' && document.getElementById('driverRequests').classList.contains('hidden') && document.getElementById('driverActiveRidePanel').classList.contains('hidden')) {
-                document.getElementById('req-pickup-address').innerText = ride.pickup.address;
-                document.getElementById('req-dropoff-address').innerText = ride.dropoff.address;
-                document.getElementById('req-price').innerText = ride.price;
+                document.getElementById('req-pickup-address').innerText = ride.pickup.address; document.getElementById('req-dropoff-address').innerText = ride.dropoff.address; document.getElementById('req-price').innerText = ride.price;
                 document.getElementById('driverRequests').classList.remove('hidden');
-                
-                showNotification("🚨 طلب جديد!", "لديك طلب رحلة جديد بالقرب منك.");
-                playBeep();
-                clearInterval(requestBeepInterval);
-                requestBeepInterval = setInterval(playBeep, 1500);
+                showNotification("🚨 طلب جديد!", "طلب رحلة جديد."); playBeep(); clearInterval(requestBeepInterval); requestBeepInterval = setInterval(playBeep, 1500);
             } 
             else if (ride.status === 'accepted') {
-                document.getElementById('displayPassName').innerText = ride.passengerName;
-                document.getElementById('callPassBtn').href = `tel:${ride.passengerPhone}`;
-                title.innerText = "توجه نحو الراكب";
-                btn.innerText = "وصلت للراكب";
-                btn.classList.replace('btn-green', 'btn-blue');
-                wazeBtn.setAttribute('onclick', `openWaze(${ride.pickup.lat}, ${ride.pickup.lng})`);
-                drawDriverRoute(userCoords, ride.pickup, 'الانطلاق');
+                document.getElementById('displayPassName').innerText = ride.passengerName; document.getElementById('callPassBtn').href = `tel:${ride.passengerPhone}`;
+                title.innerText = "توجه نحو الراكب"; btn.innerText = "وصلت للراكب"; btn.style.background = "var(--baly-blue)";
+                wazeBtn.setAttribute('onclick', `openWaze(${ride.pickup.lat}, ${ride.pickup.lng})`); drawDriverRoute(userCoords, ride.pickup, 'الانطلاق');
             }
-            else if (ride.status === 'arrived') {
-                title.innerText = "الراكب معك؟ انطلق للوجهة";
-                btn.innerText = "بدء الرحلة";
-                btn.classList.replace('btn-blue', 'btn-green');
-            }
+            else if (ride.status === 'arrived') { title.innerText = "الراكب معك؟"; btn.innerText = "بدء الرحلة"; btn.style.background = "#28a745"; }
             else if (ride.status === 'in_trip') {
-                title.innerText = "توجه نحو نقطة الوصول";
-                btn.innerText = "إنهاء الرحلة";
-                btn.classList.replace('btn-green', 'btn-red');
-                wazeBtn.setAttribute('onclick', `openWaze(${ride.dropoff.lat}, ${ride.dropoff.lng})`);
-                drawDriverRoute(ride.pickup, ride.dropoff, 'الوصول');
+                title.innerText = "توجه للوصول"; btn.innerText = "إنهاء الرحلة"; btn.style.background = "var(--baly-orange)";
+                wazeBtn.setAttribute('onclick', `openWaze(${ride.dropoff.lat}, ${ride.dropoff.lng})`); drawDriverRoute(ride.pickup, ride.dropoff, 'الوصول');
             }
             else if (ride.status === 'cancelled') {
-                alert("قام الراكب بإلغاء الرحلة.");
-                showNotification("تم الإلغاء", "قام الراكب بإلغاء الطلب.");
-                clearInterval(requestBeepInterval);
-                document.getElementById('driverRequests').classList.add('hidden');
-                document.getElementById('driverActiveRidePanel').classList.add('hidden');
-                document.getElementById('driverOfflinePanel').classList.remove('hidden');
-                mapLayers.forEach(l => driverMap.removeLayer(l));
-                mapLayers = [];
-                centerMap(driverMap);
-                localStorage.removeItem('tuktuk_ride');
+                alert("الراكب ألغى الرحلة."); showNotification("إلغاء", "تم الإلغاء."); clearInterval(requestBeepInterval);
+                document.getElementById('driverRequests').classList.add('hidden'); document.getElementById('driverActiveRidePanel').classList.add('hidden'); document.getElementById('driverOfflinePanel').classList.remove('hidden');
+                mapLayers.forEach(l => driverMap.removeLayer(l)); mapLayers = []; centerMap(driverMap); localStorage.removeItem('tuktuk_ride');
             }
         }
     }
