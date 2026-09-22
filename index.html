@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- مكتبة الاتصال السحابي المباشر (MQTT) - خادم EMQX الأكثر استقراراً -->
+    <!-- مكتبة الاتصال السحابي المباشر (MQTT) - خادم EMQX -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
     <style>
@@ -74,7 +74,7 @@
         .search-box input { border: none; background: transparent; width: 100%; font-family: 'Tajawal', sans-serif; font-size: 15px; font-weight: 700; color: #1a1a1a; outline: none; }
         .search-box input::placeholder { color: #888; font-weight: 500; }
 
-        /* التبويبات والسيارات */
+        /* التبويبات والسيارات (تحديث التكتك) */
         .tabs { display: flex; border-bottom: 1px solid #eee; padding: 0 20px; margin-bottom: 10px;}
         .tab { flex: 1; text-align: center; padding: 15px 0; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent;}
         .tab.active { color: #1a1a1a; border-bottom: 3px solid var(--baly-blue); }
@@ -83,7 +83,7 @@
         .car-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; border-radius: 12px; border: 1px solid transparent; cursor: pointer; transition: 0.2s;}
         .car-item.selected { background-color: #f5f6ff; border: 1px solid #d0d4ff; }
         .car-info-wrapper { display: flex; align-items: center; gap: 15px; }
-        .car-img { width: 50px; }
+        .car-emoji { font-size: 38px; line-height: 1; margin-left: 5px; } /* تصميم التكتك الجديد */
         .car-details h4 { margin: 0 0 3px 0; font-size: 16px; color: #1a1a1a; }
         .car-details p { margin: 0; font-size: 12px; color: #666; }
         .car-price { font-weight: bold; font-size: 15px; color: #1a1a1a; }
@@ -91,11 +91,10 @@
         .ride-options-bar { display: flex; justify-content: space-between; padding: 15px 20px; border-top: 1px solid #eee; margin-top: 10px; font-size: 14px; font-weight: bold; color: #444;}
         .btn-confirm-ride { margin: 0 20px; width: calc(100% - 40px); background-color: var(--baly-blue); border-radius: 12px; padding: 16px; font-size: 18px;}
 
-        /* شاشة جاري البحث */
+        /* شاشة جاري البحث (تحديث الرادار للتكتك) */
         .searching-ui { text-align: center; padding: 30px 20px; }
         .radar-container { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; }
         .radar-pulse { position: absolute; width: 100%; height: 100%; background-color: rgba(248, 195, 37, 0.4); border-radius: 50%; animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
-        .radar-car { position: relative; z-index: 2; width: 80px; }
         @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
 
         /* كارت الطلب للسائق */
@@ -188,27 +187,30 @@
 
             <div id="passengerStage2" class="hidden">
                 <div class="tabs">
-                    <div class="tab active">تكسي</div>
-                    <div class="tab">بوكس</div>
+                    <div class="tab active">تكتك</div>
+                    <div class="tab">سيارة</div>
                 </div>
                 
-                <div class="car-list" id="passengerCarsList"></div>
+                <div class="car-list" id="passengerCarsList">
+                    <!-- سيتم توليد قائمة التكتك هنا -->
+                </div>
 
                 <div class="ride-options-bar">
                     <span>💳 خيارات الرحلة</span>
                     <span>🏷️ رمز الخصم</span>
                 </div>
                 
-                <button class="btn btn-confirm-ride" onclick="requestRide()">يتم البحث عن أقرب سائق سوبر...</button>
+                <button class="btn btn-confirm-ride" onclick="requestRide()">يتم البحث عن أقرب كابتن سوبر...</button>
             </div>
 
             <div id="passengerStage3" class="hidden">
                 <div id="radarUI" class="searching-ui">
                     <div class="radar-container">
                         <div class="radar-pulse"></div>
-                        <img src="https://cdn-icons-png.flaticon.com/512/3204/3204043.png" class="radar-car" alt="car">
+                        <!-- أيقونة التكتك الكبيرة في الرادار -->
+                        <div style="font-size: 60px; position: relative; z-index: 2; line-height: 1;">🛺</div>
                     </div>
-                    <h3 style="color: #1a1a1a; margin-top: 10px;">يتم البحث عن أقرب سائق...</h3>
+                    <h3 style="color: #1a1a1a; margin-top: 10px;">يتم البحث عن أقرب كابتن...</h3>
                 </div>
 
                 <div id="driverInfoForPass" class="contact-card hidden">
@@ -245,7 +247,7 @@
 
         <!-- كارت الطلب الوارد -->
         <div id="driverRequests" class="request-card hidden">
-            <h3 style="margin-top: 0; color: var(--baly-blue);">🚨 طلب جديد!</h3>
+            <h3 style="margin-top: 0; color: var(--baly-blue);">🚨 طلب تكتك جديد!</h3>
             <p style="font-size: 14px;"><strong>من:</strong> <span id="req-pickup-address">--</span></p>
             <p style="font-size: 14px;"><strong>إلى:</strong> <span id="req-dropoff-address">--</span></p>
             <p style="font-size: 18px; font-weight: bold; color: var(--baly-orange);">الأجرة: <span id="req-price">--</span></p>
@@ -318,7 +320,7 @@
         }
     }
 
-    // الاتصال السحابي (تم التغيير لخادم EMQX الأكثر استقراراً للطلبات)
+    // الاتصال السحابي (EMQX)
     const mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
     const RIDE_TOPIC = 'tuktuk_iraq_live_rides_v2'; 
     const NOTIF_TOPIC = 'tuktuk_iraq_live_notif_v2';
@@ -477,7 +479,8 @@
     function initPassenger() {
         if(!passengerMap) {
             passengerMap = L.map('passengerMap', { zoomControl: false }).setView(userCoords, 16);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly' }).addTo(passengerMap);
+            // تغيير رابط الخريطة إلى الرابط الرسمي المجاني لحل مشكلة العلامة المائية "API KEY REQUIRED"
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© Baly' }).addTo(passengerMap);
             fetchRealLocation(c => { userCoords = c; passengerMap.setView(c, 16); updatePassAddress(); });
             passengerMap.on('movestart', () => document.getElementById('passAddressInput').value = "جاري التحديد...");
             passengerMap.on('moveend', updatePassAddress);
@@ -525,9 +528,9 @@
     function renderCarList() {
         let container = document.getElementById('passengerCarsList'); container.innerHTML = "";
         let cars = [
-            { id: 'سوبر', name: 'سوبر', desc: 'الخيار الأفضل', img: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' },
-            { id: 'توفير', name: 'توفير', desc: 'التكسي الأوفر', img: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' },
-            { id: 'بلس', name: 'بلس', desc: 'راحة أكثر', img: 'https://cdn-icons-png.flaticon.com/512/3204/3204043.png' }
+            { id: 'سوبر', name: 'سوبر', desc: 'الخيار الأفضل' },
+            { id: 'توفير', name: 'توفير', desc: 'التكسي الأوفر' },
+            { id: 'بلس', name: 'بلس', desc: 'راحة أكثر' }
         ];
 
         cars.forEach(car => {
@@ -535,7 +538,10 @@
             let div = document.createElement('div'); div.className = `car-item ${isSelected ? 'selected' : ''}`;
             div.onclick = () => { selectedCarType = car.id; renderCarList(); };
             div.innerHTML = `
-                <div class="car-info-wrapper"><img src="${car.img}" class="car-img"><div class="car-details"><h4>${car.name}</h4><p>${car.desc}</p></div></div>
+                <div class="car-info-wrapper">
+                    <div class="car-emoji">🛺</div>
+                    <div class="car-details"><h4>${car.name}</h4><p>${car.desc}</p></div>
+                </div>
                 <div class="car-price">${formatPrice(carPrices[car.id])}</div>
             `;
             container.appendChild(div);
@@ -544,7 +550,6 @@
     }
 
     function requestRide() {
-        // تنظيف البيانات لتجنب مشاكل الإرسال السحابي (هذا هو سبب المشكلة سابقاً)
         let cleanPickup = { lat: p_pickupCoords.lat, lng: p_pickupCoords.lng, address: p_pickupCoords.address || "نقطة الانطلاق" };
         let cleanDropoff = { lat: p_dropoffCoords.lat, lng: p_dropoffCoords.lng, address: document.getElementById('passAddressInput').value || "نقطة الوصول" };
         let finalPrice = formatPrice(carPrices[selectedCarType]);
@@ -559,7 +564,7 @@
         mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true });
 
         document.getElementById('passengerStage2').classList.add('hidden'); document.getElementById('passengerStage3').classList.remove('hidden');
-        document.getElementById('radarUI').classList.remove('hidden'); document.querySelector('#radarUI h3').innerText = `يتم البحث عن أقرب سائق ${selectedCarType}...`;
+        document.getElementById('radarUI').classList.remove('hidden'); document.querySelector('#radarUI h3').innerText = `يتم البحث عن أقرب كابتن ${selectedCarType}...`;
     }
 
     function cancelRidePassenger() {
@@ -574,7 +579,7 @@
     function initDriver() {
         if(!driverMap) {
             driverMap = L.map('driverMap', { zoomControl: false }).setView(userCoords, 15);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Baly' }).addTo(driverMap);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© Baly' }).addTo(driverMap);
             fetchRealLocation(c => { userCoords = c; driverMap.setView(c, 15); L.circleMarker(c, {color: 'var(--baly-blue)', radius: 8, fillOpacity: 1, color:'white', weight:3}).addTo(driverMap); });
         }
     }
@@ -668,13 +673,12 @@
         if (currentUser.role === 'driver' && isOnline) {
             let btn = document.getElementById('driverActionBtn'); let title = document.getElementById('driverActionTitle'); let wazeBtn = document.getElementById('wazeBtn');
             if (ride.status === 'pending' && document.getElementById('driverRequests').classList.contains('hidden') && document.getElementById('driverActiveRidePanel').classList.contains('hidden')) {
-                // التأكد من وضع العناوين بشكل صحيح لتجنب عدم ظهور الكارد
                 document.getElementById('req-pickup-address').innerText = ride.pickup.address || "نقطة محددة"; 
                 document.getElementById('req-dropoff-address').innerText = ride.dropoff.address || "نقطة محددة"; 
                 document.getElementById('req-price').innerText = ride.price;
                 
                 document.getElementById('driverRequests').classList.remove('hidden');
-                showNotification("🚨 طلب جديد!", "طلب رحلة جديد."); 
+                showNotification("🚨 طلب تكتك جديد!", "طلب رحلة جديد بالقرب منك."); 
                 
                 playBeep(); clearInterval(requestBeepInterval); requestBeepInterval = setInterval(playBeep, 1500);
             } 
