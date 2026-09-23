@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- مكتبة الاتصال السحابي (MQTT) - خادم مستقر جداً -->
+    <!-- مكتبة الاتصال السحابي (MQTT) -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
     <style>
@@ -203,10 +203,12 @@
 
                 <div id="driverInfoForPass" class="contact-card hidden">
                     <div class="contact-info">
+                        <!-- هنا كان الخطأ البرمجي (العنصر المفقود) وتم إضافته ليعمل بشكل سليم -->
+                        <h4 id="passStatusTitle" style="color: var(--baly-blue); font-size: 14px; margin: 0 0 5px 0;"></h4>
                         <h4 id="displayDriverName">اسم الكابتن</h4>
                         <p id="passStatusDesc">في الطريق إليك</p>
                     </div>
-                    <!-- زر الاتصال الجديد -->
+                    <!-- زر الاتصال -->
                     <div id="callDriverBtn" class="call-btn" onclick="makePhoneCall('driver')">📞</div>
                 </div>
                 
@@ -267,7 +269,7 @@
                         <h4 id="displayPassName">اسم الراكب</h4>
                         <p>العميل ينتظرك</p>
                     </div>
-                    <!-- زر الاتصال الجديد -->
+                    <!-- زر الاتصال -->
                     <div id="callPassBtn" class="call-btn" onclick="makePhoneCall('passenger')">📞</div>
                 </div>
 
@@ -318,10 +320,9 @@
         }
     }
 
-    // تم تغيير الخادم إلى HiveMQ لضمان وصول المحادثات 100%
     const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const RIDE_TOPIC = 'tuktuk_iraq_live_rides_v5'; 
-    const NOTIF_TOPIC = 'tuktuk_iraq_live_notif_v5';
+    const RIDE_TOPIC = 'tuktuk_iraq_live_rides_v6'; 
+    const NOTIF_TOPIC = 'tuktuk_iraq_live_notif_v6';
     
     let globalRide = null;
     let requestBeepInterval = null;
@@ -423,9 +424,6 @@
         if(msg) { mqttClient.publish(NOTIF_TOPIC, JSON.stringify({ text: msg })); document.getElementById('adminNotif').value = ""; alert("تم الإرسال!"); }
     }
 
-    // ==========================================
-    // حل مشكلة الاتصال (توجيه مباشر)
-    // ==========================================
     function makePhoneCall(target) {
         if (!globalRide) return;
         let phone = target === 'driver' ? globalRide.driverPhone : globalRide.passengerPhone;
@@ -436,9 +434,6 @@
         }
     }
 
-    // ==========================================
-    // نظام المحادثة المحدث (إرسال يدوي وسريع)
-    // ==========================================
     function sendChatFromInput(role) {
         let inputId = role === 'pass' ? 'passChatInput' : 'driverChatInput';
         let input = document.getElementById(inputId);
@@ -452,13 +447,15 @@
     function sendChat(msgText) {
         if(!globalRide) return;
         let sender = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
-        mqttClient.publish(RIDE_TOPIC, JSON.stringify({ type: 'chat', rideId: globalRide.id, sender: sender, text: msgText }));
+        // إضافة {qos: 1} لضمان وصول الرسالة حتى مع ضعف الإنترنت
+        mqttClient.publish(RIDE_TOPIC, JSON.stringify({ type: 'chat', rideId: globalRide.id, sender: sender, text: msgText }), {qos: 1});
         appendChatMessage(sender, msgText); saveChatToLocal(sender, msgText);
     }
 
     function appendChatMessage(sender, text, isRestore = false) {
         let isMe = (sender === 'راكب' && currentUser.role === 'passenger') || (sender === 'كابتن' && currentUser.role === 'driver');
         let box = document.getElementById(currentUser.role === 'passenger' ? 'passChatBox' : 'driverChatBox');
+        if(!box) return; // منع الخطأ إذا لم تكن الشاشة محملة
         let div = document.createElement('div'); div.className = `chat-msg ${isMe ? 'me' : 'other'}`; div.innerText = text; 
         box.appendChild(div); box.scrollTop = box.scrollHeight;
         if(!isMe && !isRestore) saveChatToLocal(sender, text);
@@ -606,7 +603,8 @@
             let line = L.polyline([globalRide.pickup, globalRide.dropoff], {color: 'var(--baly-blue)', weight: 3}).addTo(passengerMap); mapLayers.push(line);
             passengerMap.fitBounds(line.getBounds(), {padding: [50, 50]});
             
-            document.getElementById('passChatBox').innerHTML = ""; // تنظيف المحادثات قبل الاستعادة
+            let pBox = document.getElementById('passChatBox');
+            if(pBox) pBox.innerHTML = ""; 
             handleRideSync(globalRide); 
             if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
         }, 800);
@@ -661,10 +659,10 @@
     function driverNextStep() {
         let btn = document.getElementById('driverActionBtn'); let title = document.getElementById('driverActionTitle'); let wazeBtn = document.getElementById('wazeBtn');
         if(globalRide.status === 'accepted') {
-            globalRide.status = 'arrived'; title.innerText = "الراكب معك؟ انطلق للوجهة"; btn.innerText = "بدء الرحلة"; btn.style.background = "#28a745";
+            globalRide.status = 'arrived'; if(title) title.innerText = "الراكب معك؟ انطلق للوجهة"; if(btn) { btn.innerText = "بدء الرحلة"; btn.style.background = "#28a745"; }
         } else if(globalRide.status === 'arrived') {
-            globalRide.status = 'in_trip'; title.innerText = "توجه نحو نقطة الوصول"; btn.innerText = "إنهاء الرحلة"; btn.style.background = "var(--baly-orange)";
-            wazeBtn.setAttribute('onclick', `openWaze(${globalRide.dropoff.lat}, ${globalRide.dropoff.lng})`); drawDriverRoute(globalRide.pickup, globalRide.dropoff, 'الوصول');
+            globalRide.status = 'in_trip'; if(title) title.innerText = "توجه نحو نقطة الوصول"; if(btn) { btn.innerText = "إنهاء الرحلة"; btn.style.background = "var(--baly-orange)"; }
+            if(wazeBtn) wazeBtn.setAttribute('onclick', `openWaze(${globalRide.dropoff.lat}, ${globalRide.dropoff.lng})`); drawDriverRoute(globalRide.pickup, globalRide.dropoff, 'الوصول');
         } else if(globalRide.status === 'in_trip') {
             globalRide.status = 'completed'; alert("تم بنجاح!\nاستلم: " + globalRide.price);
             mqttClient.publish(RIDE_TOPIC, JSON.stringify(globalRide), { retain: true }); localStorage.removeItem('tuktuk_ride'); location.reload(); return;
@@ -675,7 +673,8 @@
     function restoreDriverRideState() {
         document.getElementById('driverRequests').classList.add('hidden'); document.getElementById('driverOfflinePanel').classList.add('hidden'); document.getElementById('driverActiveRidePanel').classList.remove('hidden');
         setTimeout(() => {
-            document.getElementById('driverChatBox').innerHTML = ""; // تنظيف المحادثات قبل الاستعادة
+            let dBox = document.getElementById('driverChatBox');
+            if(dBox) dBox.innerHTML = ""; 
             handleRideSync(globalRide);
             if(globalRide.chat) globalRide.chat.forEach(c => appendChatMessage(c.sender, c.text, true));
         }, 800);
@@ -701,13 +700,13 @@
 
             if(ride.status === 'accepted') {
                 document.getElementById('radarUI').classList.add('hidden'); document.getElementById('driverInfoForPass').classList.remove('hidden'); document.getElementById('passChatContainer').classList.remove('hidden');
-                title.innerHTML = "✅ الكابتن في الطريق!"; desc.innerText = "الرجاء الاستعداد للركوب";
-                document.getElementById('displayDriverName').innerText = ride.driverName || "كابتن"; 
+                if(title) title.innerHTML = "✅ الكابتن في الطريق!"; if(desc) desc.innerText = "الرجاء الاستعداد للركوب";
+                let dName = document.getElementById('displayDriverName'); if(dName) dName.innerText = ride.driverName || "كابتن"; 
                 showNotification("تم قبول الطلب!", "الكابتن في الطريق إليك.");
             } else if(ride.status === 'arrived') {
-                title.innerHTML = "🛺 الكابتن بالباب!"; desc.innerText = "توجه إلى الكابتن فوراً"; showNotification("الكابتن بالباب!", "يرجى التوجه إلى الكابتن.");
+                if(title) title.innerHTML = "🛺 الكابتن بالباب!"; if(desc) desc.innerText = "توجه إلى الكابتن فوراً"; showNotification("الكابتن بالباب!", "يرجى التوجه إلى الكابتن.");
             } else if(ride.status === 'in_trip') {
-                title.innerHTML = "🗺️ رحلة سعيدة"; desc.innerText = "في الطريق للوجهة";
+                if(title) title.innerHTML = "🗺️ رحلة سعيدة"; if(desc) desc.innerText = "في الطريق للوجهة";
             } else if(ride.status === 'completed') {
                 alert("تم إنهاء الرحلة. الأجرة: " + ride.price); localStorage.removeItem('tuktuk_ride'); location.reload();
             }
@@ -726,14 +725,14 @@
                 playBeep(); clearInterval(requestBeepInterval); requestBeepInterval = setInterval(playBeep, 1500);
             } 
             else if (ride.status === 'accepted') {
-                document.getElementById('displayPassName').innerText = ride.passengerName; 
-                title.innerText = "توجه نحو الراكب"; btn.innerText = "وصلت للراكب"; btn.style.background = "var(--baly-blue)";
-                wazeBtn.setAttribute('onclick', `openWaze(${ride.pickup.lat}, ${ride.pickup.lng})`); drawDriverRoute(userCoords, ride.pickup, 'الانطلاق');
+                let pName = document.getElementById('displayPassName'); if(pName) pName.innerText = ride.passengerName; 
+                if(title) title.innerText = "توجه نحو الراكب"; if(btn) { btn.innerText = "وصلت للراكب"; btn.style.background = "var(--baly-blue)"; }
+                if(wazeBtn) wazeBtn.setAttribute('onclick', `openWaze(${ride.pickup.lat}, ${ride.pickup.lng})`); drawDriverRoute(userCoords, ride.pickup, 'الانطلاق');
             }
-            else if (ride.status === 'arrived') { title.innerText = "الراكب معك؟"; btn.innerText = "بدء الرحلة"; btn.style.background = "#28a745"; }
+            else if (ride.status === 'arrived') { if(title) title.innerText = "الراكب معك؟"; if(btn){ btn.innerText = "بدء الرحلة"; btn.style.background = "#28a745"; } }
             else if (ride.status === 'in_trip') {
-                title.innerText = "توجه للوصول"; btn.innerText = "إنهاء الرحلة"; btn.style.background = "var(--baly-orange)";
-                wazeBtn.setAttribute('onclick', `openWaze(${ride.dropoff.lat}, ${ride.dropoff.lng})`); drawDriverRoute(ride.pickup, ride.dropoff, 'الوصول');
+                if(title) title.innerText = "توجه للوصول"; if(btn){ btn.innerText = "إنهاء الرحلة"; btn.style.background = "var(--baly-orange)"; }
+                if(wazeBtn) wazeBtn.setAttribute('onclick', `openWaze(${ride.dropoff.lat}, ${ride.dropoff.lng})`); drawDriverRoute(ride.pickup, ride.dropoff, 'الوصول');
             }
             else if (ride.status === 'cancelled') {
                 alert("الراكب ألغى الرحلة."); showNotification("إلغاء", "تم الإلغاء."); clearInterval(requestBeepInterval);
