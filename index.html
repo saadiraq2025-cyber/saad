@@ -203,7 +203,6 @@
 
                 <div id="driverInfoForPass" class="contact-card hidden">
                     <div class="contact-info">
-                        <!-- هنا كان الخطأ البرمجي (العنصر المفقود) وتم إضافته ليعمل بشكل سليم -->
                         <h4 id="passStatusTitle" style="color: var(--baly-blue); font-size: 14px; margin: 0 0 5px 0;"></h4>
                         <h4 id="displayDriverName">اسم الكابتن</h4>
                         <p id="passStatusDesc">في الطريق إليك</p>
@@ -241,12 +240,12 @@
         
         <div id="driverMap" class="map-container"></div>
 
-        <!-- كارت الطلب الوارد -->
+        <!-- كارت الطلب الوارد للسائق -->
         <div id="driverRequests" class="request-card hidden">
             <h3 style="margin-top: 0; color: var(--baly-blue);">🚨 طلب جديد!</h3>
-            <p style="font-size: 14px;"><strong>من:</strong> <span id="req-pickup-address">--</span></p>
-            <p style="font-size: 14px;"><strong>إلى:</strong> <span id="req-dropoff-address">--</span></p>
-            <p style="font-size: 18px; font-weight: bold; color: var(--baly-orange);">الأجرة: <span id="req-price">--</span></p>
+            <p style="font-size: 15px;"><strong>من:</strong> <span id="req-pickup-address" style="color: #444;">--</span></p>
+            <p style="font-size: 15px;"><strong>إلى:</strong> <span id="req-dropoff-address" style="color: #444;">--</span></p>
+            <p style="font-size: 18px; font-weight: bold; color: var(--baly-orange); margin-top: 15px;">الأجرة: <span id="req-price">--</span></p>
             <div class="action-btns" style="margin: 15px 0 0 0;">
                 <button class="btn btn-blue" onclick="acceptRide()">قبول</button>
                 <button class="btn" style="background: #e0e0e0; color: #333;" onclick="rejectRide()">رفض</button>
@@ -321,8 +320,8 @@
     }
 
     const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    const RIDE_TOPIC = 'tuktuk_iraq_live_rides_v6'; 
-    const NOTIF_TOPIC = 'tuktuk_iraq_live_notif_v6';
+    const RIDE_TOPIC = 'tuktuk_iraq_live_rides_v7'; 
+    const NOTIF_TOPIC = 'tuktuk_iraq_live_notif_v7';
     
     let globalRide = null;
     let requestBeepInterval = null;
@@ -447,7 +446,6 @@
     function sendChat(msgText) {
         if(!globalRide) return;
         let sender = currentUser.role === 'passenger' ? 'راكب' : 'كابتن';
-        // إضافة {qos: 1} لضمان وصول الرسالة حتى مع ضعف الإنترنت
         mqttClient.publish(RIDE_TOPIC, JSON.stringify({ type: 'chat', rideId: globalRide.id, sender: sender, text: msgText }), {qos: 1});
         appendChatMessage(sender, msgText); saveChatToLocal(sender, msgText);
     }
@@ -455,7 +453,7 @@
     function appendChatMessage(sender, text, isRestore = false) {
         let isMe = (sender === 'راكب' && currentUser.role === 'passenger') || (sender === 'كابتن' && currentUser.role === 'driver');
         let box = document.getElementById(currentUser.role === 'passenger' ? 'passChatBox' : 'driverChatBox');
-        if(!box) return; // منع الخطأ إذا لم تكن الشاشة محملة
+        if(!box) return;
         let div = document.createElement('div'); div.className = `chat-msg ${isMe ? 'me' : 'other'}`; div.innerText = text; 
         box.appendChild(div); box.scrollTop = box.scrollHeight;
         if(!isMe && !isRestore) saveChatToLocal(sender, text);
@@ -469,16 +467,31 @@
         if (navigator.geolocation) { navigator.geolocation.getCurrentPosition( pos => callback([pos.coords.latitude, pos.coords.longitude]), err => callback(userCoords) ); } 
         else callback(userCoords);
     }
+
+    // ==========================================
+    // تطوير وتحسين نظام العناوين (معالم وشوارع)
+    // ==========================================
     async function getAddress(lat, lng) {
         try {
             let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`);
             let data = await res.json();
             if(data && data.address) {
-                let p = []; if(data.address.city||data.address.state) p.push(data.address.city||data.address.state); if(data.address.suburb) p.push(data.address.suburb);
-                return p.join('، ') || "موقع محدد";
-            } return "موقع محدد";
-        } catch(e) { return "بغداد"; }
+                let ad = data.address;
+                // جلب اسم النقطة الدالة أو الشارع
+                let point = ad.amenity || ad.building || ad.shop || ad.road || "";
+                // جلب اسم الحي أو المنطقة أو المدينة
+                let area = ad.neighbourhood || ad.suburb || ad.quarter || ad.city_district || ad.city || ad.town || "";
+                
+                let p = [];
+                if(point) p.push(point);
+                if(area && area !== point) p.push(area);
+                
+                return p.length > 0 ? p.join('، ') : "موقع محدد على الخريطة";
+            } 
+            return "موقع محدد على الخريطة";
+        } catch(e) { return "موقع محدد (بدون شبكة)"; }
     }
+
     async function searchLocation(query) {
         if(!query) return; document.getElementById('passAddressInput').value = "جاري البحث...";
         try {
@@ -488,6 +501,7 @@
             else { alert("لم يتم العثور على المكان."); updatePassAddress(); }
         } catch(e) { updatePassAddress(); }
     }
+
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById(id).classList.remove('hidden');
         if(id === 'passengerScreen') initPassenger(); if(id === 'driverScreen') initDriver();
@@ -505,21 +519,28 @@
     }
 
     async function updatePassAddress() {
-        let c = passengerMap.getCenter(); p_address = await getAddress(c.lat, c.lng); document.getElementById('passAddressInput').value = p_address;
+        let c = passengerMap.getCenter(); 
+        p_address = await getAddress(c.lat, c.lng); 
+        document.getElementById('passAddressInput').value = p_address;
     }
 
     function passConfirmLocation() {
         let btn = document.getElementById('passConfirmBtn'); let pinBox = document.getElementById('pinBox'); let pin = document.getElementById('centerPin');
 
         if(p_phase === 'pickup') {
-            p_pickupCoords = passengerMap.getCenter(); p_pickupCoords.address = p_address; 
+            p_pickupCoords = passengerMap.getCenter(); 
+            // نأخذ القيمة المكتوبة في الحقل كأولوية (وهي مفصلة الآن)
+            p_pickupCoords.address = document.getElementById('passAddressInput').value || "نقطة الانطلاق"; 
             p_phase = 'dropoff';
             pin.classList.add('dropoff'); pinBox.innerText = "الوصول"; btn.innerText = "تأكيد الوصول";
             document.getElementById('passAddressInput').value = ""; document.getElementById('passAddressInput').placeholder = "ابحث عن نقطة الوصول";
             document.getElementById('passHomeBtn').classList.remove('hidden');
             passengerMap.flyTo([p_pickupCoords.lat + 0.005, p_pickupCoords.lng], 15);
         } else {
-            p_dropoffCoords = passengerMap.getCenter(); p_dropoffCoords.address = document.getElementById('passAddressInput').value;
+            p_dropoffCoords = passengerMap.getCenter(); 
+            // نأخذ قيمة الوصول
+            p_dropoffCoords.address = document.getElementById('passAddressInput').value || "نقطة الوصول";
+            
             document.getElementById('passengerStage1').classList.add('hidden'); document.getElementById('passengerStage2').classList.remove('hidden');
             pin.style.display = 'none';
 
@@ -567,8 +588,9 @@
     }
 
     function requestRide() {
-        let cleanPickup = { lat: p_pickupCoords.lat, lng: p_pickupCoords.lng, address: p_pickupCoords.address || "نقطة الانطلاق" };
-        let cleanDropoff = { lat: p_dropoffCoords.lat, lng: p_dropoffCoords.lng, address: document.getElementById('passAddressInput').value || "نقطة الوصول" };
+        // تجهيز العناوين النهائية المفصلة
+        let cleanPickup = { lat: p_pickupCoords.lat, lng: p_pickupCoords.lng, address: p_pickupCoords.address };
+        let cleanDropoff = { lat: p_dropoffCoords.lat, lng: p_dropoffCoords.lng, address: p_dropoffCoords.address };
         let finalPrice = formatPrice(carPrices[selectedCarType]);
         
         globalRide = {
@@ -715,8 +737,9 @@
         if (currentUser.role === 'driver' && isOnline) {
             let btn = document.getElementById('driverActionBtn'); let title = document.getElementById('driverActionTitle'); let wazeBtn = document.getElementById('wazeBtn');
             if (ride.status === 'pending' && document.getElementById('driverRequests').classList.contains('hidden') && document.getElementById('driverActiveRidePanel').classList.contains('hidden')) {
-                document.getElementById('req-pickup-address').innerText = ride.pickup.address || "نقطة محددة"; 
-                document.getElementById('req-dropoff-address').innerText = ride.dropoff.address || "نقطة محددة"; 
+                // عرض العناوين المفصلة للسائق 
+                document.getElementById('req-pickup-address').innerText = ride.pickup.address || "موقع محدد"; 
+                document.getElementById('req-dropoff-address').innerText = ride.dropoff.address || "موقع محدد"; 
                 document.getElementById('req-price').innerText = ride.price;
                 
                 document.getElementById('driverRequests').classList.remove('hidden');
